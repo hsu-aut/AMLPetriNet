@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pnml xmlns="http://www.pnml.org/version-2009/grammar/pnml">
+  <net id="_1DE581FB-5191-4C79-A5D0-1FB6A488CE10" type="http://www.pnml.org/version-2009/grammar/ptnet">
+    <name>
+      <text>QualityCheckControl</text>
+    </name>
+    <page id="_1DE581FB-5191-4C79-A5D0-1FB6A488CE10_page">
+      <place id="CA872571-B9BB-4A48-BB52-28A4185E199B">
+        <name>
+          <text>Idle</text>
+        </name>
+        <initialMarking>
+          <text>1</text>
+        </initialMarking>
+      </place>
+      <place id="B94F2EA0-48A7-4A32-A9F0-B3AA42D29994">
+        <name>
+          <text>Checking</text>
+        </name>
+      </place>
+      <place id="_54FF7F8B-48C1-4473-8B19-089540692AA7">
+        <name>
+          <text>Approved</text>
+        </name>
+      </place>
+      <place id="B10D4E1B-A4AB-4764-A24C-2C82B4E0D044">
+        <name>
+          <text>Rejected</text>
+        </name>
+      </place>
+      <place id="_59AC0CA6-A9CB-4D47-B631-8F58B15ACED9">
+        <name>
+          <text>Result_OK</text>
+        </name>
+      </place>
+      <place id="_82B098CB-8C26-4090-8955-358C7D8A2653">
+        <name>
+          <text>Result_NOK</text>
+        </name>
+      </place>
+      <transition id="_99531AEB-52FB-4EAF-978A-5BF8E77701E3">
+        <name>
+          <text>Start</text>
+        </name>
+      </transition>
+      <transition id="_4B4CD33A-E008-483E-B8D2-61FC96A39F83">
+        <name>
+          <text>Approve</text>
+        </name>
+      </transition>
+      <transition id="_3C824CFD-5B4D-430F-A9F6-5A86ECD51F80">
+        <name>
+          <text>Reject</text>
+        </name>
+      </transition>
+      <transition id="_1ED7F0DE-2056-4292-87C1-57ED33200860">
+        <name>
+          <text>Release</text>
+        </name>
+      </transition>
+      <transition id="_9341A8EB-8D45-4FE8-A197-8961D0BCC6D9">
+        <name>
+          <text>Discard</text>
+        </name>
+      </transition>
+      <arc id="_94A7FB5C-3BF5-479D-A4D5-2CCF13AF78A5" source="CA872571-B9BB-4A48-BB52-28A4185E199B" target="_99531AEB-52FB-4EAF-978A-5BF8E77701E3">
+        <name>
+          <text>Arc_Idle_to_Start</text>
+        </name>
+      </arc>
+      <arc id="_9FE9242C-9A37-4449-8082-E1332A4A0660" source="_99531AEB-52FB-4EAF-978A-5BF8E77701E3" target="B94F2EA0-48A7-4A32-A9F0-B3AA42D29994">
+        <name>
+          <text>Arc_Start_to_Checking</text>
+        </name>
+      </arc>
+      <arc id="D9F04305-566A-459F-882C-BB36AE0D9DAA" source="B94F2EA0-48A7-4A32-A9F0-B3AA42D29994" target="_4B4CD33A-E008-483E-B8D2-61FC96A39F83">
+        <name>
+          <text>Arc_Checking_to_Approve</text>
+        </name>
+      </arc>
+      <arc id="EF1C17D9-5C26-414A-910A-5CFEAE7D5603" source="B94F2EA0-48A7-4A32-A9F0-B3AA42D29994" target="_3C824CFD-5B4D-430F-A9F6-5A86ECD51F80">
+        <name>
+          <text>Arc_Checking_to_Reject</text>
+        </name>
+      </arc>
+      <arc id="DA4E72D8-4490-4BBA-8FAA-09BC9203BBF5" source="_59AC0CA6-A9CB-4D47-B631-8F58B15ACED9" target="_4B4CD33A-E008-483E-B8D2-61FC96A39F83">
+        <name>
+          <text>Arc_ResultOK_to_Approve</text>
+        </name>
+      </arc>
+      <arc id="_549BB02D-DCF5-4A96-B3FD-A7912CC02674" source="_82B098CB-8C26-4090-8955-358C7D8A2653" target="_3C824CFD-5B4D-430F-A9F6-5A86ECD51F80">
+        <name>
+          <text>Arc_ResultNOK_to_Reject</text>
+        </name>
+      </arc>
+      <arc id="_424DCB89-F0D9-4073-A20C-43A9EA755215" source="_4B4CD33A-E008-483E-B8D2-61FC96A39F83" target="_54FF7F8B-48C1-4473-8B19-089540692AA7">
+        <name>
+          <text>Arc_Approve_to_Approved</text>
+        </name>
+      </arc>
+      <arc id="B1AC942E-1860-4BD3-BBA6-141C5CB5F306" source="_3C824CFD-5B4D-430F-A9F6-5A86ECD51F80" target="B10D4E1B-A4AB-4764-A24C-2C82B4E0D044">
+        <name>
+          <text>Arc_Reject_to_Rejected</text>
+        </name>
+      </arc>
+      <arc id="F6930465-E83C-49F3-975E-220A5D105B56" source="_54FF7F8B-48C1-4473-8B19-089540692AA7" target="_1ED7F0DE-2056-4292-87C1-57ED33200860">
+        <name>
+          <text>Arc_Approved_to_Release</text>
+        </name>
+      </arc>
+      <arc id="_3841F0AA-CAD7-4489-AD37-E23765C6C053" source="_1ED7F0DE-2056-4292-87C1-57ED33200860" target="CA872571-B9BB-4A48-BB52-28A4185E199B">
+        <name>
+          <text>Arc_Release_to_Idle</text>
+        </name>
+      </arc>
+      <arc id="_6922B97D-B31E-4635-8754-729E2006D56F" source="B10D4E1B-A4AB-4764-A24C-2C82B4E0D044" target="_9341A8EB-8D45-4FE8-A197-8961D0BCC6D9">
+        <name>
+          <text>Arc_Rejected_to_Discard</text>
+        </name>
+      </arc>
+      <arc id="_640EF3ED-37AA-43A2-933A-F08D864F3A0F" source="_9341A8EB-8D45-4FE8-A197-8961D0BCC6D9" target="CA872571-B9BB-4A48-BB52-28A4185E199B">
+        <name>
+          <text>Arc_Discard_to_Idle</text>
+        </name>
+      </arc>
+    </page>
+  </net>
+</pnml>

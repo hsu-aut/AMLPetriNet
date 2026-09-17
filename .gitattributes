@@ -1,0 +1,19 @@
+# Text files keep LF in the repository; Windows checkouts get CRLF where the
+# tooling expects it. Without this the C# and JS sources arrive with mixed
+# endings, which makes a diff of a one-line change look like a rewrite.
+* text=auto eol=lf
+
+*.sln       text eol=crlf
+*.csproj    text eol=crlf
+*.xaml      text eol=crlf
+*.cs        text eol=crlf
+
+# AML and PNML are XML and diffable; so are the fixtures.
+*.aml       text eol=lf
+*.pnml      text eol=lf
+*.xsd       text eol=lf
+
+*.png       binary
+*.nupkg     binary
+*.woff      binary
+*.woff2     binary

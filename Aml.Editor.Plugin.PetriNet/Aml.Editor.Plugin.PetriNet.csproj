@@ -1,0 +1,112 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows7.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <Version>0.1.14</Version>
+    <Title>AMLPetriNet</Title>
+    <Description>AutomationML Editor plugin for editing basic place/transition Petri nets (ISO/IEC 15909). Embeds a diagram-js based modeler and keeps it in sync with a PT_Net instance hierarchy, using PNML as the exchange format.</Description>
+    <PackageTags>AMLEditor; AMLEditorPlugin.Net; AutomationML; PetriNet; PNML; ISO15909</PackageTags>
+    <Authors>Hamied Nabizada</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+
+    <!-- Anchored at this file, not at the solution: SolutionDir is empty when
+         the project is built on its own, and the package then landed in a
+         second build tree inside the project folder. -->
+    <BaseOutputPath>$(MSBuildThisFileDirectory)..\build\Plugins\$(MSBuildProjectName)</BaseOutputPath>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+
+    <!-- Built by 'npm run build' in web/. -->
+    <PtnJsDistDir>..\web\dist</PtnJsDistDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      Editor-side dependencies are pinned exactly. A drift here (the editor
+      publishes a new Contract or API package) silently changes the surface this
+      plugin reflects against without any compile error, so the versions are
+      locked and bumped by hand.
+    -->
+    <PackageReference Include="Aml.Editor.Plugin.Contract" Version="[4.3.0]">
+      <PrivateAssets>All</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Aml.Engine" Version="[4.*, 5.0.0)">
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
+    <PackageReference Include="Aml.Editor.API" Version="[2.3.0]">
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
+    <PackageReference Include="Aml.Skins" Version="2.*">
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
+    <!-- PrivateAssets suppresses the NuGet dependency in the nuspec;
+         GeneratePathProperty exposes $(PkgMicrosoft_Web_WebView2) so the DLLs
+         can be packed explicitly below. -->
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.*" GeneratePathProperty="true">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\dotnet\PtMapper.Conversion\PtMapper.Conversion.csproj">
+      <PrivateAssets>all</PrivateAssets>
+    </ProjectReference>
+  </ItemGroup>
+
+  <!-- ─── DLLs bundled into the nupkg, all guaranteed by the build ─────────── -->
+  <ItemGroup>
+    <None Include="$(OutputPath)$(AssemblyName).deps.json" Pack="true" PackagePath="lib\$(TargetFramework)" />
+    <None Include="$(OutputPath)PtMapper.Conversion.dll" Pack="true" PackagePath="lib\$(TargetFramework)" />
+    <None Include="Metadata.xml" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The license and the notices the bundled third-party components require. -->
+    <None Include="..\LICENSE" Pack="true" PackagePath="" />
+    <None Include="..\THIRD-PARTY-NOTICES.md" Pack="true" PackagePath="" />
+
+    <!-- WebView2 assemblies out of the NuGet cache. Link makes
+         CopyToOutputDirectory work for an absolute Include. -->
+    <None Include="$(PkgMicrosoft_Web_WebView2)\lib\net462\Microsoft.Web.WebView2.Core.dll"
+          Link="Microsoft.Web.WebView2.Core.dll"
+          CopyToOutputDirectory="PreserveNewest" Visible="false"
+          Pack="true" PackagePath="lib\$(TargetFramework)" />
+    <None Include="$(PkgMicrosoft_Web_WebView2)\lib\net462\Microsoft.Web.WebView2.Wpf.dll"
+          Link="Microsoft.Web.WebView2.Wpf.dll"
+          CopyToOutputDirectory="PreserveNewest" Visible="false"
+          Pack="true" PackagePath="lib\$(TargetFramework)" />
+    <None Include="$(PkgMicrosoft_Web_WebView2)\lib\Microsoft.Web.WebView2.Core.winmd"
+          Link="Microsoft.Web.WebView2.Core.winmd"
+          CopyToOutputDirectory="PreserveNewest" Visible="false"
+          Pack="true" PackagePath="lib\$(TargetFramework)" />
+    <!-- NuGet.Pack drops items that point at runtimes/win-x64/native/, so the
+         loader is staged under obj/ first and packed from there by file name. -->
+    <None Include="$(IntermediateOutputPath)bundled\WebView2Loader.dll"
+          Link="WebView2Loader.dll"
+          CopyToOutputDirectory="PreserveNewest" Visible="false"
+          Pack="true" PackagePath="lib\$(TargetFramework)\WebView2Loader.dll" />
+  </ItemGroup>
+
+  <!-- ─── The modeler bundle, shipped as content ───────────────────────────── -->
+  <ItemGroup>
+    <None Include="$(PtnJsDistDir)\**\*"
+          Link="ptnjs-assets\%(RecursiveDir)%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest"
+          Pack="true"
+          PackagePath="lib\$(TargetFramework)\ptnjs-assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <Target Name="VerifyPtnJsDist" BeforeTargets="BeforeBuild">
+    <Error Condition="!Exists('$(PtnJsDistDir)\ptnjs.esm.js')"
+           Text="The modeler bundle is missing. Run 'npm install &amp;&amp; npm run build' in web\." />
+  </Target>
+
+  <!-- Stage WebView2Loader.dll so NuGet.Pack treats it as ordinary content.
+       Must run before the build so the None item above resolves. -->
+  <Target Name="StageWebView2Loader" BeforeTargets="BeforeResolveReferences">
+    <Copy SourceFiles="$(PkgMicrosoft_Web_WebView2)\runtimes\win-x64\native\WebView2Loader.dll"
+          DestinationFolder="$(IntermediateOutputPath)bundled\"
+          SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

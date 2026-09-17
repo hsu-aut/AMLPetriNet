@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Aml.Engine" Version="4.*" />
+  </ItemGroup>
+
+  <!-- Drath's object reference library, shipped inside the assembly.
+       The ISO_PT classes type their refObj attribute against it, so a document
+       that carries those classes has to carry this one too, and the plugin runs
+       inside the AML Editor with no library folder in reach. The ISO_PT and
+       OMG_DD libraries are not here because the mapper builds those in code. -->
+  <ItemGroup>
+    <EmbeddedResource
+        Include="$(MSBuildThisFileDirectory)..\..\libraries\AutomationML_ObjectReferences_AttributeTypeLib_AMLEd2_1.1.1-beta.aml"
+        LogicalName="PtMapper.Conversion.AutomationML_ObjectReferences_AttributeTypeLib_AMLEd2_1.1.1-beta.aml" />
+  </ItemGroup>
+</Project>

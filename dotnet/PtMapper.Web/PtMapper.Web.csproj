@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>PtMapper.Web</RootNamespace>
+
+    <!-- AnyCPU: the app also runs on hosts with a 32 bit worker process. -->
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PtMapper.Conversion\PtMapper.Conversion.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <PtnJsDistDir>$(MSBuildThisFileDirectory)..\..\web\dist</PtnJsDistDir>
+  </PropertyGroup>
+
+  <!-- ─── The modeler bundle and the demo file, staged into wwwroot ──────────
+       Copied rather than Linked: the Web SDK serves wwwroot from the content
+       root, so linked items would be found in a publish but not by `dotnet run`,
+       and the local page would silently lose the modeler. Staged files are
+       gitignored. -->
+  <Target Name="StageWebAssets" BeforeTargets="BeforeBuild">
+    <Error Condition="!Exists('$(PtnJsDistDir)\ptnjs.esm.js')"
+           Text="The modeler bundle is missing. Run 'npm install &amp;&amp; npm run build' in web\." />
+
+    <Copy SourceFiles="$(PtnJsDistDir)\ptnjs.esm.js;$(PtnJsDistDir)\ptnjs.css"
+          DestinationFolder="$(MSBuildThisFileDirectory)wwwroot"
+          SkipUnchangedFiles="true" />
+    <!-- The MPS500 bridging example, self-contained so that it opens without its
+         libraries beside it, served under a short name. -->
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)..\..\examples\paper\BridgingExample_MPS500_selfcontained.aml"
+          DestinationFiles="$(MSBuildThisFileDirectory)wwwroot\examples\MPS500_QualityCheck.aml"
+          SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

@@ -1,0 +1,95 @@
+name: build and test
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    # Windows, because the plugin targets net8.0-windows and WPF, and because
+    # the browser checks run against the same Chromium a developer has here.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      # The .NET build refuses to run without the bundle: the plugin and the
+      # web application ship it.
+      - name: Build the modeler bundle
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build
+        run: |
+          dotnet restore Aml.Editor.Plugin.PetriNet.sln
+          dotnet build Aml.Editor.Plugin.PetriNet.sln -c Release --no-restore
+
+      - name: Test the mapper
+        run: dotnet test dotnet/PtMapper.Tests -c Release --no-build
+
+      # npm test installs Chromium first (see the pretest script) and then runs
+      # the PNML round trip, the interop fixtures, the host bridge, the label
+      # behaviour and the number formats in a real browser.
+      - name: Test the modeler
+        working-directory: web
+        run: npm test
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # bash, because PowerShell passes the * through unexpanded.
+      - name: Check the PNML against the ISO/IEC 15909-2 grammar
+        working-directory: web
+        shell: bash
+        run: node tools/validate-pnml.mjs ../examples/interop/*.pnml ../examples/quality-gate.pnml ../examples/paper/MPS500_PT.pnml
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Aml.Editor.Plugin.PetriNet-nupkg
+          path: build/Plugins/Aml.Editor.Plugin.PetriNet/Release/*.nupkg
+
+  release:
+    # Only this job may write, and only for a version tag. The tag has to match
+    # the package version, or a tag v0.1.15 would publish a 0.1.14 package.
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: windows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Aml.Editor.Plugin.PetriNet-nupkg
+          path: nupkg
+
+      - name: Check that the tag matches the package version
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          test -f "nupkg/Aml.Editor.Plugin.PetriNet.${version}.nupkg" || { ls nupkg; echo "no package for version ${version}"; exit 1; }
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: nupkg/*.nupkg
+          generate_release_notes: true
+          fail_on_unmatched_files: true

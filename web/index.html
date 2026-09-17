@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Petri net modeler</title>
+  <link rel="stylesheet" href="./ptnjs.css">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      font-family: sans-serif;
+      background: #fff;
+    }
+
+    #modeler-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    /* diagram-js spawns .djs-container inside the host element; pin it so the
+       SVG really fills the viewport. */
+    #modeler-container > .djs-container,
+    #modeler-container > .djs-container > svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    #boot-error {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      color: #b00;
+      font-family: Consolas, monospace;
+      white-space: pre-wrap;
+      padding: 16px;
+      box-sizing: border-box;
+      z-index: 1000;
+    }
+
+    /* The AML Editor can run a dark skin. Keep this to the canvas ground and
+       the palette chrome; element colours come from the renderer. */
+    :root[data-theme="dark"] body,
+    :root[data-theme="dark"] #boot-error {
+      background: #1e1e1e;
+      color: #ddd;
+    }
+    :root[data-theme="dark"] .djs-palette,
+    :root[data-theme="dark"] .djs-context-pad .entry,
+    :root[data-theme="dark"] .djs-popup {
+      background: #2b2b2b;
+      color: #ddd;
+      border-color: #444;
+    }
+  </style>
+</head>
+<body>
+  <div id="modeler-container"></div>
+  <div id="boot-error"></div>
+
+  <script type="module">
+    import { createPetriNetModeler, connectBridge, exportSvg, installDiagnostics, showFatal }
+      from './ptnjs.esm.js';
+
+    installDiagnostics();
+
+    try {
+      window.ptn = await createPetriNetModeler({
+        container: document.getElementById('modeler-container'),
+      });
+      connectBridge(window.ptn);
+      window.ptnExportSvg = exportSvg;
+      window.ptnReady = true;
+    } catch (err) {
+      showFatal('Petri net modeler failed to load:\n' + (err?.stack || err));
+      throw err;
+    }
+  </script>
+</body>
+</html>

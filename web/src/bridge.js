@@ -1,0 +1,242 @@
+/**
+ * Message bridge between the modeler and the WebView2 host.
+ *
+ * Mirrors the protocol the FPD plugin uses (Aml.Editor.Plugin.FPB/Bridge), so
+ * the C# side stays recognisable across the two plugins. The payload here is
+ * PNML rather than FPB JSON.
+ *
+ * Host -> page:
+ *   { type: 'importPNML', pnml }   replace the diagram
+ *   { type: 'setTheme', theme }    'light' | 'dark'
+ *   { type: 'selectElement', id }  select and scroll to a model element
+ *   { type: 'requestExport' }      ask for the current PNML on demand
+ *   { type: 'requestSvg' }         ask for the diagram as an SVG picture
+ *
+ * Page -> host:
+ *   { type: 'ready', url }
+ *   { type: 'imported', pnml }     import finished; pnml is the echo baseline
+ *   { type: 'changed', pnml }      user edit
+ *   { type: 'svg', svg }           answer to requestSvg
+ *   { type: 'log', level, message }
+ *   { type: 'error', message }
+ */
+
+import { exportSvg } from './svg.js';
+
+const CHANGE_DEBOUNCE_MS = 300;
+
+/** The modeler's token replay events; see its lib/replay/EventHelper.js. */
+const TOGGLE_SIMULATION_EVENT = 'tokenSimulation.toggleMode';
+
+/**
+ * Below the simulator's own handlers (it uses 5000 for the mode toggle), so our
+ * listener sees the state after the simulator has restored the marking.
+ */
+const AFTER_SIMULATOR = 100;
+
+/** Preserved before console is patched so the forwarder cannot recurse. */
+const nativeConsole = {
+  log: console.log.bind(console),
+  info: console.info.bind(console),
+  warn: console.warn.bind(console),
+  error: console.error.bind(console),
+  debug: (console.debug ?? console.log).bind(console),
+};
+
+function post(message) {
+  try {
+    window.chrome?.webview?.postMessage(message);
+  } catch (e) {
+    nativeConsole.error('postMessage failed', e);
+  }
+}
+
+function formatArg(value) {
+  if (value == null) return String(value);
+  if (value instanceof Error) return value.stack || `${value.name}: ${value.message}`;
+  if (typeof value === 'string') return value;
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+/**
+ * Forwards every console call and unhandled failure to the host log. The host
+ * gates log/debug behind its verbose setting; warn and error always pass.
+ */
+function installDiagnostics() {
+  for (const level of ['log', 'info', 'warn', 'error', 'debug']) {
+    console[level] = (...args) => {
+      try {
+        post({ type: 'log', level, message: args.map(formatArg).join(' ') });
+      } catch {
+        /* logging must never break the page */
+      }
+      try {
+        nativeConsole[level](...args);
+      } catch {
+        /* ignore */
+      }
+    };
+  }
+
+  window.addEventListener('error', (e) => {
+    post({
+      type: 'log',
+      level: 'error',
+      message: 'window.error: ' + (e.error?.stack || e.message || String(e)),
+    });
+  });
+  window.addEventListener('unhandledrejection', (e) => {
+    post({
+      type: 'log',
+      level: 'error',
+      message: 'unhandledRejection: ' + (e.reason?.stack || e.reason || '(no reason)'),
+    });
+  });
+}
+
+function showFatal(text) {
+  try {
+    const el = document.getElementById('boot-error');
+    if (el) {
+      el.textContent = text;
+      el.style.display = 'flex';
+    }
+  } catch {
+    /* ignore */
+  }
+  post({ type: 'error', message: text });
+}
+
+/**
+ * Wires a modeler instance to the host. Returns nothing; the page keeps the
+ * modeler on window for diagnostics.
+ */
+export function connectBridge(modeler) {
+  const eventBus = modeler.get('eventBus');
+  const canvas = modeler.get('canvas');
+  const selection = modeler.get('selection');
+  const elementRegistry = modeler.get('elementRegistry');
+
+  // While an import runs the command stack fires a barrage of changes that are
+  // not user edits. Suppress those, and hand the host our own export of the
+  // imported model so it can tell import fallout from a real edit by content.
+  let importing = false;
+  let pending = null;
+
+  // Token replay moves tokens by writing initialMarking through the command
+  // stack (the package notes this as a known shortcut), so a simulation looks
+  // exactly like a user editing every marking in the net. Reporting that would
+  // let someone save a mid-simulation state into the AML document. The
+  // simulator restores the original marking when the mode is switched off, so
+  // suppressing changes for the duration and exporting once afterwards keeps
+  // the host on the real model throughout.
+  let simulating = false;
+
+  const exportPnml = async () => {
+    try {
+      return await modeler.savePNML();
+    } catch (e) {
+      post({ type: 'error', message: 'PNML export failed: ' + (e?.stack || e) });
+      return null;
+    }
+  };
+
+  const scheduleChange = () => {
+    if (importing || simulating) return;
+    clearTimeout(pending);
+    pending = setTimeout(async () => {
+      const pnml = await exportPnml();
+      if (pnml !== null) post({ type: 'changed', pnml });
+    }, CHANGE_DEBOUNCE_MS);
+  };
+
+  eventBus.on('commandStack.changed', scheduleChange);
+
+  /** Imports run one after another; see the importPNML handler below. */
+  let importQueue = Promise.resolve();
+
+  const runImport = async (pnml) => {
+    importing = true;
+    clearTimeout(pending);
+    try {
+      await modeler.importPNML(pnml);
+    } catch (err) {
+      post({ type: 'error', message: 'importPNML failed: ' + (err?.stack || err) });
+    } finally {
+      importing = false;
+    }
+    post({ type: 'imported', pnml: await exportPnml() });
+  };
+
+  eventBus.on(TOGGLE_SIMULATION_EVENT, AFTER_SIMULATOR, (event) => {
+    simulating = Boolean(event.active);
+    if (simulating) {
+      // Anything already queued describes the pre-simulation net, which the
+      // host either has or is about to get on the way out.
+      clearTimeout(pending);
+    } else {
+      // The marking is back to where it started; let the host confirm that
+      // rather than leaving it with whatever it last saw.
+      scheduleChange();
+    }
+  });
+
+  window.chrome?.webview?.addEventListener('message', async (e) => {
+    const msg = e.data;
+    if (!msg || typeof msg !== 'object') return;
+
+    try {
+      if (msg.type === 'importPNML') {
+        // Serialised deliberately. Two imports arriving close together (a
+        // document switch right after a refresh, say) would otherwise interleave
+        // at the await below: the first one's `finally` would clear the flag
+        // while the second is still running, and the second import's own command
+        // stack traffic would be reported to the host as user edits.
+        importQueue = importQueue.then(() => runImport(msg.pnml));
+        await importQueue;
+      } else if (msg.type === 'requestExport') {
+        // Same reason the change listener stays quiet during a replay: the
+        // marking on the canvas is the simulator's, not the model's, and
+        // handing it to the host would let someone save a mid-simulation
+        // state into the AML document.
+        if (simulating) {
+          post({
+            type: 'error',
+            message: 'The token simulation is running; leave it before exporting so the '
+              + 'original marking is back.',
+          });
+        } else {
+          const pnml = await exportPnml();
+          if (pnml !== null) post({ type: 'changed', pnml });
+        }
+      } else if (msg.type === 'requestSvg') {
+        post({ type: 'svg', svg: await exportSvg(modeler) });
+      } else if (msg.type === 'setTheme') {
+        const theme = msg.theme === 'dark' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', theme);
+      } else if (msg.type === 'selectElement') {
+        const element = elementRegistry.get(msg.id);
+        if (element) {
+          selection.select(element);
+          canvas.scrollToElement(element);
+        } else {
+          post({
+            type: 'log',
+            level: 'info',
+            message: 'selectElement: id not in current diagram: ' + msg.id,
+          });
+        }
+      }
+    } catch (err) {
+      post({ type: 'error', message: `handling ${msg.type} failed: ` + (err?.stack || err) });
+    }
+  });
+
+  post({ type: 'ready', url: location.href });
+}
+
+export { installDiagnostics, post, showFatal };

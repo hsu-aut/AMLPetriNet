@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Petri net to AutomationML</title>
+  <link rel="stylesheet" href="./ptnjs.css">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --ground: #f4f5f7;
+      --line: #d8dbe0;
+      --ink: #1d2125;
+      --muted: #626a73;
+      --accent: #0b6fb8;
+      --accent-ink: #ffffff;
+      --error: #b4232c;
+      --warn: #9a6400;
+      --ok: #1c7a44;
+      --warn: #9a5b00;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      color: var(--ink);
+      background: var(--ground);
+    }
+
+    body {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 10px 16px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--line);
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 0;
+      white-space: nowrap;
+    }
+
+    /* Shown only when the page is served under a path of a site that also
+       serves the FPD mapper (aml.fpbjs.net/pt/); standing alone it links
+       nowhere useful. */
+    nav.languages { display: flex; gap: 4px; }
+    nav.languages[hidden] { display: none; }
+    nav.languages a {
+      padding: 4px 10px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      color: inherit;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    nav.languages a[aria-current] { background: var(--line); font-weight: 600; }
+
+    h1 small {
+      display: block;
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--muted);
+    }
+
+    .spacer { flex: 1 1 auto; }
+
+    button, .filebutton {
+      font: inherit;
+      padding: 6px 12px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: var(--bg);
+      color: var(--ink);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    button:hover:not(:disabled), .filebutton:hover { border-color: var(--accent); color: var(--accent); }
+    button:disabled { opacity: .45; cursor: default; }
+
+    button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--accent-ink);
+    }
+    button.primary:hover:not(:disabled) { color: var(--accent-ink); filter: brightness(1.08); }
+
+    .filebutton input { display: none; }
+
+    select {
+      font: inherit;
+      padding: 5px 8px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: var(--bg);
+      color: var(--ink);
+      max-width: 240px;
+    }
+
+    main {
+      position: relative;
+      background: var(--bg);
+      overflow: hidden;
+    }
+
+    #canvas { position: absolute; inset: 0; }
+    #canvas > .djs-container, #canvas > .djs-container > svg { width: 100%; height: 100%; }
+
+    /* The drop target covers the canvas only while a file is over the window. */
+    #drop {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(11, 111, 184, .07);
+      border: 2px dashed var(--accent);
+      color: var(--accent);
+      font-size: 18px;
+      z-index: 40;
+    }
+    body.dragging #drop { display: flex; }
+
+    #boot-error {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      color: var(--error);
+      font-family: Consolas, monospace;
+      white-space: pre-wrap;
+      padding: 16px;
+      z-index: 60;
+      overflow: auto;
+    }
+
+    #empty {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: var(--muted);
+      text-align: center;
+      padding: 24px;
+      pointer-events: none;
+      z-index: 20;
+    }
+    #empty strong { color: var(--ink); font-size: 16px; }
+    #empty .hint { max-width: 460px; line-height: 1.5; }
+    #empty button { pointer-events: auto; }
+    body.loaded #empty { display: none; }
+
+    #findings {
+      background: var(--bg);
+      border-top: 1px solid var(--line);
+      max-height: 34vh;
+      overflow: auto;
+      display: none;
+    }
+    body.showfindings #findings { display: block; }
+
+    #findings table { border-collapse: collapse; width: 100%; }
+    #findings th, #findings td {
+      text-align: left;
+      padding: 5px 10px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+    #findings th { font-weight: 600; color: var(--muted); font-size: 12px; }
+    #findings tr.clickable { cursor: pointer; }
+    #findings tr.clickable:hover { background: var(--ground); }
+    .sev-error { color: var(--error); font-weight: 600; }
+    .sev-warning { color: var(--warn); font-weight: 600; }
+
+    footer {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 7px 16px;
+      background: var(--bg);
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+      min-height: 32px;
+    }
+    footer a { color: var(--accent); }
+    #status.error { color: var(--error); }
+    #status.ok { color: var(--ok); }
+    #status.warn { color: var(--warn); }
+    #status.busy::after { content: " ..."; }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #22262b;
+        --ground: #1a1d21;
+        --line: #3a4048;
+        --ink: #e6e8ea;
+        --muted: #99a1aa;
+        --accent: #4aa3e0;
+        --accent-ink: #10151a;
+        --error: #ef6b73;
+        --warn: #d8a33a;
+        --ok: #57c98a;
+        --warn: #e0a64a;
+      }
+      .djs-palette, .djs-context-pad .entry, .djs-popup {
+        background: #2b3037 !important;
+        color: var(--ink) !important;
+        border-color: var(--line) !important;
+      }
+
+      /* The renderer draws the net in black on the assumption of a white
+         ground. Inverting the shapes would fight it on every redraw, so the
+         canvas keeps its light ground in dark mode and only the frame around
+         it goes dark. */
+      #canvas { background: #ffffff; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Petri net to AutomationML<small>ISO/IEC 15909 and the ISO_PT domain library</small></h1>
+
+    <nav class="languages" id="languages" aria-label="Mapper" hidden>
+      <a href="../">FPD</a>
+      <a href="./" aria-current="page">Petri nets</a>
+    </nav>
+
+    <label class="filebutton">
+      Open file
+      <input id="file" type="file" accept=".aml,.pnml,.xml">
+    </label>
+    <button id="example">Load example</button>
+
+    <select id="hierarchy" title="InstanceHierarchy holding the net"
+            aria-label="InstanceHierarchy holding the net" hidden></select>
+
+    <span class="spacer"></span>
+
+    <button id="validate" disabled>Validate</button>
+    <button id="pnml" disabled>Download PNML</button>
+    <button id="svg" disabled title="The diagram as a picture, as it is drawn here">Download SVG</button>
+    <button id="aml" class="primary" disabled>Download AML</button>
+  </header>
+
+  <main>
+    <div id="canvas"></div>
+    <div id="drop">Drop an .aml or .pnml file</div>
+    <!-- showFatal() from the shared bundle writes here if the modeler cannot boot. -->
+    <div id="boot-error"></div>
+    <div id="empty">
+      <strong>Open an AutomationML or PNML file</strong>
+      <span class="hint">
+        An AML document is read through the ISO_PT domain library, shown here as a
+        Petri net, and written back into the same document, so everything the file
+        holds besides the net stays where it is. The example is the behaviour of
+        the Festo MPS500 quality-check station, in a document that also holds an
+        FPD process view and the plant the two are linked into.
+      </span>
+      <button id="example2">Load the MPS500 quality check</button>
+    </div>
+  </main>
+
+  <div id="findings"></div>
+
+  <footer>
+    <span id="status" role="status" aria-live="polite">Ready.</span>
+    <span class="spacer"></span>
+    <a href="./api/library" download>ISO_PT domain library</a>
+  </footer>
+
+  <script>
+    // Under a path, the site above serves the FPD mapper; at the root there is nothing to switch to.
+    if (location.pathname.replace(/index\.html$/, '') !== '/') document.getElementById('languages').hidden = false;
+  </script>
+
+  <script type="module">
+    import { createPetriNetModeler, exportSvg, installDiagnostics, showFatal } from './ptnjs.esm.js';
+
+    const el = (id) => document.getElementById(id);
+    const status = el('status');
+
+    /**
+     * The document the net came from, kept so that saving can write the net back
+     * into it instead of building a new one. This is the whole point of the page:
+     * /api/to-aml would return a document holding the net and nothing else.
+     */
+    let source = null;   // { aml, name, hierarchy }
+    let modeler = null;
+
+    /**
+     * True while a request is in flight. The buttons are disabled then, but a
+     * file drop, a file picked from the dialog and the hierarchy select are not
+     * buttons: without this flag a second file could be opened while the first
+     * was still being converted, and the later answer would overwrite the
+     * earlier one on a canvas the user had already moved on from.
+     */
+    let working = false;
+
+    function say(text, kind = '') {
+      status.textContent = text;
+      status.className = kind;
+    }
+
+    function busy(text) {
+      working = true;
+      say(text, 'busy');
+      for (const id of ['validate', 'pnml', 'svg', 'aml', 'example', 'example2', 'file', 'hierarchy']) {
+        el(id).disabled = true;
+      }
+    }
+
+    function idle(text, kind = '') {
+      working = false;
+      say(text, kind);
+      const loaded = document.body.classList.contains('loaded');
+      for (const id of ['validate', 'pnml', 'svg', 'aml']) el(id).disabled = !loaded;
+      for (const id of ['example', 'example2', 'file', 'hierarchy']) el(id).disabled = false;
+    }
+
+    /**
+     * The server answers failures as {error}; anything else is a bug worth
+     * showing. Paths are relative on purpose: the app also lives behind a path
+     * on another host, and an absolute /api would land on whatever serves that
+     * host's root.
+     */
+    async function call(url, options) {
+      const response = await fetch(url, options);
+      if (response.ok) return response;
+
+      let message = `${response.status} ${response.statusText}`;
+      try {
+        const body = await response.json();
+        if (body?.error) message = body.error;
+      } catch { /* not JSON: keep the status line */ }
+      throw new Error(message);
+    }
+
+    function info(response) {
+      const raw = response.headers.get('X-Pt-Info');
+      if (!raw) return null;
+      try { return JSON.parse(raw); } catch { return null; }
+    }
+
+    function download(text, name, type) {
+      const url = URL.createObjectURL(new Blob([text], { type }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = name;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      // Revoked late: Safari reads the blob after the click returns.
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    }
+
+    // ── loading ─────────────────────────────────────────────────────────────
+
+    async function openText(text, name) {
+      const isAml = text.includes('CAEXFile');
+      busy(isAml ? 'Reading the AutomationML document' : 'Reading the PNML file');
+
+      try {
+        if (isAml) {
+          await openAml(text, name);
+        } else {
+          source = null;
+          await modeler.importPNML(text);
+          el('hierarchy').hidden = true;
+          document.body.classList.add('loaded');
+          idle(`${name}: loaded. Saving as AML will create a new document.`, 'ok');
+        }
+      } catch (err) {
+        document.body.classList.remove('loaded');
+        idle(String(err.message || err), 'error');
+        return;
+      }
+
+      clearFindings();
+    }
+
+    async function openAml(aml, name, hierarchy) {
+      const query = hierarchy ? `?hierarchy=${encodeURIComponent(hierarchy)}` : '';
+      const response = await call('./api/to-pnml' + query, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/xml' },
+        body: aml,
+      });
+
+      const pnml = await response.text();
+      const detail = info(response);
+
+      await modeler.importPNML(pnml);
+
+      source = { aml, name, hierarchy: detail?.hierarchy ?? hierarchy ?? null };
+      document.body.classList.add('loaded');
+      fillHierarchies(detail);
+
+      const parts = [`${name}:`];
+      if (detail) {
+        parts.push(`${detail.places} places, ${detail.transitions} transitions, ${detail.arcs} arcs`);
+        parts.push(`in ${detail.hierarchy}`);
+        if (detail.arrangedNodes > 0) parts.push(`| ${detail.arrangedNodes} node(s) had no layout and were arranged`);
+        if (detail.adjustedIds > 0) parts.push(`| ${detail.adjustedIds} id(s) are no valid XML names and were adjusted for the diagram, the document keeps its own`);
+        if (detail.warningCount > 0) parts.push(`| ${notShown(detail)}`);
+      }
+      idle(parts.join(' '), detail?.warningCount > 0 ? 'warn' : 'ok');
+    }
+
+    /**
+     * Why something of the document is missing from the canvas. It is still in
+     * the document and a save keeps it there; without this line it would look
+     * as if it had been lost.
+     */
+    function notShown(detail) {
+      const more = detail.warningCount > detail.warnings.length
+        ? ` and ${detail.warningCount - detail.warnings.length} more`
+        : '';
+      return `${detail.warningCount} element(s) of the document are not on the canvas and stay in the document as they are: `
+        + detail.warnings.join(' ') + more;
+    }
+
+    function fillHierarchies(detail) {
+      const select = el('hierarchy');
+      const names = detail?.hierarchies ?? [];
+
+      if (names.length < 2) {
+        select.hidden = true;
+        return;
+      }
+
+      select.innerHTML = '';
+      for (const name of names) {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        option.selected = name === detail.hierarchy;
+        select.appendChild(option);
+      }
+      select.hidden = false;
+    }
+
+    async function readFile(file) {
+      const text = await file.text();
+      await openText(text, file.name);
+    }
+
+    // ── saving ──────────────────────────────────────────────────────────────
+
+    async function saveAml() {
+      busy('Writing the net back');
+      try {
+        const pnml = await modeler.savePNML();
+
+        if (source) {
+          const response = await call('./api/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ aml: source.aml, pnml, hierarchy: source.hierarchy }),
+          });
+
+          const aml = await response.text();
+          const detail = info(response);
+          download(aml, source.name.replace(/\.(aml|xml)$/i, '') + '.aml', 'application/xml');
+
+          const counts = detail
+            ? `${detail.added} added, ${detail.updated} updated, ${detail.removed} removed`
+            : 'written';
+          const notes = detail?.notes?.length ? ` | ${detail.notes.join(' | ')}` : '';
+          idle(`Saved into ${source.name}: ${counts}${notes}`, 'ok');
+        } else {
+          const response = await call('./api/to-aml', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/xml' },
+            body: pnml,
+          });
+          download(await response.text(), 'net.aml', 'application/xml');
+          const detail = info(response);
+          idle(detail?.warningCount > 0
+            ? `Saved as a new AutomationML document. | ${detail.warnings.join(' ')}`
+            : 'Saved as a new AutomationML document.', detail?.warningCount > 0 ? 'warn' : 'ok');
+        }
+      } catch (err) {
+        idle(String(err.message || err), 'error');
+      }
+    }
+
+    async function savePnml() {
+      busy('Exporting PNML');
+      try {
+        const pnml = await modeler.savePNML();
+        const name = (source?.name ?? 'net').replace(/\.(aml|pnml|xml)$/i, '') + '.pnml';
+        download(pnml, name, 'application/xml');
+        idle('PNML exported.', 'ok');
+      } catch (err) {
+        idle(String(err.message || err), 'error');
+      }
+    }
+
+    async function saveSvg() {
+      busy('Exporting the picture');
+      try {
+        const svg = await exportSvg(modeler);
+        const name = (source?.name ?? 'net').replace(/\.(aml|pnml|xml)$/i, '') + '.svg';
+        download(svg, name, 'image/svg+xml');
+        idle('SVG exported.', 'ok');
+      } catch (err) {
+        idle(String(err.message || err), 'error');
+      }
+    }
+
+    // ── validation ──────────────────────────────────────────────────────────
+
+    function clearFindings() {
+      el('findings').innerHTML = '';
+      document.body.classList.remove('showfindings');
+    }
+
+    async function validate() {
+      busy('Checking the net');
+      try {
+        const response = await call('./api/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/xml' },
+          body: await modeler.savePNML(),
+        });
+
+        const result = await response.json();
+        renderFindings(result.findings ?? []);
+
+        const errors = (result.findings ?? []).filter((f) => f.severity === 'error').length;
+        idle(
+          result.findings.length === 0
+            ? 'No findings: the net satisfies the ISO/IEC 15909-1 rules.'
+            : `${result.findings.length} finding(s), ${errors} of them error(s).`,
+          errors === 0 ? 'ok' : 'error');
+      } catch (err) {
+        idle(String(err.message || err), 'error');
+      }
+    }
+
+    function renderFindings(findings) {
+      if (findings.length === 0) {
+        clearFindings();
+        return;
+      }
+
+      const table = document.createElement('table');
+      table.innerHTML = '<thead><tr><th>Rule</th><th>Severity</th><th>Finding</th></tr></thead>';
+      const body = document.createElement('tbody');
+
+      for (const finding of findings) {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${escape(finding.rule)}</td>`
+          + `<td class="sev-${escape(finding.severity)}">${escape(finding.severity)}</td>`
+          + `<td>${escape(finding.message)}</td>`;
+
+        if (finding.element) {
+          row.classList.add('clickable');
+          row.title = 'Show this element';
+          row.tabIndex = 0;
+          row.setAttribute('role', 'button');
+          row.addEventListener('click', () => select(finding.element));
+          row.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              select(finding.element);
+            }
+          });
+        }
+        body.appendChild(row);
+      }
+
+      table.appendChild(body);
+      el('findings').replaceChildren(table);
+      document.body.classList.add('showfindings');
+    }
+
+    function select(id) {
+      const element = modeler.get('elementRegistry').get(id);
+      if (!element) return;
+      modeler.get('selection').select(element);
+      modeler.get('canvas').scrollToElement(element);
+    }
+
+    const escape = (value) => String(value ?? '').replace(/[&<>"]/g,
+      (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+    // ── wiring ──────────────────────────────────────────────────────────────
+
+    installDiagnostics();
+
+    try {
+      modeler = await createPetriNetModeler({ container: el('canvas') });
+      window.ptn = modeler;
+      window.ptnReady = true;
+    } catch (err) {
+      showFatal('The Petri net modeler failed to load:\n' + (err?.stack || err));
+      throw err;
+    }
+
+    el('file').addEventListener('change', async (event) => {
+      const file = event.target.files?.[0];
+      event.target.value = '';
+      if (file && !working) await readFile(file);
+    });
+
+    el('hierarchy').addEventListener('change', async (event) => {
+      if (!source || working) return;
+      const previous = source.hierarchy;
+      busy('Switching hierarchy');
+      try {
+        await openAml(source.aml, source.name, event.target.value);
+      } catch (err) {
+        // The net and the save target are still the old ones, so the select
+        // has to say so rather than name a hierarchy that is not loaded.
+        event.target.value = previous ?? event.target.value;
+        idle(String(err.message || err), 'error');
+      }
+    });
+
+    el('aml').addEventListener('click', saveAml);
+    el('pnml').addEventListener('click', savePnml);
+    el('svg').addEventListener('click', saveSvg);
+    el('validate').addEventListener('click', validate);
+
+    for (const id of ['example', 'example2']) {
+      el(id).addEventListener('click', async () => {
+        busy('Loading the example');
+        try {
+          const response = await call('./examples/MPS500_QualityCheck.aml');
+          await openText(await response.text(), 'MPS500_QualityCheck.aml');
+        } catch (err) {
+          idle(String(err.message || err), 'error');
+        }
+      });
+    }
+
+    // Drag and drop over the whole window, with a counter so that moving across
+    // child elements does not flicker the overlay.
+    let dragDepth = 0;
+    const dragsFiles = (event) => event.dataTransfer?.types?.includes('Files') ?? false;
+
+    window.addEventListener('dragenter', (event) => {
+      if (!dragsFiles(event)) return;
+      event.preventDefault();
+      if (++dragDepth === 1) document.body.classList.add('dragging');
+    });
+    window.addEventListener('dragover', (event) => {
+      if (dragsFiles(event)) event.preventDefault();
+    });
+    window.addEventListener('dragleave', () => {
+      if (--dragDepth <= 0) { dragDepth = 0; document.body.classList.remove('dragging'); }
+    });
+    window.addEventListener('drop', async (event) => {
+      event.preventDefault();
+      dragDepth = 0;
+      document.body.classList.remove('dragging');
+      const file = event.dataTransfer?.files?.[0];
+      if (file && !working) await readFile(file);
+    });
+
+    idle('Ready.');
+  </script>
+</body>
+</html>

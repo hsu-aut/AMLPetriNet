@@ -1,0 +1,814 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CAEXFile SchemaVersion="3.0" FileName="QualityGate.aml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.dke.de/CAEX">
+  <SuperiorStandardVersion>AutomationML 2.1</SuperiorStandardVersion>
+  <SourceDocumentInformation OriginName="pt-aml-mapper" OriginID="iso-pt-aml-mapper" OriginVersion="0.3.0" LastWritingDateTime="2026-09-12T23:27:23.1661979+02:00" />
+  <ExternalReference Path="AutomationML_Base_Libraries_AMLEd2_2.11.0.aml" Alias="AutomationMLBaseLibrariesAMLEd22_11_0" />
+  <InstanceHierarchy Name="QualityGate" ID="{4502a706-e587-580c-be3f-05febdfe1ca9}">
+    <Version>1.0.0</Version>
+    <InternalElement Name="Quality gate" ID="{e4aae590-1f3d-5aa4-95be-8c10cd611bc9}" RefBaseSystemUnitPath="ISO_PT_SystemUnitClassLib/PT_Net">
+      <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="ISO_PT_AttributeTypeLib/PT_Identification">
+        <Attribute Name="id" AttributeDataType="xs:string">
+          <Value>quality_gate</Value>
+        </Attribute>
+        <Attribute Name="name" AttributeDataType="xs:string">
+          <Value>Quality gate</Value>
+        </Attribute>
+      </Attribute>
+      <Attribute Name="refObj" AttributeDataType="xs:IDREF" RefAttributeType="AutomationML_ObjectReferences_AttributeTypeLib/refObj" />
+      <InternalElement Name="Waiting" ID="{a877d5d8-61be-51a9-ac29-cd4179fd6d89}" RefBaseSystemUnitPath="ISO_PT_SystemUnitClassLib/PT_Place">
+        <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="ISO_PT_AttributeTypeLib/PT_Identification">
+          <Attribute Name="id" AttributeDataType="xs:string">
+            <Value>p_waiting</Value>
+          </Attribute>
+          <Attribute Name="name" AttributeDataType="xs:string">
+            <Value>Waiting</Value>
+          </Attribute>
+        </Attribute>
+        <Attribute Name="ViewInformation" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Bounds">
+          <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>100</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>200</Value>
+            </Attribute>
+          </Attribute>
+          <Attribute Name="width" AttributeDataType="xs:double">
+            <Value>50</Value>
+          </Attribute>
+          <Attribute Name="height" AttributeDataType="xs:double">
+            <Value>50</Value>
+          </Attribute>
+        </Attribute>
+        <Attribute Name="InitialMarking" AttributeDataType="xs:nonNegativeInteger">
+          <DefaultValue>0</DefaultValue>
+          <Value>2</Value>
+        </Attribute>
+        <ExternalInterface Name="Out_a1" ID="{7e69efe3-47d3-5da6-af58-2fe3e71d79ae}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_NodeArcEnd" />
+        <ExternalInterface Name="In_a9" ID="{04cdbf11-84d3-5116-9ad5-ccbb8a0f9c2b}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_NodeArcEnd" />
+        <RoleRequirements RefBaseRoleClassPath="ISO_PT_RoleClassLib/PT_Place" />
+      </InternalElement>
+      <InternalElement Name="Result OK" ID="{54a2a15b-b00f-5689-ba43-78fdf84671a5}" RefBaseSystemUnitPath="ISO_PT_SystemUnitClassLib/PT_Place">
+        <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="ISO_PT_AttributeTypeLib/PT_Identification">
+          <Attribute Name="id" AttributeDataType="xs:string">
+            <Value>p_ok</Value>
+          </Attribute>
+          <Attribute Name="name" AttributeDataType="xs:string">
+            <Value>Result OK</Value>
+          </Attribute>
+        </Attribute>
+        <Attribute Name="ViewInformation" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Bounds">
+          <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>280</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>100</Value>
+            </Attribute>
+          </Attribute>
+          <Attribute Name="width" AttributeDataType="xs:double">
+            <Value>50</Value>
+          </Attribute>
+          <Attribute Name="height" AttributeDataType="xs:double">
+            <Value>50</Value>
+          </Attribute>
+        </Attribute>
+        <Attribute Name="InitialMarking" AttributeDataType="xs:nonNegativeInteger">
+          <DefaultValue>0</DefaultValue>
+          <Value>0</Value>
+        </Attribute>
+        <ExternalInterface Name="In_a2" ID="{f1c79224-f7ec-5929-88cf-4a88b0c760e6}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_NodeArcEnd" />
+        <ExternalInterface Name="Out_a4" ID="{3cefe207-7f59-5257-8cc1-cae7157caaec}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_NodeArcEnd" />
+        <RoleRequirements RefBaseRoleClassPath="ISO_PT_RoleClassLib/PT_Place" />
+      </InternalElement>
+      <InternalElement Name="Result NOK" ID="{254f1c2b-bb6e-538a-8f3d-5671ded1507d}" RefBaseSystemUnitPath="ISO_PT_SystemUnitClassLib/PT_Place">
+        <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="ISO_PT_AttributeTypeLib/PT_Identification">
+          <Attribute Name="id" AttributeDataType="xs:string">
+            <Value>p_nok</Value>
+          </Attribute>
+          <Attribute Name="name" AttributeDataType="xs:string">
+            <Value>Result NOK</Value>
+          </Attribute>
+        </Attribute>
+        <Attribute Name="ViewInformation" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Bounds">
+          <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>280</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>300</Value>
+            </Attribute>
+          </Attribute>
+          <Attribute Name="width" AttributeDataType="xs:double">
+            <Value>50</Value>
+          </Attribute>
+          <Attribute Name="height" AttributeDataType="xs:double">
+            <Value>50</Value>
+          </Attribute>
+        </Attribute>
+        <Attribute Name="InitialMarking" AttributeDataType="xs:nonNegativeInteger">
+          <DefaultValue>0</DefaultValue>
+          <Value>0</Value>
+        </Attribute>
+        <ExternalInterface Name="In_a3" ID="{2e89308f-a5e1-5d8d-a0fa-70426e212e21}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_NodeArcEnd" />
+        <ExternalInterface Name="Out_a6" ID="{291675c8-c26d-5503-aa77-3cf4ba4eb659}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_NodeArcEnd" />
+        <RoleRequirements RefBaseRoleClassPath="ISO_PT_RoleClassLib/PT_Place" />
+      </InternalElement>
+      <InternalElement Name="Shipped" ID="{89435354-2782-5e03-b152-b5fbaf829615}" RefBaseSystemUnitPath="ISO_PT_SystemUnitClassLib/PT_Place">
+        <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="ISO_PT_AttributeTypeLib/PT_Identification">
+          <Attribute Name="id" AttributeDataType="xs:string">
+            <Value>p_shipped</Value>
+          </Attribute>
+          <Attribute Name="name" AttributeDataType="xs:string">
+            <Value>Shipped</Value>
+          </Attribute>
+        </Attribute>
+        <Attribute Name="ViewInformation" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Bounds">
+          <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>620</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>100</Value>
+            </Attribute>
+          </Attribute>
+          <Attribute Name="width" AttributeDataType="xs:double">
+            <Value>50</Value>
+          </Attribute>
+          <Attribute Name="height" AttributeDataType="xs:double">
+            <Value>50</Value>
+          </Attribute>
+        </Attribute>
+        <Attribute Name="InitialMarking" AttributeDataType="xs:nonNegativeInteger">
+          <DefaultValue>0</DefaultValue>
+          <Value>0</Value>
+        </Attribute>
+        <ExternalInterface Name="In_a5" ID="{6300f73a-e6b2-5fae-b9c4-2295bb7d9b05}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_NodeArcEnd" />
+        <RoleRequirements RefBaseRoleClassPath="ISO_PT_RoleClassLib/PT_Place" />
+      </InternalElement>
+      <InternalElement Name="Scrapped" ID="{d7f9d97b-c373-54f2-b453-d17efc67b13f}" RefBaseSystemUnitPath="ISO_PT_SystemUnitClassLib/PT_Place">
+        <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="ISO_PT_AttributeTypeLib/PT_Identification">
+          <Attribute Name="id" AttributeDataType="xs:string">
+            <Value>p_scrapped</Value>
+          </Attribute>
+          <Attribute Name="name" AttributeDataType="xs:string">
+            <Value>Scrapped</Value>
+          </Attribute>
+        </Attribute>
+        <Attribute Name="ViewInformation" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Bounds">
+          <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>620</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>300</Value>
+            </Attribute>
+          </Attribute>
+          <Attribute Name="width" AttributeDataType="xs:double">
+            <Value>50</Value>
+          </Attribute>
+          <Attribute Name="height" AttributeDataType="xs:double">
+            <Value>50</Value>
+          </Attribute>
+        </Attribute>
+        <Attribute Name="InitialMarking" AttributeDataType="xs:nonNegativeInteger">
+          <DefaultValue>0</DefaultValue>
+          <Value>0</Value>
+        </Attribute>
+        <ExternalInterface Name="In_a7" ID="{a5c924d3-eca2-5970-bf9c-35c18ef52403}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_NodeArcEnd" />
+        <ExternalInterface Name="Out_a8" ID="{51ee19c4-e10c-509b-945d-35e2544bd9f9}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_NodeArcEnd" />
+        <RoleRequirements RefBaseRoleClassPath="ISO_PT_RoleClassLib/PT_Place" />
+      </InternalElement>
+      <InternalElement Name="Inspect" ID="{7ff99cbd-6930-5788-a7b2-626bb9a202bd}" RefBaseSystemUnitPath="ISO_PT_SystemUnitClassLib/PT_Transition">
+        <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="ISO_PT_AttributeTypeLib/PT_Identification">
+          <Attribute Name="id" AttributeDataType="xs:string">
+            <Value>t_inspect</Value>
+          </Attribute>
+          <Attribute Name="name" AttributeDataType="xs:string">
+            <Value>Inspect</Value>
+          </Attribute>
+        </Attribute>
+        <Attribute Name="ViewInformation" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Bounds">
+          <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>190</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>200</Value>
+            </Attribute>
+          </Attribute>
+          <Attribute Name="width" AttributeDataType="xs:double">
+            <Value>50</Value>
+          </Attribute>
+          <Attribute Name="height" AttributeDataType="xs:double">
+            <Value>50</Value>
+          </Attribute>
+        </Attribute>
+        <ExternalInterface Name="In_a1" ID="{4835fb0c-defe-5fc9-9304-7b56097d3b67}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_NodeArcEnd" />
+        <ExternalInterface Name="Out_a2" ID="{3a9de2e3-c7cb-5b3f-a1fa-5925c07c1c6e}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_NodeArcEnd" />
+        <ExternalInterface Name="Out_a3" ID="{4bc25825-e583-5379-8f72-376b7c81bb92}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_NodeArcEnd" />
+        <RoleRequirements RefBaseRoleClassPath="ISO_PT_RoleClassLib/PT_Transition" />
+      </InternalElement>
+      <InternalElement Name="Approve" ID="{f102eef6-b296-5712-be32-9b9961da5138}" RefBaseSystemUnitPath="ISO_PT_SystemUnitClassLib/PT_Transition">
+        <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="ISO_PT_AttributeTypeLib/PT_Identification">
+          <Attribute Name="id" AttributeDataType="xs:string">
+            <Value>t_approve</Value>
+          </Attribute>
+          <Attribute Name="name" AttributeDataType="xs:string">
+            <Value>Approve</Value>
+          </Attribute>
+        </Attribute>
+        <Attribute Name="ViewInformation" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Bounds">
+          <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>450</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>100</Value>
+            </Attribute>
+          </Attribute>
+          <Attribute Name="width" AttributeDataType="xs:double">
+            <Value>50</Value>
+          </Attribute>
+          <Attribute Name="height" AttributeDataType="xs:double">
+            <Value>50</Value>
+          </Attribute>
+        </Attribute>
+        <ExternalInterface Name="In_a4" ID="{5ecc59bf-d8fb-51cf-b5f4-eda6087129e0}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_NodeArcEnd" />
+        <ExternalInterface Name="Out_a5" ID="{58481185-84be-59b7-bcce-39499bee0253}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_NodeArcEnd" />
+        <RoleRequirements RefBaseRoleClassPath="ISO_PT_RoleClassLib/PT_Transition" />
+      </InternalElement>
+      <InternalElement Name="Reject" ID="{ceb39825-fe4f-5b23-af9b-79e39ba2b561}" RefBaseSystemUnitPath="ISO_PT_SystemUnitClassLib/PT_Transition">
+        <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="ISO_PT_AttributeTypeLib/PT_Identification">
+          <Attribute Name="id" AttributeDataType="xs:string">
+            <Value>t_reject</Value>
+          </Attribute>
+          <Attribute Name="name" AttributeDataType="xs:string">
+            <Value>Reject</Value>
+          </Attribute>
+        </Attribute>
+        <Attribute Name="ViewInformation" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Bounds">
+          <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>450</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>300</Value>
+            </Attribute>
+          </Attribute>
+          <Attribute Name="width" AttributeDataType="xs:double">
+            <Value>50</Value>
+          </Attribute>
+          <Attribute Name="height" AttributeDataType="xs:double">
+            <Value>50</Value>
+          </Attribute>
+        </Attribute>
+        <ExternalInterface Name="In_a6" ID="{3eda5e6f-8d93-5a08-92e6-38389a209877}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_NodeArcEnd" />
+        <ExternalInterface Name="Out_a7" ID="{305786e4-3bb3-5973-a6a3-a7d516a2a5ce}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_NodeArcEnd" />
+        <RoleRequirements RefBaseRoleClassPath="ISO_PT_RoleClassLib/PT_Transition" />
+      </InternalElement>
+      <InternalElement Name="Rework" ID="{331232dd-7e1c-5090-bfe4-4ac17186fb1e}" RefBaseSystemUnitPath="ISO_PT_SystemUnitClassLib/PT_Transition">
+        <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="ISO_PT_AttributeTypeLib/PT_Identification">
+          <Attribute Name="id" AttributeDataType="xs:string">
+            <Value>t_rework</Value>
+          </Attribute>
+          <Attribute Name="name" AttributeDataType="xs:string">
+            <Value>Rework</Value>
+          </Attribute>
+        </Attribute>
+        <Attribute Name="ViewInformation" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Bounds">
+          <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>360</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>430</Value>
+            </Attribute>
+          </Attribute>
+          <Attribute Name="width" AttributeDataType="xs:double">
+            <Value>50</Value>
+          </Attribute>
+          <Attribute Name="height" AttributeDataType="xs:double">
+            <Value>50</Value>
+          </Attribute>
+        </Attribute>
+        <ExternalInterface Name="In_a8" ID="{07734f57-b596-5c28-98ce-a37815da8537}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_NodeArcEnd" />
+        <ExternalInterface Name="Out_a9" ID="{d64519e4-7f2d-5993-9035-6b4fee27d4f3}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_NodeArcEnd" />
+        <RoleRequirements RefBaseRoleClassPath="ISO_PT_RoleClassLib/PT_Transition" />
+      </InternalElement>
+      <InternalElement Name="a1" ID="{7e8ced34-c765-52eb-99c4-ecb093afcbd6}" RefBaseSystemUnitPath="ISO_PT_SystemUnitClassLib/PT_Arc">
+        <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="ISO_PT_AttributeTypeLib/PT_Identification">
+          <Attribute Name="id" AttributeDataType="xs:string">
+            <Value>a1</Value>
+          </Attribute>
+          <Attribute Name="name" AttributeDataType="xs:string" />
+        </Attribute>
+        <Attribute Name="Weight" AttributeDataType="xs:positiveInteger">
+          <DefaultValue>1</DefaultValue>
+          <Value>1</Value>
+        </Attribute>
+        <ExternalInterface Name="Source" ID="{d1e548e4-d2c4-5079-a4a6-20f7a1333da6}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_ArcSource">
+          <Attribute Name="PortCoordinate" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>150</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>225</Value>
+            </Attribute>
+          </Attribute>
+        </ExternalInterface>
+        <ExternalInterface Name="Target" ID="{568f6497-8f09-5c8e-a851-c88f21094d04}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_ArcTarget">
+          <Attribute Name="PortCoordinate" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>190</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>225</Value>
+            </Attribute>
+          </Attribute>
+        </ExternalInterface>
+        <RoleRequirements RefBaseRoleClassPath="ISO_PT_RoleClassLib/PT_Arc" />
+      </InternalElement>
+      <InternalElement Name="a2" ID="{260731a3-a94a-5423-91f4-618d83cb00d2}" RefBaseSystemUnitPath="ISO_PT_SystemUnitClassLib/PT_Arc">
+        <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="ISO_PT_AttributeTypeLib/PT_Identification">
+          <Attribute Name="id" AttributeDataType="xs:string">
+            <Value>a2</Value>
+          </Attribute>
+          <Attribute Name="name" AttributeDataType="xs:string" />
+        </Attribute>
+        <Attribute Name="Weight" AttributeDataType="xs:positiveInteger">
+          <DefaultValue>1</DefaultValue>
+          <Value>1</Value>
+        </Attribute>
+        <ExternalInterface Name="Source" ID="{8873c3db-4acb-5a54-b3ec-8dd0725c4ea4}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_ArcSource">
+          <Attribute Name="PortCoordinate" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>237.5</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>200</Value>
+            </Attribute>
+          </Attribute>
+        </ExternalInterface>
+        <ExternalInterface Name="Target" ID="{9429df65-6049-5097-a0e1-a26eb885a995}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_ArcTarget">
+          <Attribute Name="PortCoordinate" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>288.28</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>143.58</Value>
+            </Attribute>
+          </Attribute>
+        </ExternalInterface>
+        <RoleRequirements RefBaseRoleClassPath="ISO_PT_RoleClassLib/PT_Arc" />
+      </InternalElement>
+      <InternalElement Name="a3" ID="{22f226f8-dacd-5841-832e-81e562441278}" RefBaseSystemUnitPath="ISO_PT_SystemUnitClassLib/PT_Arc">
+        <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="ISO_PT_AttributeTypeLib/PT_Identification">
+          <Attribute Name="id" AttributeDataType="xs:string">
+            <Value>a3</Value>
+          </Attribute>
+          <Attribute Name="name" AttributeDataType="xs:string" />
+        </Attribute>
+        <Attribute Name="Weight" AttributeDataType="xs:positiveInteger">
+          <DefaultValue>1</DefaultValue>
+          <Value>1</Value>
+        </Attribute>
+        <ExternalInterface Name="Source" ID="{470f6f16-5fbf-55e8-ad16-54e21606415d}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_ArcSource">
+          <Attribute Name="PortCoordinate" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>237.5</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>250</Value>
+            </Attribute>
+          </Attribute>
+        </ExternalInterface>
+        <ExternalInterface Name="Target" ID="{03984c7d-1669-5d2a-b13c-a236a5223208}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_ArcTarget">
+          <Attribute Name="PortCoordinate" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>288.28</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>306.42</Value>
+            </Attribute>
+          </Attribute>
+        </ExternalInterface>
+        <RoleRequirements RefBaseRoleClassPath="ISO_PT_RoleClassLib/PT_Arc" />
+      </InternalElement>
+      <InternalElement Name="a4" ID="{f250cf81-a879-590a-8ac1-ababea754449}" RefBaseSystemUnitPath="ISO_PT_SystemUnitClassLib/PT_Arc">
+        <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="ISO_PT_AttributeTypeLib/PT_Identification">
+          <Attribute Name="id" AttributeDataType="xs:string">
+            <Value>a4</Value>
+          </Attribute>
+          <Attribute Name="name" AttributeDataType="xs:string" />
+        </Attribute>
+        <Attribute Name="Weight" AttributeDataType="xs:positiveInteger">
+          <DefaultValue>1</DefaultValue>
+          <Value>1</Value>
+        </Attribute>
+        <ExternalInterface Name="Source" ID="{fad98c2a-b295-51a7-849f-d01fff5d06ad}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_ArcSource">
+          <Attribute Name="PortCoordinate" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>330</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>125</Value>
+            </Attribute>
+          </Attribute>
+        </ExternalInterface>
+        <ExternalInterface Name="Target" ID="{90eb16c4-3e2e-578c-bdde-a8418b2eb331}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_ArcTarget">
+          <Attribute Name="PortCoordinate" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>450</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>125</Value>
+            </Attribute>
+          </Attribute>
+        </ExternalInterface>
+        <RoleRequirements RefBaseRoleClassPath="ISO_PT_RoleClassLib/PT_Arc" />
+      </InternalElement>
+      <InternalElement Name="a5" ID="{1e2fa5aa-5893-5837-8ad6-0369ae68c706}" RefBaseSystemUnitPath="ISO_PT_SystemUnitClassLib/PT_Arc">
+        <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="ISO_PT_AttributeTypeLib/PT_Identification">
+          <Attribute Name="id" AttributeDataType="xs:string">
+            <Value>a5</Value>
+          </Attribute>
+          <Attribute Name="name" AttributeDataType="xs:string" />
+        </Attribute>
+        <Attribute Name="Weight" AttributeDataType="xs:positiveInteger">
+          <DefaultValue>1</DefaultValue>
+          <Value>1</Value>
+        </Attribute>
+        <ExternalInterface Name="Source" ID="{432a0147-a469-5fa3-b17a-799fd95ca1b0}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_ArcSource">
+          <Attribute Name="PortCoordinate" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>500</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>125</Value>
+            </Attribute>
+          </Attribute>
+        </ExternalInterface>
+        <ExternalInterface Name="Target" ID="{75652bed-7d49-5f7c-939e-47d9925756be}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_ArcTarget">
+          <Attribute Name="PortCoordinate" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>620</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>125</Value>
+            </Attribute>
+          </Attribute>
+        </ExternalInterface>
+        <RoleRequirements RefBaseRoleClassPath="ISO_PT_RoleClassLib/PT_Arc" />
+      </InternalElement>
+      <InternalElement Name="a6" ID="{73e69f1c-76c6-57c0-ba37-e50a18734e3a}" RefBaseSystemUnitPath="ISO_PT_SystemUnitClassLib/PT_Arc">
+        <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="ISO_PT_AttributeTypeLib/PT_Identification">
+          <Attribute Name="id" AttributeDataType="xs:string">
+            <Value>a6</Value>
+          </Attribute>
+          <Attribute Name="name" AttributeDataType="xs:string" />
+        </Attribute>
+        <Attribute Name="Weight" AttributeDataType="xs:positiveInteger">
+          <DefaultValue>1</DefaultValue>
+          <Value>1</Value>
+        </Attribute>
+        <ExternalInterface Name="Source" ID="{ea268da4-e462-5ce8-91ab-f0630585b706}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_ArcSource">
+          <Attribute Name="PortCoordinate" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>330</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>325</Value>
+            </Attribute>
+          </Attribute>
+        </ExternalInterface>
+        <ExternalInterface Name="Target" ID="{5ac958ab-d374-54da-b016-ff7131d61f19}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_ArcTarget">
+          <Attribute Name="PortCoordinate" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>450</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>325</Value>
+            </Attribute>
+          </Attribute>
+        </ExternalInterface>
+        <RoleRequirements RefBaseRoleClassPath="ISO_PT_RoleClassLib/PT_Arc" />
+      </InternalElement>
+      <InternalElement Name="a7" ID="{28bbeb66-9c4f-510a-a359-28dba32e2f55}" RefBaseSystemUnitPath="ISO_PT_SystemUnitClassLib/PT_Arc">
+        <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="ISO_PT_AttributeTypeLib/PT_Identification">
+          <Attribute Name="id" AttributeDataType="xs:string">
+            <Value>a7</Value>
+          </Attribute>
+          <Attribute Name="name" AttributeDataType="xs:string" />
+        </Attribute>
+        <Attribute Name="Weight" AttributeDataType="xs:positiveInteger">
+          <DefaultValue>1</DefaultValue>
+          <Value>1</Value>
+        </Attribute>
+        <ExternalInterface Name="Source" ID="{a14a2216-a4e0-5e11-950d-7804e66d07e2}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_ArcSource">
+          <Attribute Name="PortCoordinate" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>500</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>325</Value>
+            </Attribute>
+          </Attribute>
+        </ExternalInterface>
+        <ExternalInterface Name="Target" ID="{2350df3f-2aed-5736-bcfa-7b8c4a8ec4b3}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_ArcTarget">
+          <Attribute Name="PortCoordinate" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>620</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>325</Value>
+            </Attribute>
+          </Attribute>
+        </ExternalInterface>
+        <RoleRequirements RefBaseRoleClassPath="ISO_PT_RoleClassLib/PT_Arc" />
+      </InternalElement>
+      <InternalElement Name="a8" ID="{4ca058cd-db62-56c0-8698-58b45d14ff7d}" RefBaseSystemUnitPath="ISO_PT_SystemUnitClassLib/PT_Arc">
+        <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="ISO_PT_AttributeTypeLib/PT_Identification">
+          <Attribute Name="id" AttributeDataType="xs:string">
+            <Value>a8</Value>
+          </Attribute>
+          <Attribute Name="name" AttributeDataType="xs:string" />
+        </Attribute>
+        <Attribute Name="Weight" AttributeDataType="xs:positiveInteger">
+          <DefaultValue>1</DefaultValue>
+          <Value>2</Value>
+        </Attribute>
+        <ExternalInterface Name="Source" ID="{9e1a9232-7187-53c6-bc2e-3f02f66710a8}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_ArcSource">
+          <Attribute Name="PortCoordinate" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>622.64</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>336.18</Value>
+            </Attribute>
+          </Attribute>
+        </ExternalInterface>
+        <ExternalInterface Name="Target" ID="{f0066a1d-c855-5a6e-b605-1db8fa09cbcb}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_ArcTarget">
+          <Attribute Name="PortCoordinate" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>410</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>442.5</Value>
+            </Attribute>
+          </Attribute>
+        </ExternalInterface>
+        <RoleRequirements RefBaseRoleClassPath="ISO_PT_RoleClassLib/PT_Arc" />
+      </InternalElement>
+      <InternalElement Name="a9" ID="{94b0862f-bdf6-585a-9b7c-22561ba16b7a}" RefBaseSystemUnitPath="ISO_PT_SystemUnitClassLib/PT_Arc">
+        <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="ISO_PT_AttributeTypeLib/PT_Identification">
+          <Attribute Name="id" AttributeDataType="xs:string">
+            <Value>a9</Value>
+          </Attribute>
+          <Attribute Name="name" AttributeDataType="xs:string" />
+        </Attribute>
+        <Attribute Name="Weight" AttributeDataType="xs:positiveInteger">
+          <DefaultValue>1</DefaultValue>
+          <Value>1</Value>
+        </Attribute>
+        <Attribute Name="Waypoint_1" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Waypoint">
+          <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>125</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>455</Value>
+            </Attribute>
+          </Attribute>
+        </Attribute>
+        <ExternalInterface Name="Source" ID="{72aec785-4795-53af-83c5-b83967eaacb6}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_ArcSource">
+          <Attribute Name="PortCoordinate" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>360</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>455</Value>
+            </Attribute>
+          </Attribute>
+        </ExternalInterface>
+        <ExternalInterface Name="Target" ID="{ce01074f-6805-5471-8238-86e05072e287}" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_ArcTarget">
+          <Attribute Name="PortCoordinate" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>125</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>250</Value>
+            </Attribute>
+          </Attribute>
+        </ExternalInterface>
+        <RoleRequirements RefBaseRoleClassPath="ISO_PT_RoleClassLib/PT_Arc" />
+      </InternalElement>
+      <InternalLink RefPartnerSideA="{d1e548e4-d2c4-5079-a4a6-20f7a1333da6}" RefPartnerSideB="{7e69efe3-47d3-5da6-af58-2fe3e71d79ae}" Name="a1_source" ID="{bed4435a-500d-5821-9ec2-bbb17e50aad4}" />
+      <InternalLink RefPartnerSideA="{568f6497-8f09-5c8e-a851-c88f21094d04}" RefPartnerSideB="{4835fb0c-defe-5fc9-9304-7b56097d3b67}" Name="a1_target" ID="{9d6b173a-c43e-52bf-87f3-0e4d19b11219}" />
+      <InternalLink RefPartnerSideA="{8873c3db-4acb-5a54-b3ec-8dd0725c4ea4}" RefPartnerSideB="{3a9de2e3-c7cb-5b3f-a1fa-5925c07c1c6e}" Name="a2_source" ID="{fbee2a40-899b-5ec4-81df-932309e83a13}" />
+      <InternalLink RefPartnerSideA="{9429df65-6049-5097-a0e1-a26eb885a995}" RefPartnerSideB="{f1c79224-f7ec-5929-88cf-4a88b0c760e6}" Name="a2_target" ID="{d1b279a9-fec5-551d-9317-ae44ba27492f}" />
+      <InternalLink RefPartnerSideA="{470f6f16-5fbf-55e8-ad16-54e21606415d}" RefPartnerSideB="{4bc25825-e583-5379-8f72-376b7c81bb92}" Name="a3_source" ID="{99b0e176-5d5e-5458-bf44-2d9744e4fe0b}" />
+      <InternalLink RefPartnerSideA="{03984c7d-1669-5d2a-b13c-a236a5223208}" RefPartnerSideB="{2e89308f-a5e1-5d8d-a0fa-70426e212e21}" Name="a3_target" ID="{91237715-09d6-531a-8567-6a81fbfd05de}" />
+      <InternalLink RefPartnerSideA="{fad98c2a-b295-51a7-849f-d01fff5d06ad}" RefPartnerSideB="{3cefe207-7f59-5257-8cc1-cae7157caaec}" Name="a4_source" ID="{3e65afff-90f1-51ff-b975-4eb591123184}" />
+      <InternalLink RefPartnerSideA="{90eb16c4-3e2e-578c-bdde-a8418b2eb331}" RefPartnerSideB="{5ecc59bf-d8fb-51cf-b5f4-eda6087129e0}" Name="a4_target" ID="{9f21498a-cd60-5e9a-aed9-8100517e38e2}" />
+      <InternalLink RefPartnerSideA="{432a0147-a469-5fa3-b17a-799fd95ca1b0}" RefPartnerSideB="{58481185-84be-59b7-bcce-39499bee0253}" Name="a5_source" ID="{1ba38161-44d0-5973-8e87-b3f9705b29f7}" />
+      <InternalLink RefPartnerSideA="{75652bed-7d49-5f7c-939e-47d9925756be}" RefPartnerSideB="{6300f73a-e6b2-5fae-b9c4-2295bb7d9b05}" Name="a5_target" ID="{27a2d258-a12d-56a2-93ed-ebcfd821a239}" />
+      <InternalLink RefPartnerSideA="{ea268da4-e462-5ce8-91ab-f0630585b706}" RefPartnerSideB="{291675c8-c26d-5503-aa77-3cf4ba4eb659}" Name="a6_source" ID="{4452fec7-c930-5638-8c06-5a734cfedb49}" />
+      <InternalLink RefPartnerSideA="{5ac958ab-d374-54da-b016-ff7131d61f19}" RefPartnerSideB="{3eda5e6f-8d93-5a08-92e6-38389a209877}" Name="a6_target" ID="{c72f5155-8f95-5981-b08a-2ebb16fe4bba}" />
+      <InternalLink RefPartnerSideA="{a14a2216-a4e0-5e11-950d-7804e66d07e2}" RefPartnerSideB="{305786e4-3bb3-5973-a6a3-a7d516a2a5ce}" Name="a7_source" ID="{787c432c-4baa-5bca-9110-02859561df2f}" />
+      <InternalLink RefPartnerSideA="{2350df3f-2aed-5736-bcfa-7b8c4a8ec4b3}" RefPartnerSideB="{a5c924d3-eca2-5970-bf9c-35c18ef52403}" Name="a7_target" ID="{e0b29452-4d77-52d9-b33b-e9463968bdd8}" />
+      <InternalLink RefPartnerSideA="{9e1a9232-7187-53c6-bc2e-3f02f66710a8}" RefPartnerSideB="{51ee19c4-e10c-509b-945d-35e2544bd9f9}" Name="a8_source" ID="{70939ad8-1c1c-5bd1-89d1-e2aecb96e202}" />
+      <InternalLink RefPartnerSideA="{f0066a1d-c855-5a6e-b605-1db8fa09cbcb}" RefPartnerSideB="{07734f57-b596-5c28-98ce-a37815da8537}" Name="a8_target" ID="{4a0bfd88-c1ed-5c7c-a303-e305f14d5bd2}" />
+      <InternalLink RefPartnerSideA="{72aec785-4795-53af-83c5-b83967eaacb6}" RefPartnerSideB="{d64519e4-7f2d-5993-9035-6b4fee27d4f3}" Name="a9_source" ID="{d4797b3f-110c-56d5-b7df-e4381ea2a64d}" />
+      <InternalLink RefPartnerSideA="{ce01074f-6805-5471-8238-86e05072e287}" RefPartnerSideB="{04cdbf11-84d3-5116-9ad5-ccbb8a0f9c2b}" Name="a9_target" ID="{f4abbd5c-61d6-518c-8bc8-bdeb75b521c1}" />
+      <RoleRequirements RefBaseRoleClassPath="ISO_PT_RoleClassLib/PT_Net" />
+      <RoleRequirements RefBaseRoleClassPath="AutomationMLBaseLibrariesAMLEd22_11_0@AutomationMLBaseRoleClassLib/AutomationMLBaseRole/Structure" />
+    </InternalElement>
+  </InstanceHierarchy>
+  <InterfaceClassLib Name="ISO_PT_InterfaceClassLib">
+    <Description>Connection endpoint interfaces for basic Place/Transition Petri nets per ISO/IEC 15909-1. In contrast to the FPD library, connections (arcs) are elements with an identity of their own: node-side and arc-side interfaces are distinct types.</Description>
+    <Version>0.3.0</Version>
+    <InterfaceClass Name="PT_Port" RefBaseClassPath="AutomationMLBaseLibrariesAMLEd22_11_0@AutomationMLInterfaceClassLib/AutomationMLBaseInterface/Port">
+      <Description>Abstract base port for all PT connection endpoints.</Description>
+      <Version>1.0.0</Version>
+      <Attribute Name="PortCoordinate" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+        <Attribute Name="x" AttributeDataType="xs:double" />
+        <Attribute Name="y" AttributeDataType="xs:double" />
+      </Attribute>
+    </InterfaceClass>
+    <InterfaceClass Name="PT_NodeArcEnd" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_Port">
+      <Description>Connection endpoint on a place or transition (the node side of an arc-node coupling). Nodes carry one PT_NodeArcEnd per incident arc.</Description>
+      <Version>1.0.0</Version>
+    </InterfaceClass>
+    <InterfaceClass Name="PT_ArcSource" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_Port">
+      <Description>Source endpoint of an arc. Links via InternalLink to a PT_NodeArcEnd on the source place or transition.</Description>
+      <Version>1.0.0</Version>
+    </InterfaceClass>
+    <InterfaceClass Name="PT_ArcTarget" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_Port">
+      <Description>Target endpoint of an arc. Links via InternalLink to a PT_NodeArcEnd on the target place or transition.</Description>
+      <Version>1.0.0</Version>
+    </InterfaceClass>
+  </InterfaceClassLib>
+  <RoleClassLib Name="ISO_PT_RoleClassLib">
+    <Description>Semantic model of basic Place/Transition Petri nets per ISO/IEC 15909-1. Flat inheritance; three concrete element types (Place, Transition, Arc), one container role (Net).</Description>
+    <Version>0.3.0</Version>
+    <RoleClass Name="PT_Net" RefBaseClassPath="AutomationMLBaseLibrariesAMLEd22_11_0@AutomationMLBaseRoleClassLib/AutomationMLBaseRole/Structure">
+      <Description>Petri net (ISO/IEC 15909-1, Sec. 4). Aggregates places, transitions, and arcs of one diagram.</Description>
+      <Version>1.0.0</Version>
+      <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="ISO_PT_AttributeTypeLib/PT_Identification">
+        <Description>Identification of the net (PNML net id and name).</Description>
+        <Attribute Name="id" AttributeDataType="xs:string" />
+        <Attribute Name="name" AttributeDataType="xs:string" />
+      </Attribute>
+      <Attribute Name="refObj" AttributeDataType="xs:IDREF" RefAttributeType="AutomationML_ObjectReferences_AttributeTypeLib/refObj">
+        <Description>Generic reference attribute for cross-diagram or cross-language references at net level.</Description>
+      </Attribute>
+    </RoleClass>
+    <RoleClass Name="PT_Element" RefBaseClassPath="AutomationMLBaseLibrariesAMLEd22_11_0@AutomationMLBaseRoleClassLib/AutomationMLBaseRole">
+      <Description>Abstract base for all PT elements (Place, Transition, Arc). Carries identification and diagram interchange information shared by all elements.</Description>
+      <Version>1.0.0</Version>
+      <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="ISO_PT_AttributeTypeLib/PT_Identification">
+        <Attribute Name="id" AttributeDataType="xs:string" />
+        <Attribute Name="name" AttributeDataType="xs:string" />
+      </Attribute>
+      <Attribute Name="ViewInformation" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Bounds">
+        <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+          <Attribute Name="x" AttributeDataType="xs:double" />
+          <Attribute Name="y" AttributeDataType="xs:double" />
+        </Attribute>
+        <Attribute Name="width" AttributeDataType="xs:double" />
+        <Attribute Name="height" AttributeDataType="xs:double" />
+      </Attribute>
+    </RoleClass>
+    <RoleClass Name="PT_Place" RefBaseClassPath="ISO_PT_RoleClassLib/PT_Element">
+      <Description>Place (ISO/IEC 15909-1, Sec. 4.1). Passive node type; may carry an initial marking.</Description>
+      <Version>1.0.0</Version>
+      <Attribute Name="InitialMarking" AttributeDataType="xs:nonNegativeInteger">
+        <Description>Static initial marking (non-negative integer). Default 0.</Description>
+        <DefaultValue>0</DefaultValue>
+      </Attribute>
+    </RoleClass>
+    <RoleClass Name="PT_Transition" RefBaseClassPath="ISO_PT_RoleClassLib/PT_Element">
+      <Description>Transition (ISO/IEC 15909-1, Sec. 4.2). Active node type representing a firing event.</Description>
+      <Version>1.0.0</Version>
+    </RoleClass>
+    <RoleClass Name="PT_Arc" RefBaseClassPath="ISO_PT_RoleClassLib/PT_Element">
+      <Description>Arc (ISO/IEC 15909-1, Sec. 4.3). Directed connection between a place and a transition. Element with an identity of its own, a weight, and a graphical representation. Routing is stored on the instance as attributes Waypoint_1..n typed OMG_DD@OMG_DD_AttributeTypeLib/DD_Waypoint, in the order from source to target. Label positions may be stored as attributes typed OMG_DD@OMG_DD_AttributeTypeLib/DD_Point (e.g. LabelOffset).</Description>
+      <Version>1.0.0</Version>
+      <Attribute Name="Weight" AttributeDataType="xs:positiveInteger">
+        <Description>Arc weight (positive integer). Default 1.</Description>
+        <DefaultValue>1</DefaultValue>
+      </Attribute>
+    </RoleClass>
+  </RoleClassLib>
+  <SystemUnitClassLib Name="ISO_PT_SystemUnitClassLib">
+    <Description>Instantiation templates for the PT domain library. Mirrors the RoleClass hierarchy; each template references its role class via SupportedRoleClass, following the semantics/instantiation separation established in the FPD library.</Description>
+    <Version>0.3.0</Version>
+    <SystemUnitClass Name="PT_Net" ID="c1a8d000-0001-4000-8000-000000000001">
+      <Version>1.0.0</Version>
+      <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="ISO_PT_AttributeTypeLib/PT_Identification">
+        <Attribute Name="id" AttributeDataType="xs:string" />
+        <Attribute Name="name" AttributeDataType="xs:string" />
+      </Attribute>
+      <Attribute Name="refObj" AttributeDataType="xs:IDREF" RefAttributeType="AutomationML_ObjectReferences_AttributeTypeLib/refObj" />
+      <SupportedRoleClass RefRoleClassPath="ISO_PT_RoleClassLib/PT_Net" />
+      <SupportedRoleClass RefRoleClassPath="AutomationMLBaseLibrariesAMLEd22_11_0@AutomationMLBaseRoleClassLib/AutomationMLBaseRole/Structure" />
+    </SystemUnitClass>
+    <SystemUnitClass Name="PT_Element" ID="c1a8d000-0001-4000-8000-000000000002">
+      <Version>1.0.0</Version>
+      <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="ISO_PT_AttributeTypeLib/PT_Identification">
+        <Attribute Name="id" AttributeDataType="xs:string" />
+        <Attribute Name="name" AttributeDataType="xs:string" />
+      </Attribute>
+      <Attribute Name="ViewInformation" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Bounds">
+        <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+          <Attribute Name="x" AttributeDataType="xs:double" />
+          <Attribute Name="y" AttributeDataType="xs:double" />
+        </Attribute>
+        <Attribute Name="width" AttributeDataType="xs:double" />
+        <Attribute Name="height" AttributeDataType="xs:double" />
+      </Attribute>
+      <SupportedRoleClass RefRoleClassPath="ISO_PT_RoleClassLib/PT_Element" />
+    </SystemUnitClass>
+    <SystemUnitClass Name="PT_Place" ID="c1a8d000-0001-4000-8000-000000000003" RefBaseClassPath="ISO_PT_SystemUnitClassLib/PT_Element">
+      <Version>1.0.0</Version>
+      <Attribute Name="InitialMarking" AttributeDataType="xs:nonNegativeInteger">
+        <DefaultValue>0</DefaultValue>
+      </Attribute>
+      <SupportedRoleClass RefRoleClassPath="ISO_PT_RoleClassLib/PT_Place" />
+    </SystemUnitClass>
+    <SystemUnitClass Name="PT_Transition" ID="c1a8d000-0001-4000-8000-000000000004" RefBaseClassPath="ISO_PT_SystemUnitClassLib/PT_Element">
+      <Version>1.0.0</Version>
+      <SupportedRoleClass RefRoleClassPath="ISO_PT_RoleClassLib/PT_Transition" />
+    </SystemUnitClass>
+    <SystemUnitClass Name="PT_Arc" ID="c1a8d000-0001-4000-8000-000000000005" RefBaseClassPath="ISO_PT_SystemUnitClassLib/PT_Element">
+      <Version>1.0.0</Version>
+      <Attribute Name="Weight" AttributeDataType="xs:positiveInteger">
+        <DefaultValue>1</DefaultValue>
+      </Attribute>
+      <SupportedRoleClass RefRoleClassPath="ISO_PT_RoleClassLib/PT_Arc" />
+    </SystemUnitClass>
+  </SystemUnitClassLib>
+  <AttributeTypeLib Name="ISO_PT_AttributeTypeLib">
+    <Description>Information-model attribute types for PT nets. Kept intentionally minimal to reflect the small ontology of ISO/IEC 15909-1 (as opposed to VDI 3682 Part 2, which specifies a richer information model).</Description>
+    <Version>0.3.0</Version>
+    <AttributeType Name="PT_Identification" AttributeDataType="xs:string">
+      <Description>Identification of a PT element. Corresponds to the PNML object identification per ISO/IEC 15909-2: id maps to the PNML id attribute, name maps to the PNML name label.</Description>
+      <Version>1.0.0</Version>
+      <Attribute Name="id" AttributeDataType="xs:string" />
+      <Attribute Name="name" AttributeDataType="xs:string" />
+    </AttributeType>
+  </AttributeTypeLib>
+  <AttributeTypeLib Name="OMG_DD_AttributeTypeLib">
+    <Description>Language-agnostic diagram-interchange attribute types, structured after the OMG Diagram Definition (DD) specification: DD_Bounds (DC::Bounds), DD_Point (DC::Point), DD_Waypoint (DI::Waypoint). Referenced by the VDI_FPD and ISO_PT domain libraries.</Description>
+    <Version>0.1.0</Version>
+    <AttributeType Name="DD_Bounds" AttributeDataType="xs:string">
+      <Description>A rectangular area defined by a top-left (x, y) location and a size (width, height) along the x-y axes (cf. DC::Bounds).</Description>
+      <Version>0.1.0</Version>
+      <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+        <Attribute Name="x" AttributeDataType="xs:double" />
+        <Attribute Name="y" AttributeDataType="xs:double" />
+      </Attribute>
+      <Attribute Name="width" AttributeDataType="xs:double" />
+      <Attribute Name="height" AttributeDataType="xs:double" />
+    </AttributeType>
+    <AttributeType Name="DD_Waypoint" AttributeDataType="xs:string">
+      <Description>A routing point along a connection path (cf. DI::Waypoint).</Description>
+      <Version>0.1.0</Version>
+      <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+        <Attribute Name="x" AttributeDataType="xs:double" />
+        <Attribute Name="y" AttributeDataType="xs:double" />
+      </Attribute>
+    </AttributeType>
+    <AttributeType Name="DD_Point" AttributeDataType="xs:string">
+      <Description>A two-dimensional point in a coordinate system (cf. DC::Point).</Description>
+      <Version>0.1.0</Version>
+      <Attribute Name="x" AttributeDataType="xs:double" />
+      <Attribute Name="y" AttributeDataType="xs:double" />
+    </AttributeType>
+  </AttributeTypeLib>
+  <AttributeTypeLib Name="AutomationML_ObjectReferences_AttributeTypeLib" ID="207a2f21-f41a-47f7-b8a7-1e640cad289c">
+    <Description>Library of object reference types</Description>
+    <Version>1.1.1-beta</Version>
+    <AttributeType Name="refObj" ID="6bfeebe7-d1f4-4085-b34d-dea400a87740" AttributeDataType="xs:IDREF">
+      <Description>refObj is an abstract attribute type for modelling object references. Its value references another AML object, its semantic is unspecific. Derived reference attribute types specify the semantic meaning of the relationship, such as identity, aspect, abstraction, or refinement.</Description>
+      <Version>1.0.0</Version>
+    </AttributeType>
+    <AttributeType Name="refBaseObj" ID="94df107c-15e4-4381-92c1-b0ad8043d19d" AttributeDataType="xs:IDREF" RefAttributeType="AutomationML_ObjectReferences_AttributeTypeLib/refObj">
+      <Description>refBaseObj is an attribute type attached to an aspect object. Its value shall reference the corresponding base object. The aspect object and the referenced base object represent the same logical object while containing complementary information. This mechanism enables distributed modelling of logical objects across different hierarchies, contexts, ownership boundaries, and aspects. </Description>
+      <Version>1.0.0</Version>
+    </AttributeType>
+    <AttributeType Name="refAspectObj" ID="629175a1-9813-4678-a6aa-0d8d278c0f01" AttributeDataType="xs:IDREF" RefAttributeType="AutomationML_ObjectReferences_AttributeTypeLib/refObj">
+      <Description>refAspectObj is an attribute type attached to a base object. Its value shall reference an aspect object representing the same logical object. The attribute is optional and provides a reverse reference to distributed aspect representations. It facilitates discovery and navigation of complementary object descriptions without changing the semantic relationship established by the corresponding refBaseObj reference.</Description>
+      <Version>1.0.0</Version>
+    </AttributeType>
+    <AttributeType Name="refDetailObj" ID="223848cc-78a2-47f9-b593-3f86a1bccf7d" AttributeDataType="xs:IDREF" RefAttributeType="AutomationML_ObjectReferences_AttributeTypeLib/refObj">
+      <Description>refDetailObj is an attribute type attached to an abstract object. Its value references a distinct object that provides a more detailed representation of the same subject, typically including its internal structure or subordinate objects. The referenced object may have a different type and may be located in another hierarchy.</Description>
+      <Version>1.0.0</Version>
+    </AttributeType>
+    <AttributeType Name="refAbstractObj" ID="7dc12b9e-70fe-4c48-90a9-39a632419530" AttributeDataType="xs:IDREF" RefAttributeType="AutomationML_ObjectReferences_AttributeTypeLib/refObj">
+      <Description>refAbstractObj is an attribute type attached to a detail object. Its value references the distinct object that represents the same subject at a higher level of abstraction. The referenced object may have a different type and may be located in another hierarchy.</Description>
+      <Version>1.0.0</Version>
+    </AttributeType>
+  </AttributeTypeLib>
+</CAEXFile>

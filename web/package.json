@@ -1,0 +1,28 @@
+{
+  "name": "ptnjs-aml-bundle",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Bundles the bptlab Petri net modeler plus the AML Editor bridge into a single ESM file for the WebView2 host.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "pretest": "playwright install chromium",
+    "test": "node tools/roundtrip.mjs && node tools/verify-interop.mjs && node tools/verify-bridge.mjs && node tools/verify-labels.mjs && node tools/verify-tokens.mjs && node tools/verify-numbers.mjs && node tools/verify-svg.mjs",
+    "test:svg": "node tools/verify-svg.mjs",
+    "test:numbers": "node tools/verify-numbers.mjs",
+    "test:labels": "node tools/verify-labels.mjs",
+    "test:tokens": "node tools/verify-tokens.mjs",
+    "test:roundtrip": "node tools/roundtrip.mjs",
+    "test:interop": "node tools/verify-interop.mjs",
+    "dump": "node tools/dump-xml.mjs",
+    "test:bridge": "node tools/verify-bridge.mjs",
+    "test:webapp": "node tools/verify-webapp.mjs"
+  },
+  "dependencies": {
+    "@bptlab/openbpt-modeler-petri-net": "1.0.2"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "playwright": "^1.63.0"
+  }
+}

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CAEXFile SchemaVersion="3.0" FileName="OMG_DD_AttributeTypeLib_v0.1.aml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.dke.de/CAEX">
+  <SuperiorStandardVersion>AutomationML 2.1</SuperiorStandardVersion>
+  <SourceDocumentInformation OriginName="fpb-aml-mapper" OriginID="omg-dd-attributetypelib" OriginVersion="0.1.0" LastWritingDateTime="2026-09-06T16:42:33.5105403+02:00" />
+  <AttributeTypeLib Name="OMG_DD_AttributeTypeLib">
+    <Description>Language-agnostic diagram-interchange attribute types, structured after the OMG Diagram Definition (DD) specification: DD_Bounds (DC::Bounds), DD_Point (DC::Point), DD_Waypoint (DI::Waypoint). Referenced by the VDI_FPD and ISO_PT domain libraries.</Description>
+    <Version>0.1.0</Version>
+    <AttributeType Name="DD_Bounds" AttributeDataType="xs:string">
+      <Description>A rectangular area defined by a top-left (x, y) location and a size (width, height) along the x-y axes (cf. DC::Bounds).</Description>
+      <Version>0.1.0</Version>
+      <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+        <Attribute Name="x" AttributeDataType="xs:double" />
+        <Attribute Name="y" AttributeDataType="xs:double" />
+      </Attribute>
+      <Attribute Name="width" AttributeDataType="xs:double" />
+      <Attribute Name="height" AttributeDataType="xs:double" />
+    </AttributeType>
+    <AttributeType Name="DD_Waypoint" AttributeDataType="xs:string">
+      <Description>A routing point along a connection path (cf. DI::Waypoint).</Description>
+      <Version>0.1.0</Version>
+      <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+        <Attribute Name="x" AttributeDataType="xs:double" />
+        <Attribute Name="y" AttributeDataType="xs:double" />
+      </Attribute>
+    </AttributeType>
+    <AttributeType Name="DD_Point" AttributeDataType="xs:string">
+      <Description>A two-dimensional point in a coordinate system (cf. DC::Point).</Description>
+      <Version>0.1.0</Version>
+      <Attribute Name="x" AttributeDataType="xs:double" />
+      <Attribute Name="y" AttributeDataType="xs:double" />
+    </AttributeType>
+  </AttributeTypeLib>
+</CAEXFile>

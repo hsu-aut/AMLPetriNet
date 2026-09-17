@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CAEXFile SchemaVersion="3.0" FileName="ISO_PT_DomainLibrary_v0.3.aml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.dke.de/CAEX" xsi:schemaLocation="http://www.dke.de/CAEX CAEX_ClassModel_V.3.0.xsd">
+  <SuperiorStandardVersion>AutomationML 2.1</SuperiorStandardVersion>
+  <SourceDocumentInformation OriginName="AMLPetriNet" OriginID="iso-pt-lib-0.3" OriginVersion="0.3.0" LastWritingDateTime="2026-07-24T02:00:00.0000000+00:00" />
+  <ExternalReference Path="AutomationML_Base_Libraries_AMLEd2_2.11.0.aml" Alias="AutomationMLBaseLibrariesAMLEd22_11_0" />
+  <ExternalReference Path="AutomationML_ObjectReferences_AttributeTypeLib_AMLEd2_1.1.1-beta.aml" Alias="ObjectReferences" />
+  <ExternalReference Path="OMG_DD_AttributeTypeLib_v0.1.aml" Alias="OMG_DD" />
+  <!--
+    Domain library for basic Place/Transition (P/T) Petri nets per ISO/IEC 15909-1.
+    Structural parallel to VDI_FPD_DomainLibrary_v0.7.aml. Diagram-interchange types come from the shared OMG_DD_AttributeTypeLib.
+    Applies the three-phase methodology introduced in Drath/Nabizada/Fay (EKA 2026).
+    Demonstrates that the methodology applies to a language with different structural characteristics:
+    connections (arcs) with an identity of their own, bipartite graph, no inheritance among element types.
+  -->
+  <InterfaceClassLib Name="ISO_PT_InterfaceClassLib">
+    <Description>Connection endpoint interfaces for basic Place/Transition Petri nets per ISO/IEC 15909-1. In contrast to the FPD library, connections (arcs) are elements with an identity of their own: node-side and arc-side interfaces are distinct types.</Description>
+    <Version>1.0.0</Version>
+    <InterfaceClass Name="PT_Port" RefBaseClassPath="AutomationMLBaseLibrariesAMLEd22_11_0@AutomationMLInterfaceClassLib/AutomationMLBaseInterface/Port">
+      <Description>Abstract base port for all PT connection endpoints.</Description>
+      <Version>1.0.0</Version>
+      <Attribute Name="PortCoordinate" AttributeDataType="xs:string" RefAttributeType="OMG_DD@OMG_DD_AttributeTypeLib/DD_Point">
+        <Attribute Name="x" AttributeDataType="xs:double" />
+        <Attribute Name="y" AttributeDataType="xs:double" />
+      </Attribute>
+    </InterfaceClass>
+    <InterfaceClass Name="PT_NodeArcEnd" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_Port">
+      <Description>Connection endpoint on a place or transition (the node side of an arc-node coupling). Nodes carry one PT_NodeArcEnd per incident arc.</Description>
+      <Version>1.0.0</Version>
+    </InterfaceClass>
+    <InterfaceClass Name="PT_ArcSource" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_Port">
+      <Description>Source endpoint of an arc. Links via InternalLink to a PT_NodeArcEnd on the source place or transition.</Description>
+      <Version>1.0.0</Version>
+    </InterfaceClass>
+    <InterfaceClass Name="PT_ArcTarget" RefBaseClassPath="ISO_PT_InterfaceClassLib/PT_Port">
+      <Description>Target endpoint of an arc. Links via InternalLink to a PT_NodeArcEnd on the target place or transition.</Description>
+      <Version>1.0.0</Version>
+    </InterfaceClass>
+  </InterfaceClassLib>
+  <RoleClassLib Name="ISO_PT_RoleClassLib">
+    <Description>Semantic model of basic Place/Transition Petri nets per ISO/IEC 15909-1. Flat inheritance; three concrete element types (Place, Transition, Arc), one container role (Net).</Description>
+    <Version>1.0.0</Version>
+    <RoleClass Name="PT_Net" RefBaseClassPath="AutomationMLBaseLibrariesAMLEd22_11_0@AutomationMLBaseRoleClassLib/AutomationMLBaseRole/Structure">
+      <Description>Petri net (ISO/IEC 15909-1, Sec. 4). Aggregates places, transitions, and arcs of one diagram.</Description>
+      <Version>1.0.0</Version>
+      <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="ISO_PT_AttributeTypeLib/PT_Identification">
+        <Description>Identification of the net (PNML net id and name).</Description>
+        <Attribute Name="id" AttributeDataType="xs:string" />
+        <Attribute Name="name" AttributeDataType="xs:string" />
+      </Attribute>
+      <Attribute Name="refObj" AttributeDataType="xs:IDREF" RefAttributeType="ObjectReferences@AutomationML_ObjectReferences_AttributeTypeLib/refObj">
+        <Description>Generic reference attribute for cross-diagram or cross-language references at net level.</Description>
+      </Attribute>
+    </RoleClass>
+    <RoleClass Name="PT_Element" RefBaseClassPath="AutomationMLBaseLibrariesAMLEd22_11_0@AutomationMLBaseRoleClassLib/AutomationMLBaseRole">
+      <Description>Abstract base for all PT elements (Place, Transition, Arc). Carries identification and diagram interchange information shared by all elements.</Description>
+      <Version>1.0.0</Version>
+      <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="ISO_PT_AttributeTypeLib/PT_Identification">
+        <Attribute Name="id" AttributeDataType="xs:string" />
+        <Attribute Name="name" AttributeDataType="xs:string" />
+      </Attribute>
+      <Attribute Name="ViewInformation" AttributeDataType="xs:string" RefAttributeType="OMG_DD@OMG_DD_AttributeTypeLib/DD_Bounds">
+        <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD@OMG_DD_AttributeTypeLib/DD_Point">
+          <Attribute Name="x" AttributeDataType="xs:double" />
+          <Attribute Name="y" AttributeDataType="xs:double" />
+        </Attribute>
+        <Attribute Name="width" AttributeDataType="xs:double" />
+        <Attribute Name="height" AttributeDataType="xs:double" />
+      </Attribute>
+    </RoleClass>
+    <RoleClass Name="PT_Place" RefBaseClassPath="ISO_PT_RoleClassLib/PT_Element">
+      <Description>Place (ISO/IEC 15909-1, Sec. 4.1). Passive node type; may carry an initial marking.</Description>
+      <Version>1.0.0</Version>
+      <Attribute Name="InitialMarking" AttributeDataType="xs:nonNegativeInteger">
+        <Description>Static initial marking (non-negative integer). Default 0.</Description>
+        <DefaultValue>0</DefaultValue>
+      </Attribute>
+    </RoleClass>
+    <RoleClass Name="PT_Transition" RefBaseClassPath="ISO_PT_RoleClassLib/PT_Element">
+      <Description>Transition (ISO/IEC 15909-1, Sec. 4.2). Active node type representing a firing event.</Description>
+      <Version>1.0.0</Version>
+    </RoleClass>
+    <RoleClass Name="PT_Arc" RefBaseClassPath="ISO_PT_RoleClassLib/PT_Element">
+      <Description>Arc (ISO/IEC 15909-1, Sec. 4.3). Directed connection between a place and a transition. Element with an identity of its own, a weight, and a graphical representation. Routing is stored on the instance as attributes Waypoint_1..n typed OMG_DD@OMG_DD_AttributeTypeLib/DD_Waypoint, in the order from source to target. Label positions may be stored as attributes typed OMG_DD@OMG_DD_AttributeTypeLib/DD_Point (e.g. LabelOffset).</Description>
+      <Version>1.0.0</Version>
+      <Attribute Name="Weight" AttributeDataType="xs:positiveInteger">
+        <Description>Arc weight (positive integer). Default 1.</Description>
+        <DefaultValue>1</DefaultValue>
+      </Attribute>
+    </RoleClass>
+  </RoleClassLib>
+  <SystemUnitClassLib Name="ISO_PT_SystemUnitClassLib">
+    <Description>Instantiation templates for the PT domain library. Mirrors the RoleClass hierarchy; each template references its role class via SupportedRoleClass, following the semantics/instantiation separation established in the FPD library.</Description>
+    <Version>1.0.0</Version>
+    <SystemUnitClass Name="PT_Net" ID="c1a8d000-0001-4000-8000-000000000001">
+      <Version>1.0.0</Version>
+      <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="ISO_PT_AttributeTypeLib/PT_Identification">
+        <Attribute Name="id" AttributeDataType="xs:string" />
+        <Attribute Name="name" AttributeDataType="xs:string" />
+      </Attribute>
+      <Attribute Name="refObj" AttributeDataType="xs:IDREF" RefAttributeType="ObjectReferences@AutomationML_ObjectReferences_AttributeTypeLib/refObj" />
+      <SupportedRoleClass RefRoleClassPath="ISO_PT_RoleClassLib/PT_Net" />
+      <SupportedRoleClass RefRoleClassPath="AutomationMLBaseLibrariesAMLEd22_11_0@AutomationMLBaseRoleClassLib/AutomationMLBaseRole/Structure" />
+    </SystemUnitClass>
+    <SystemUnitClass Name="PT_Element" ID="c1a8d000-0001-4000-8000-000000000002">
+      <Version>1.0.0</Version>
+      <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="ISO_PT_AttributeTypeLib/PT_Identification">
+        <Attribute Name="id" AttributeDataType="xs:string" />
+        <Attribute Name="name" AttributeDataType="xs:string" />
+      </Attribute>
+      <Attribute Name="ViewInformation" AttributeDataType="xs:string" RefAttributeType="OMG_DD@OMG_DD_AttributeTypeLib/DD_Bounds">
+        <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD@OMG_DD_AttributeTypeLib/DD_Point">
+          <Attribute Name="x" AttributeDataType="xs:double" />
+          <Attribute Name="y" AttributeDataType="xs:double" />
+        </Attribute>
+        <Attribute Name="width" AttributeDataType="xs:double" />
+        <Attribute Name="height" AttributeDataType="xs:double" />
+      </Attribute>
+      <SupportedRoleClass RefRoleClassPath="ISO_PT_RoleClassLib/PT_Element" />
+    </SystemUnitClass>
+    <SystemUnitClass Name="PT_Place" ID="c1a8d000-0001-4000-8000-000000000003" RefBaseClassPath="ISO_PT_SystemUnitClassLib/PT_Element">
+      <Version>1.0.0</Version>
+      <Attribute Name="InitialMarking" AttributeDataType="xs:nonNegativeInteger">
+        <DefaultValue>0</DefaultValue>
+      </Attribute>
+      <SupportedRoleClass RefRoleClassPath="ISO_PT_RoleClassLib/PT_Place" />
+    </SystemUnitClass>
+    <SystemUnitClass Name="PT_Transition" ID="c1a8d000-0001-4000-8000-000000000004" RefBaseClassPath="ISO_PT_SystemUnitClassLib/PT_Element">
+      <Version>1.0.0</Version>
+      <SupportedRoleClass RefRoleClassPath="ISO_PT_RoleClassLib/PT_Transition" />
+    </SystemUnitClass>
+    <SystemUnitClass Name="PT_Arc" ID="c1a8d000-0001-4000-8000-000000000005" RefBaseClassPath="ISO_PT_SystemUnitClassLib/PT_Element">
+      <Version>1.0.0</Version>
+      <Attribute Name="Weight" AttributeDataType="xs:positiveInteger">
+        <DefaultValue>1</DefaultValue>
+      </Attribute>
+      <SupportedRoleClass RefRoleClassPath="ISO_PT_RoleClassLib/PT_Arc" />
+    </SystemUnitClass>
+  </SystemUnitClassLib>
+  <AttributeTypeLib Name="ISO_PT_AttributeTypeLib">
+    <Description>Information-model attribute types for PT nets. Kept intentionally minimal to reflect the small ontology of ISO/IEC 15909-1 (as opposed to VDI 3682 Part 2, which specifies a richer information model).</Description>
+    <Version>1.0.0</Version>
+    <AttributeType Name="PT_Identification" AttributeDataType="xs:string">
+      <Description>Identification of a PT element. Corresponds to the PNML object identification per ISO/IEC 15909-2: id maps to the PNML id attribute, name maps to the PNML name label.</Description>
+      <Version>1.0.0</Version>
+      <Attribute Name="id" AttributeDataType="xs:string" />
+      <Attribute Name="name" AttributeDataType="xs:string" />
+    </AttributeType>
+  </AttributeTypeLib>
+</CAEXFile>
