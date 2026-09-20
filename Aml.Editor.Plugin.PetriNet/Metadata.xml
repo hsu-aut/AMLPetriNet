@@ -3,7 +3,7 @@
                        xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <PackageName>Aml.Editor.Plugin.PetriNet</PackageName>
   <DisplayName>AMLPetriNet</DisplayName>
-  <Version>0.1.14</Version>
+  <Version>0.1.15</Version>
   <Author>Hamied Nabizada</Author>
   <Description>AutomationML Editor plugin for editing basic place/transition Petri nets (ISO/IEC 15909). Embeds a diagram-js based modeler and keeps it in sync with a PT_Net instance hierarchy, using PNML as the exchange format.</Description>
   <MinimumEditorVersion>6.4.0.0</MinimumEditorVersion>

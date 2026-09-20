@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <EnableDynamicLoading>true</EnableDynamicLoading>
-    <Version>0.1.14</Version>
+    <Version>0.1.15</Version>
     <Title>AMLPetriNet</Title>
     <Description>AutomationML Editor plugin for editing basic place/transition Petri nets (ISO/IEC 15909). Embeds a diagram-js based modeler and keeps it in sync with a PT_Net instance hierarchy, using PNML as the exchange format.</Description>
     <PackageTags>AMLEditor; AMLEditorPlugin.Net; AutomationML; PetriNet; PNML; ISO15909</PackageTags>
