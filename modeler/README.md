@@ -37,8 +37,28 @@ it work is theirs; the changes below are this fork's.
 - **A findings list** (`src/findings/`) that says what the net does and leads to
   the element a finding is about. A host can add its own findings to it.
 - **The state space** (`src/reachability/`) as a second view: every marking the
-  net can reach, the firings between them, and a click to put the net into one
-  of them.
+  net can reach, the firings between them, and a click that walks the net into
+  one of them. A query line answers whether the net can reach a marking the
+  reader has in mind, with the way there.
+- **The way there, not just the fact.** A finding about a deadlock hands over
+  the firings that lead into it, and they are loaded into the simulation to be
+  stepped through or played (`src/net/paths.js`).
+- **Invariants in the drawing** (`src/highlight/`): the places a conservation
+  law covers are ringed, each with the weight it counts for, and a transition
+  invariant is loaded as a firing sequence that returns the marking.
+- **Siphons and traps** (`src/net/structure.js`): why a net can get stuck, from
+  the structure, so the answer holds on nets whose state space is too large to
+  build.
+- **Steps and moving tokens**: one click fires everything that can fire at once,
+  with a speed and with the tokens running along the arcs the firing used.
+- **Answers as files** (`src/net/report.js`): the state space as DOT for a graph
+  tool, the markings and the findings as tables.
+- **Tidying up** (`src/arrange/`, `src/layout/`): a layered layout for the whole
+  net in one undoable step, and aligning and spreading for a selection.
+- **A PNML file from another tool comes back as it went in**: pages with their
+  names and nesting, reference nodes, and the tool-specific sections of other
+  tools are carried through, although the canvas itself has one plane and no
+  pages.
 
 ## Use
 
@@ -72,10 +92,20 @@ The state space view draws up to 300 markings; a larger one is reported in
 numbers instead, and `findings.analyse()` answers for any size.
 
 ```js
-modeler.get('findings').analyse();          // boundedness, deadlocks, invariants
-modeler.get('findings').setHostFindings([]) // findings of your own, in the same list
-modeler.get('reachabilityView').show();     // the state space beside the net
+modeler.get('findings').analyse();           // boundedness, deadlocks, invariants, siphons
+modeler.get('findings').setHostFindings([]); // findings of your own, in the same list
+modeler.get('findings').wayTo(finding);      // the firings that lead to what it is about
+modeler.get('reachabilityView').show();      // the state space beside the net
+modeler.get('reachabilityView').ask('p1 = 2, p2 = 0');  // can it reach that?
+modeler.get('highlight').show([['p1', 2], ['p2', 1]]);  // ring these, with weights
+modeler.get('arrange').tidy();               // lay the net out by its flow
+modeler.get('simulation').fireStep();        // everything that can fire at once
 ```
+
+A file the tool writes is offered on the event bus first, as `export.file` with
+`{ name, text, type }`; a listener that returns `true` has saved it and no
+download happens. The same holds for `selection.changed`, which a host can use
+to point at the same element in its own view.
 
 ## Demo
 

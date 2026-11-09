@@ -53,10 +53,18 @@ Editor and install the plugin from there. It opens as the tab "AMLPetriNet".
   click fires one, and the run can be stepped back or played. The document is
   not touched by a run; the marking it holds is the one the user typed.
 - **Analyse** lists what the net does: how many tokens a place can hold,
-  transitions that can never fire, deadlocks, liveness and invariants. A finding
-  leads to the element it is about.
+  transitions that can never fire, deadlocks, liveness, invariants, siphons and
+  traps. A finding leads to the element it is about, rings the set of elements
+  it covers, or hands over the firings that lead into the marking it names.
 - **State space** draws every marking the net can reach and the firings between
-  them; a click puts the net into that marking.
+  them; a click walks the net into that marking, and the query line answers
+  whether a marking you have in mind is reachable, with the way there.
+- **Tidy up** lays the net out by its flow in one undoable step; a selection can
+  be lined up and spread evenly.
+- Both panels save what they show: the state space as DOT for a graph tool, the
+  markings and the findings as tables.
+- A click on the canvas selects the same element in the editor's tree, which the
+  settings can turn off.
 - **Update** writes the net into the document. Elements are updated in place,
   so attributes and links added by others are kept.
 - **Refresh** reloads the net from the document.

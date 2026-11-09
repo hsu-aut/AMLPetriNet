@@ -5,9 +5,13 @@ about their behaviour: whether a transition can ever fire, whether the net
 deadlocks, how many tokens a place can hold. This design adds that, and brings
 the editing comfort of a current modeler with it.
 
-Status: stages 1 to 5 are built; editing comfort is not. Decisions are listed so
-that the reasons survive; stages are ordered so that work can stop after any of
-them and leave a working tool.
+Status: stages 1 to 5 are built. The work that followed them, asked for after
+the author had seen them, is planned and built as stages 6 to 13 in
+`plan-second-round.md`: the way into a marking, invariants in the drawing, the
+selection back into the AML tree, siphons and traps, steps with moving tokens,
+export, editing comfort, and PNML as other tools write it. Decisions are listed
+so that the reasons survive; stages are ordered so that work can stop after any
+of them and leave a working tool.
 
 ## 1. Scope
 
@@ -239,12 +243,20 @@ Each stage leaves the tool working and shippable.
 5. **Reachability view.** Second view, selecting a marking, deadlock marking.
    Proof: a browser check on a net with a known state space.
 
-Editing comfort is not a stage of its own; its pieces are small and independent
-and are added as they become useful, each with its own check.
+6 to 13. **The second round**, in `plan-second-round.md`: the way into a marking
+   and a query line for one, invariants in the drawing, the canvas selection back
+   into the editor tree, siphons and traps, steps with moving tokens, the answers
+   as files, tidying up, and a PNML file from another tool coming back as it went
+   in. All built; each stage carries its own node tests and its own browser
+   check.
 
 ## 8. Open questions
 
 - Where the fork finally lives (see D-1), and its name.
+- Whether `Findings.setHostFindings` is worth keeping: the plugin and the web
+  application both show the findings of their own validator in their own table,
+  so nothing in production hands findings to the modeler. The way is tested and
+  documented; using it would mean one list instead of two.
 - Whether the command line tool gets `ptmap analyze` from the same core, which
   would mean a second implementation in C# or running the JavaScript core in the
   tool. Not decided; nothing in stages 1 to 5 depends on it.

@@ -5,6 +5,9 @@
 > This plan covers what the author asked for after seeing them, in the order the
 > work depends on itself: the core first, the views on it, the host last.
 
+**Status: all eight stages are built, with 112 node tests and 15 browser checks.**
+What was left open on purpose is named at the end.
+
 **Goal:** make the fork a Petri net tool rather than a Petri net editor: every
 answer the core computes is reachable from the drawing, every statement it makes
 can be played back, and the net can be taken apart the way the literature takes
@@ -151,6 +154,23 @@ them back.
 
 Proof: the PNML grammar check stays green, a round trip over a file with pages
 and references, and a test that another tool's toolspecific section survives.
+
+## What was left out
+
+- **The order inside a page** of a PNML file is not preserved: the elements of a
+  page come back on their page, but in the modeler's own order. PNML gives the
+  order inside a page no meaning, and keeping it would mean carrying an index on
+  every element.
+- **A page is not a thing the canvas has.** A file with pages is drawn on one
+  plane, as before; the pages are carried through the model rather than shown.
+  Showing them would be a feature of its own, and a questionable one: the nets
+  this tool is for have one page.
+- **Siphons and traps are not searched for above 40 places.** The enumeration is
+  exponential in the worst case; above that the findings say that they were not
+  searched rather than hanging the page.
+- **The animation is off above a speed.** A run that fires every 60 milliseconds
+  leaves no time to watch a token travel, so the dots stay away rather than
+  queueing up.
 
 ## Review focus
 
