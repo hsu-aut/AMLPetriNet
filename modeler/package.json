@@ -11,7 +11,7 @@
     "assets",
     "LICENSE",
     "README.md",
-    "!src/net/*.test.js",
+    "!src/**/*.test.js",
     "!src/net/fixtures.js"
   ],
   "keywords": [
@@ -21,7 +21,7 @@
     "modeler"
   ],
   "scripts": {
-    "test": "node --test src/net/ src/reachability/",
+    "test": "node --test src/net/ src/reachability/ src/layout/",
     "demo": "node demo/serve.mjs"
   },
   "dependencies": {
