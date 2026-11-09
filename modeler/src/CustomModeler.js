@@ -41,6 +41,8 @@ import CustomPopupMenuModule from "./popup-menu";
 // this is forked from, which wrote the simulated marking into the model, had
 // no history and took the undo stack for its own.
 import SimulationModule from "./simulation";
+// What the net does, as a list beside the drawing.
+import FindingsModule from "./findings";
 
 import emptyDiagram from "./util/emptyDiagram";
 
@@ -82,6 +84,7 @@ export default class CustomModeler extends BaseViewer {
       CustomRulesModule,
       CustomPopupMenuModule,
       SimulationModule,
+      FindingsModule,
     ];
 
     const modules = [...builtinModules, ...customModules, ...additionalModules];

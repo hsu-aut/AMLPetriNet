@@ -57,3 +57,91 @@
 .ptn-simulation-running .djs-element {
   cursor: pointer;
 }
+
+/* The findings: a button on the canvas and the list it opens. */
+
+.ptn-findings-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  font: 13px system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding: 5px 10px;
+  border: 1px solid #d8dbe0;
+  border-radius: 4px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.ptn-findings {
+  position: absolute;
+  top: 48px;
+  right: 10px;
+  z-index: 10;
+  width: 360px;
+  max-height: 60%;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid #d8dbe0;
+  border-radius: 4px;
+  font: 13px system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.ptn-findings-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-bottom: 1px solid #eceef1;
+}
+
+.ptn-findings-title {
+  flex: 1 1 auto;
+  font-weight: 600;
+}
+
+.ptn-findings-close {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #5f6368;
+  font-size: 14px;
+}
+
+.ptn-findings-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: auto;
+}
+
+.ptn-finding {
+  display: grid;
+  grid-template-columns: 16px 44px 1fr;
+  gap: 6px;
+  padding: 5px 8px;
+  border-bottom: 1px solid #f3f4f6;
+  align-items: start;
+}
+
+.ptn-finding:last-child {
+  border-bottom: none;
+}
+
+.ptn-findings-clickable {
+  cursor: pointer;
+}
+
+.ptn-findings-clickable:hover {
+  background: #f5f7fa;
+}
+
+.ptn-finding-rule {
+  color: #5f6368;
+  font-variant-numeric: tabular-nums;
+}
+
+.ptn-finding-error .ptn-finding-mark { color: #d93025; }
+.ptn-finding-warning .ptn-finding-mark { color: #e8a33d; }
+.ptn-finding-information .ptn-finding-mark { color: #5f6368; }
