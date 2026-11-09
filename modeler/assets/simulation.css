@@ -214,6 +214,11 @@
   color: #d93025;
 }
 
+.ptn-states-note {
+  margin: 4px 6px;
+  color: #5f6368;
+}
+
 .ptn-states-edge {
   fill: none;
   stroke: #9aa0a6;

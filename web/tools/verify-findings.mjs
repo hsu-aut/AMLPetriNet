@@ -138,7 +138,8 @@ check(ruleOf(result.afterSecond, 'PT02').length === 1, 'analysing again dropped 
 // net that has since changed.
 check(result.afterEdit.every((row) => row.rule === ''),
   `editing the net left ${result.afterEdit.filter((row) => row.rule).length} stale finding(s) on screen`);
-check(result.afterEdit.length === 1 && /Nothing to report/.test(result.afterEdit[0].message),
+// And it says that it dropped them, not that the net is fine.
+check(result.afterEdit.length === 1 && /net changed.*Analyse again/.test(result.afterEdit[0].message),
   `after an edit the panel shows ${JSON.stringify(result.afterEdit)}`);
 
 if (pageErrors.length) problems.push('page errors: ' + pageErrors.join('; '));

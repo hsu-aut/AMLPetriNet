@@ -17,6 +17,9 @@
  *   { type: 'imported', pnml }     import finished; pnml is the echo baseline
  *   { type: 'changed', pnml }      user edit
  *   { type: 'svg', svg }           answer to requestSvg
+ *   { type: 'simulation', active } a run started or ended; the model is not
+ *                                  touched by a run, so nothing is to be done
+ *                                  about it
  *   { type: 'log', level, message }
  *   { type: 'error', message }
  */

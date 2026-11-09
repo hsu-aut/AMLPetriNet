@@ -19,6 +19,18 @@ import { layoutStateSpace } from './layout.js';
 const SVG = 'http://www.w3.org/2000/svg';
 const RADIUS = 11;
 
+/**
+ * How much is worth drawing. Above this the picture says nothing a reader can
+ * use, and drawing it blocks the page: twelve thousand markings take three
+ * seconds and produce a quarter of a million SVG elements. The exploration
+ * itself has its own, larger limit; what the numbers say stays available in
+ * the findings.
+ */
+const MOST_NODES = 300;
+
+/** Above this the firing labels are noise rather than information. */
+const LABELS_UP_TO = 60;
+
 export default class ReachabilityView {
   static $inject = ['eventBus', 'canvas', 'elementRegistry', 'simulation'];
 
@@ -74,7 +86,8 @@ export default class ReachabilityView {
       const net = readNet(netFromElements(this._elementRegistry.getAll()));
       this._result = explore(net);
       this._net = net;
-      this._draw();
+      if (this._result.markings.length > MOST_NODES) this._tooBig();
+      else this._draw();
     } catch (error) {
       this._result = null;
       this._title.textContent = 'The net could not be read';
@@ -99,6 +112,18 @@ export default class ReachabilityView {
     };
   }
 
+  /** Says how big it is rather than drawing something unreadable. */
+  _tooBig() {
+    const { markings, edges, complete } = this._result;
+    this._title.textContent = `${count(markings.length, 'marking')}, too many to draw`;
+    this._picture.replaceChildren(text(
+      `The net reaches ${complete ? '' : 'at least '}${markings.length} markings with `
+      + `${edges.length} firings between them, more than this view draws. `
+      + 'Analyse gives the same net in numbers: bounds, dead transitions, deadlocks and invariants.',
+      'ptn-states-note',
+    ));
+  }
+
   _draw() {
     const { nodes, edges, width, height } = layoutStateSpace(this._result);
     const name = new Map([...this._net.places, ...this._net.transitions].map((e) => [e.id, e.name || e.id]));
@@ -114,6 +139,8 @@ export default class ReachabilityView {
 
     const at = new Map(nodes.map((node) => [node.key, node]));
 
+    const labelled = nodes.length <= LABELS_UP_TO;
+
     for (const edge of edges) {
       const from = at.get(edge.from);
       const to = at.get(edge.to);
@@ -122,11 +149,19 @@ export default class ReachabilityView {
       line.setAttribute('d', path(from, to));
       svg.appendChild(line);
 
+      const firing = name.get(edge.transition) ?? edge.transition;
+      const hint = document.createElementNS(SVG, 'title');
+      hint.textContent = firing;
+      line.appendChild(hint);
+
+      // Above a few dozen markings the labels lie on top of each other, so
+      // they are left to the pointer.
+      if (!labelled) continue;
       const label = document.createElementNS(SVG, 'text');
       label.setAttribute('class', 'ptn-states-edge-label');
       label.setAttribute('x', String((from.x + to.x) / 2));
       label.setAttribute('y', String((from.y + to.y) / 2 - 4));
-      label.textContent = name.get(edge.transition) ?? edge.transition;
+      label.textContent = firing;
       svg.appendChild(label);
     }
 
@@ -157,12 +192,26 @@ export default class ReachabilityView {
 
   /** Puts the net into the marking a node stands for. */
   _goTo(key) {
-    const marking = this._result.markings.find((entry) => entry.key === key);
-    if (!marking) return;
+    const entry = this._result.markings.find((marking) => marking.key === key);
+    if (!entry) return;
 
     if (!this._simulation.active) this._simulation.start();
-    this._simulation.setMarking(marking.marking);
+
+    if (!this._simulation.setMarking(entry.marking)) {
+      // A node holding omega stands for every marking that holds enough
+      // tokens there, so the net cannot be put into it.
+      this._note('This node stands for a family of markings, not for one, so the net cannot be put into it.');
+      return;
+    }
+
+    this._note(null);
     this._markCurrent();
+  }
+
+  _note(message) {
+    const existing = this._picture.querySelector('.ptn-states-note');
+    if (existing) existing.remove();
+    if (message) this._picture.prepend(text(message, 'ptn-states-note'));
   }
 
   _markCurrent() {
@@ -192,9 +241,9 @@ function describe(key, name) {
     .join(', ');
 }
 
-function text(message) {
+function text(message, className = 'ptn-states-message') {
   const paragraph = document.createElement('p');
-  paragraph.className = 'ptn-states-message';
+  paragraph.className = className;
   paragraph.textContent = message;
   return paragraph;
 }

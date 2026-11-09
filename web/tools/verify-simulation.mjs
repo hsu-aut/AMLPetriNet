@@ -83,13 +83,15 @@ const result = await page.evaluate(async () => {
   const pnmlDuring = await modeler.savePNML();
   const markingDuring = idle.businessObject.initialMarking;
 
-  let edited = null;
-  try {
-    modeling.updateLabel(idle, 'Changed');
-    edited = 'the net was edited while the simulation ran';
-  } catch {
-    edited = null;
-  }
+  // Editing is refused by the rules, which is what every interactive feature
+  // asks before it starts: dragging, drawing, deleting, pasting.
+  const rules = modeler.get('rules');
+  const refusedWhileRunning = {
+    move: rules.allowed('elements.move', { shapes: [idle] }),
+    create: rules.allowed('shape.create', { shape: idle, target: root }),
+    remove: rules.allowed('elements.delete', { elements: [idle] }),
+    connect: rules.allowed('connection.create', { source: idle, target: start }),
+  };
 
   simulation.reset();
   const afterReset = { idle: drawn(idle), busy: drawn(busy), steps: simulation.steps };
@@ -97,14 +99,48 @@ const result = await page.evaluate(async () => {
   simulation.stop();
   const stopped = { idle: drawn(idle), busy: drawn(busy), start: drawn(start), bar: bar() };
   const pnmlAfter = await modeler.savePNML();
+  const allowedAgain = rules.allowed('elements.move', { shapes: [idle] });
+
+  // The editor has to work after a run, and after an edit that was refused:
+  // a refusal that leaves the command stack half way through stops the canvas
+  // from ever redrawing again, which looks like the editor freezing.
+  modeling.updateLabel(busy, 'Working');
+  const afterRun = {
+    model: busy.businessObject.name,
+    drawn: registry.getGraphics(busy.label ?? busy).textContent.trim(),
+  };
+
+  // A change that does not go through the rules, a host writing into the model
+  // or an undo, ends the run rather than leaving a marking on a net that is
+  // gone.
+  simulation.start();
+  modeling.updateLabel(busy, 'Busy again');
+  const afterForeignEdit = { running: simulation.active, bar: bar() };
 
   // A net the core refuses: the simulation says why and stays off.
   modeling.updateProperty(idle, 'initialMarking', 'two', { rerender: true });
   const refused = { started: simulation.start(), problem: simulation.problem, active: simulation.active };
   modeling.updateProperty(idle, 'initialMarking', 1, { rerender: true });
 
+  // An import while the net runs ends the run: the marking belongs to the net
+  // that was replaced.
+  simulation.start();
+  const pnml = await modeler.savePNML();
+  await modeler.importPNML(pnml);
+  const afterImport = { running: simulation.active, bar: bar() };
+
+  // Stepping back and then forward walks the same run rather than choosing
+  // again, which matters where a marking offers several firings.
+  simulation.start();
+  simulation.fire(start.id);
+  simulation.stepBack();
+  simulation.fireOne();
+  const reproduced = simulation.steps.map((id) => registry.get(id).businessObject.name);
+  simulation.stop();
+
   return {
-    before, started, afterClick, afterBack, afterRound, afterReset, stopped, refused, edited,
+    before, started, afterClick, afterBack, afterRound, afterReset, stopped, refused,
+    refusedWhileRunning, allowedAgain, afterRun, afterForeignEdit, afterImport, reproduced,
     markingDuring,
     documentUnchanged: pnmlBefore === pnmlDuring && pnmlBefore === pnmlAfter,
   };
@@ -144,7 +180,17 @@ check(result.afterReset.idle.dots === 1 && result.afterReset.steps.length === 0,
 check(result.stopped.idle.dots === 1 && !result.stopped.start.marked, 'stop: the drawing was not put back');
 check(result.stopped.bar.text === '', `stop: the bar still says '${result.stopped.bar.text}'`);
 
-check(result.edited === null, result.edited ?? '');
+for (const [what, answer] of Object.entries(result.refusedWhileRunning)) {
+  check(answer === false, `${what} is still allowed while the net runs (answer: ${answer})`);
+}
+check(result.allowedAgain !== false, 'editing is still refused after the run ended');
+check(result.afterRun.model === 'Working' && result.afterRun.drawn === 'Working',
+  `after the run the model says '${result.afterRun.model}' and the canvas '${result.afterRun.drawn}'`);
+check(result.afterForeignEdit.running === false, 'a change from outside the rules left the run going');
+check(/net changed/.test(result.afterForeignEdit.bar.text ?? ''),
+  `the bar says '${result.afterForeignEdit.bar.text}' after the net changed`);
+check(result.reproduced.join() === 'Start', `stepping back and forward gave ${result.reproduced}`);
+check(result.afterImport.running === false, 'an import while the net ran left the run going');
 check(result.markingDuring === 1, `the document held ${result.markingDuring} while the net ran`);
 check(result.documentUnchanged, 'the PNML export changed although only the simulation ran');
 

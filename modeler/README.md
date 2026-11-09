@@ -58,12 +58,18 @@ const simulation = modeler.get('simulation');
 simulation.start();            // reads the net from the canvas
 simulation.fire(transitionId); // or click an enabled transition
 simulation.stepBack();
+simulation.stepForward();      // does the firing taken back again
 simulation.reset();
 simulation.stop();
 ```
 
 The bar on the canvas does the same. While a simulation runs the net cannot be
-edited, and `simulation.changed` says what the net is doing.
+edited: the rules refuse it. A change that does not pass the rules, an undo or
+an import, ends the run rather than leaving a marking on a net that is gone.
+`simulation.changed` says what the net is doing.
+
+The state space view draws up to 300 markings; a larger one is reported in
+numbers instead, and `findings.analyse()` answers for any size.
 
 ```js
 modeler.get('findings').analyse();          // boundedness, deadlocks, invariants

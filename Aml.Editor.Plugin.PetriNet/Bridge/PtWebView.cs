@@ -49,6 +49,9 @@ public sealed class PtWebView : IDisposable
 
     public event Action<string, string>? OnJsLog;
 
+    /// <summary>A simulation started (true) or stopped (false) on the canvas.</summary>
+    public event Action<bool>? SimulationChanged;
+
     public PtWebView(WebView2 view) => _view = view;
 
     public bool IsReady => _ready;
@@ -282,6 +285,15 @@ public sealed class PtWebView : IDisposable
 
             case JsMessageType.Log:
                 OnJsLog?.Invoke(message.Level ?? "log", message.Message ?? "");
+                break;
+
+            case JsMessageType.Simulation:
+                // A simulation never writes into the model, so the host has
+                // nothing to do about it. It is reported because a user who
+                // wonders why the canvas shows other markings than the
+                // document finds the answer in the log.
+                SimulationChanged?.Invoke(message.Active ?? false);
+                OnInfo?.Invoke(message.Active == true ? "Simulation started" : "Simulation stopped");
                 break;
 
             default:

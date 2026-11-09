@@ -25,6 +25,18 @@ const result = await page.evaluate(async () => {
   const simulation = modeler.get('simulation');
   const root = modeler.get('canvas').getRootElement();
 
+  const place = (x, name, marking) => {
+    const shape = modeling.createShape(factory.createShape({ type: 'ptn:Place' }), { x, y: 420 }, root);
+    modeling.updateLabel(shape, name);
+    if (marking) modeling.updateProperty(shape, 'initialMarking', marking, { rerender: true });
+    return shape;
+  };
+  const transition = (x, name) => {
+    const shape = modeling.createShape(factory.createShape({ type: 'ptn:Transition' }), { x, y: 500 }, root);
+    modeling.updateLabel(shape, name);
+    return shape;
+  };
+
   // Idle -> Start -> Busy -> Stop -> Idle: two markings, two firings, a cycle.
   const idle = modeling.createShape(factory.createShape({ type: 'ptn:Place' }), { x: 120, y: 160 }, root);
   const start = modeling.createShape(factory.createShape({ type: 'ptn:Transition' }), { x: 260, y: 160 }, root);
@@ -98,7 +110,44 @@ const result = await page.evaluate(async () => {
     state: view.state,
   };
 
-  return { before, shown, afterClick, afterFire, afterEdit, refused };
+  // A node that stands for a family of markings, which is what omega means in
+  // a coverability graph, cannot be a marking the net is put into.
+  modeling.updateProperty(idle, 'initialMarking', 1, { rerender: true });
+  const free = modeling.createShape(factory.createShape({ type: 'ptn:Transition' }), { x: 260, y: 320 }, root);
+  modeling.updateLabel(free, 'Produce');
+  modeling.connect(free, busy, { type: 'ptn:Arc' });
+  document.querySelector('.ptn-states-button').click();
+  const omegaNode = nodes().find((node) => /any number/.test(node.querySelector('title')?.textContent ?? ''));
+  omegaNode?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  const omega = {
+    found: Boolean(omegaNode),
+    note: document.querySelector('.ptn-states-note')?.textContent ?? '',
+    marking: simulation.active ? [...simulation.marking.values()] : null,
+  };
+  simulation.stop();
+
+  // A state space with more markings than the view draws says how big it is
+  // rather than drawing something unreadable, and it says it quickly.
+  modeling.removeElements([free]);
+  const many = [];
+  for (let i = 0; i < 9; i += 1) {
+    const from = place(120 + i * 60, `P${i}`, 1);
+    const via = transition(150 + i * 60, `T${i}`);
+    const to = place(180 + i * 60, `Q${i}`);
+    modeling.connect(from, via, { type: 'ptn:Arc' });
+    modeling.connect(via, to, { type: 'ptn:Arc' });
+    many.push(from, via, to);
+  }
+  const drawingStarted = Date.now();
+  document.querySelector('.ptn-states-button').click();
+  const big = {
+    milliseconds: Date.now() - drawingStarted,
+    title: document.querySelector('.ptn-states-title')?.textContent ?? '',
+    note: document.querySelector('.ptn-states-note')?.textContent ?? '',
+    nodes: nodes().length,
+  };
+
+  return { before, shown, afterClick, afterFire, afterEdit, refused, omega, big };
 });
 
 await browser.close();
@@ -134,6 +183,16 @@ check(result.refused.hidden === false, 'a net that cannot be read closed the vie
 check(/could not be read/.test(result.refused.title), `the refusal says '${result.refused.title}'`);
 check(/marking of place/.test(result.refused.message), `the reason reads '${result.refused.message}'`);
 check(result.refused.state === null, 'the view kept the old state space after a refusal');
+
+check(result.omega.found === true, 'the unbounded net produced no node standing for a family of markings');
+check(/family of markings/.test(result.omega.note), `clicking it said '${result.omega.note}'`);
+check(result.omega.marking === null || result.omega.marking.every((n) => Number.isFinite(n)),
+  `the net was put into the marking ${result.omega.marking}`);
+
+check(result.big.nodes === 0, `a state space too large to draw still drew ${result.big.nodes} node(s)`);
+check(/too many to draw/.test(result.big.title), `the title says '${result.big.title}'`);
+check(/markings with/.test(result.big.note), `the note says '${result.big.note}'`);
+check(result.big.milliseconds < 1500, `saying so took ${result.big.milliseconds} ms`);
 
 if (pageErrors.length) problems.push('page errors: ' + pageErrors.join('; '));
 

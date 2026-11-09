@@ -10,10 +10,12 @@
  *     simulated marking into the model, which is how a run ends up in a saved
  *     file.
  *  2. **The run is not part of the undo stack.** Firing is not an edit, so it
- *     does not belong among the user's edits. Steps are kept here and stepping
+ *     does not belong among the user's edits. Steps are kept here, and stepping
  *     back is a step of this module, not an undo.
- *  3. **Nothing can be edited while a net runs**, because a changed net under a
- *     running marking is neither the old net nor the new one.
+ *  3. **A net that changes ends the run.** Editing is refused while a net runs
+ *     (see SimulationRules), but undo, redo, an import and a host that writes
+ *     into the model do not pass the rules. Whatever changed the net, the run
+ *     stops: a marking on a net that no longer exists is worse than no marking.
  *
  * The net is read from the canvas on every start, so a net that was edited is
  * simulated as it is now.
@@ -22,6 +24,7 @@ import { netFromElements } from '../net/fromDiagram.js';
 import { enabled, fire, initialMarking, isEnabled, markingKey, readNet, unfire } from '../net/model.js';
 
 const ENABLED_CLASS = 'ptn-enabled';
+const RUNNING_CLASS = 'ptn-simulation-running';
 
 export default class Simulation {
   static $inject = ['eventBus', 'elementRegistry', 'canvas', 'graphicsFactory'];
@@ -36,7 +39,13 @@ export default class Simulation {
     this._net = null;
     this._marking = null;
     this._steps = [];
+    this._undone = [];
     this._problem = null;
+
+    // Redrawing goes through the graphics factory, which does not touch the
+    // command stack. The flag keeps the backstop below from reading our own
+    // redraw as somebody editing the net.
+    this._changing = false;
 
     // A click on an enabled transition fires it. The listener sits at a higher
     // priority than the selection, so that a running net does not also select.
@@ -44,14 +53,18 @@ export default class Simulation {
       if (!this._active) return undefined;
       const { element } = event;
       if (element?.type !== 'ptn:Transition') return false;
-      this.fire(element.id);
+
+      if (!this.fire(element.id)) {
+        this._say(`${name(element)} cannot fire in this marking.`);
+      }
       return false;
     });
 
-    // An edit while the simulation runs would leave the marking on a net that
-    // no longer exists, so editing is refused for as long as it runs.
-    eventBus.on('commandStack.preExecute', 2000, () => {
-      if (this._active) throw new Error('the net cannot be edited while the simulation runs');
+    // The backstop for rule 3. Editing is refused by the rules, but undo, redo
+    // and an import never ask them, and a host can write into the model.
+    eventBus.on(['commandStack.changed', 'import.done', 'diagram.clear'], () => {
+      if (!this._active || this._changing) return;
+      this.stop('The net changed, so the run was stopped.');
     });
   }
 
@@ -70,14 +83,24 @@ export default class Simulation {
     return this._marking ? new Map(this._marking) : null;
   }
 
+  /** The marking as a key, for whoever wants to compare it with a state space. */
+  get markingKey() {
+    return this._active ? markingKey(this._marking) : null;
+  }
+
   /** The transitions that can fire now. */
   get enabled() {
     return this._active ? enabled(this._net, this._marking) : [];
   }
 
-  /** How many firings have happened, and which. */
+  /** The firings that have happened, in order. */
   get steps() {
     return [...this._steps];
+  }
+
+  /** The firings that were taken back and can be done again, the latest last. */
+  get undone() {
+    return [...this._undone];
   }
 
   /**
@@ -86,34 +109,40 @@ export default class Simulation {
    * `problem`.
    */
   start() {
+    let net;
     try {
-      this._net = readNet(netFromElements(this._elementRegistry.getAll()));
-      this._problem = null;
+      net = readNet(netFromElements(this._elementRegistry.getAll()));
     } catch (error) {
       this._net = null;
+      this._marking = null;
+      this._steps = [];
+      this._undone = [];
       this._problem = error.message;
-      // The canvas says that a net is running, so the palette and the context
-    // pad can be greyed: refusing an edit is right, but an editor that looks
-    // ready and then refuses is not.
-    this._canvas.getContainer().classList.toggle('ptn-simulation-running', this._active);
-
-    this._eventBus.fire('simulation.changed', { active: false, problem: this._problem });
+      this._redraw();
       return false;
     }
 
+    this._net = net;
+    this._problem = null;
     this._active = true;
-    this._marking = initialMarking(this._net);
+    this._marking = initialMarking(net);
     this._steps = [];
+    this._undone = [];
     this._redraw();
     return true;
   }
 
-  /** Stops, and puts the drawing back to the marking the document holds. */
-  stop() {
+  /**
+   * Stops, and puts the drawing back to the marking the document holds.
+   * @param reason why, for a run that ended by itself rather than by the user.
+   */
+  stop(reason = null) {
     this._active = false;
+    this._net = null;
     this._marking = null;
     this._steps = [];
-    this._net = null;
+    this._undone = [];
+    this._problem = reason;
     this._redraw();
   }
 
@@ -122,6 +151,7 @@ export default class Simulation {
     if (!this._active) return;
     this._marking = initialMarking(this._net);
     this._steps = [];
+    this._undone = [];
     this._redraw();
   }
 
@@ -131,6 +161,9 @@ export default class Simulation {
 
     this._marking = fire(this._net, this._marking, transitionId);
     this._steps.push(transitionId);
+    // A firing chosen here starts a new run from this marking: what was taken
+    // back cannot be put back on top of a different history.
+    this._undone = [];
     this._redraw();
     return true;
   }
@@ -141,39 +174,66 @@ export default class Simulation {
 
     const last = this._steps.pop();
     this._marking = unfire(this._net, this._marking, last);
+    this._undone.push(last);
     this._redraw();
     return true;
   }
 
   /**
-   * Fires one transition of the ones that can fire. Where several can, one is
-   * picked at random, which is the usual reading of a conflict: the net does
-   * not say which. The choice is recorded in the steps, so stepping back and
-   * forward repeats this run rather than making a new one.
+   * Does the firing that was taken back again, so that stepping back and
+   * forward walks the same run instead of making a new one at every choice.
+   */
+  stepForward() {
+    if (!this._active || this._undone.length === 0) return false;
+
+    const next = this._undone[this._undone.length - 1];
+    if (!isEnabled(this._net, this._marking, next)) return false;
+
+    this._undone.pop();
+    this._marking = fire(this._net, this._marking, next);
+    this._steps.push(next);
+    this._redraw();
+    return true;
+  }
+
+  /**
+   * Fires one transition: the one that was taken back, if there is one, and
+   * otherwise one of those that can fire. Where several can, one is picked at
+   * random, which is the usual reading of a conflict: the net does not say
+   * which. The choice is recorded, so stepping back and forward repeats this
+   * run rather than making a new one.
    */
   fireOne() {
+    if (this.stepForward()) return true;
+
     const ready = this.enabled;
     if (ready.length === 0) return false;
     return this.fire(ready[Math.floor(Math.random() * ready.length)]);
   }
 
-  /** The marking as a key, for whoever wants to compare it with a state space. */
-  get markingKey() {
-    return this._active ? markingKey(this._marking) : null;
-  }
-
   /**
-   * Puts the net into a marking that was computed, rather than fired into.
+   * Puts the net into a marking that was computed rather than fired into.
    *
    * The state space view uses this to jump: a marking there is one the net can
    * reach, so showing it is honest, but the run that led to it is not known,
    * and the steps are cleared rather than invented.
+   *
+   * Refused for anything the net cannot be in: a place it does not have, a
+   * count that is not a whole number, and omega, which stands for a family of
+   * markings rather than for one.
    */
   setMarking(marking) {
     if (!this._active) return false;
 
+    const places = new Set(this._net.places.map((place) => place.id));
+    for (const [place, tokens] of marking) {
+      if (!places.has(place)) return false;
+      if (!Number.isInteger(tokens) || tokens < 0) return false;
+    }
+
     this._marking = new Map(marking);
     this._steps = [];
+    this._undone = [];
     this._redraw();
     return true;
   }
@@ -188,7 +248,12 @@ export default class Simulation {
     return this._active ? this._marking.get(placeId) ?? 0 : undefined;
   }
 
+  _say(message) {
+    this._eventBus.fire('simulation.said', { message });
+  }
+
   _redraw() {
+    this._changing = true;
     const ready = new Set(this.enabled);
 
     for (const element of this._elementRegistry.getAll()) {
@@ -204,18 +269,23 @@ export default class Simulation {
       this._graphicsFactory.update('shape', element, gfx);
     }
 
-    // The canvas says that a net is running, so the palette and the context
-    // pad can be greyed: refusing an edit is right, but an editor that looks
-    // ready and then refuses is not.
-    this._canvas.getContainer().classList.toggle('ptn-simulation-running', this._active);
+    // The canvas says that a net is running, so that the palette and the
+    // context pad can be greyed: refusing an edit is right, but an editor that
+    // looks ready and then refuses is not.
+    this._canvas.getContainer().classList.toggle(RUNNING_CLASS, this._active);
 
     this._eventBus.fire('simulation.changed', {
       active: this._active,
       marking: this.marking,
       enabled: [...ready],
       steps: this.steps,
+      undone: this.undone,
       deadlocked: this._active && ready.size === 0,
       problem: this._problem,
     });
+
+    this._changing = false;
   }
 }
+
+const name = (element) => element.businessObject?.name || 'The transition';

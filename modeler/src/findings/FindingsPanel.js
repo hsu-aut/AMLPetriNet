@@ -76,7 +76,7 @@ export default class FindingsPanel {
     this._container.hidden = true;
   }
 
-  _update({ findings, problem }) {
+  _update({ findings, problem, stale }) {
     this._list.replaceChildren();
 
     if (problem) {
@@ -87,12 +87,21 @@ export default class FindingsPanel {
 
     this._title.textContent = title(findings);
     if (findings.length === 0 && this._open) {
-      this._list.appendChild(row({ severity: 'information', message: 'Nothing to report.' }));
+      // "Nothing to report" would read as "the net is fine", which is not what
+      // a dropped list means.
+      this._list.appendChild(row({
+        severity: 'information',
+        message: stale
+          ? 'The net changed, so the findings were dropped. Analyse again.'
+          : 'Nothing to report.',
+      }));
     }
 
     for (const finding of findings) {
       const item = row(finding);
-      if (finding.element) {
+      // Only a finding whose element is on the canvas looks like a link: one
+      // that leads nowhere is worse than one that does not pretend to.
+      if (finding.element && this._findings.canShow(finding)) {
         item.classList.add('ptn-findings-clickable');
         item.addEventListener('click', () => this._findings.show(finding));
       }

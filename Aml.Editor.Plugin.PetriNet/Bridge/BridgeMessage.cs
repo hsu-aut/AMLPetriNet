@@ -20,6 +20,9 @@ public class JsToHostMessage
 
     /// <summary>The diagram as a picture, for "svg" messages.</summary>
     [JsonPropertyName("svg")] public string? Svg { get; set; }
+
+    /// <summary>Whether a simulation is running, for "simulation" messages.</summary>
+    [JsonPropertyName("active")] public bool? Active { get; set; }
 }
 
 /// <summary>Type tags on the wire, kept as constants rather than loose strings.</summary>
@@ -32,6 +35,7 @@ public static class JsMessageType
     public const string Error = "error";
     public const string Log = "log";
     public const string Svg = "svg";
+    public const string Simulation = "simulation";
 
     // host -> modeler
     public const string ImportPnml = "importPNML";

@@ -8,7 +8,7 @@
 const BUTTONS = [
   { name: 'toggle', text: 'Simulate', title: 'Run the net (Escape leaves)' },
   { name: 'back', text: '◀', title: 'One firing back' },
-  { name: 'step', text: '▶', title: 'Fire one transition' },
+  { name: 'step', text: '▶', title: 'Fire one transition, or do the one taken back again' },
   { name: 'play', text: '▶▶', title: 'Fire until nothing is enabled' },
   { name: 'reset', text: '↺', title: 'Back to the initial marking' },
 ];
@@ -47,6 +47,11 @@ export default class SimulationBar {
     });
 
     eventBus.on('simulation.changed', (event) => this._update(event));
+
+    // Something the simulation refused to do, said once, until the next step.
+    eventBus.on('simulation.said', (event) => {
+      this._status.textContent = event.message;
+    });
 
     // Escape leaves the simulation, as it leaves every other mode.
     eventBus.on('keyboard.keydown', (event) => {
@@ -93,7 +98,7 @@ export default class SimulationBar {
   }
 
   _update(event) {
-    const { active, enabled = [], steps = [], deadlocked, problem } = event;
+    const { active, enabled = [], steps = [], undone = [], deadlocked, problem } = event;
 
     this._container.classList.toggle('ptn-simulation-active', Boolean(active));
     this._buttons.toggle.textContent = active ? 'Stop' : 'Simulate';
@@ -101,12 +106,12 @@ export default class SimulationBar {
       this._buttons[name].disabled = !active;
     }
     this._buttons.back.disabled = !active || steps.length === 0;
-    this._buttons.step.disabled = !active || enabled.length === 0;
+    this._buttons.step.disabled = !active || (enabled.length === 0 && undone.length === 0);
     this._buttons.play.disabled = this._buttons.step.disabled;
 
     if (problem) this._status.textContent = problem;
     else if (!active) this._status.textContent = '';
-    else if (deadlocked) this._status.textContent = `${count(steps)}, nothing is enabled`;
+    else if (deadlocked && undone.length === 0) this._status.textContent = `${count(steps)}, nothing is enabled`;
     else this._status.textContent = `${count(steps)}, ${enabled.length} enabled`;
   }
 }
