@@ -135,8 +135,16 @@ check(result.step.flying === result.step.dots,
 check(result.settled.dots === 0, `${result.settled.dots} dots stayed on the canvas`);
 check(result.settled.flying === 0, 'the service still counts dots in flight');
 
-check(result.afterOne.steps === 1 && result.afterOne.marking?.B === 0 && result.afterOne.marking?.D === 1,
-  `one step back left ${result.afterOne.steps} firings and ${JSON.stringify(result.afterOne.marking)}`);
+// Which of the two firings is taken back depends on the order they went in,
+// and that order is decided by chance: a conflict inside a step has no answer
+// in the net, so the simulation picks one. What is pinned is that exactly one
+// firing was taken back, which means one half is back at its start.
+const half = result.afterOne.marking ?? {};
+check(result.afterOne.steps === 1
+  && (half.A === 1) !== (half.B === 1)
+  && (half.C === 1) !== (half.D === 1)
+  && (half.A === 1) !== (half.C === 1),
+  `one step back left ${result.afterOne.steps} firings and ${JSON.stringify(half)}`);
 check(result.afterBoth.steps === 0 && result.afterBoth.marking?.A === 1 && result.afterBoth.marking?.C === 1,
   `two steps back left ${JSON.stringify(result.afterBoth.marking)}`);
 

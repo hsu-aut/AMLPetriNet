@@ -29,6 +29,13 @@ public sealed class PluginSettings
 
     [JsonPropertyName("large_update_threshold")] public int LargeUpdateThreshold { get; set; } = 5;
 
+    /// <summary>
+    /// Whether a click on the canvas selects the same element in the editor's
+    /// tree. On by default: the two views show one document, and a user who
+    /// clicks a place usually wants to see its attributes.
+    /// </summary>
+    [JsonPropertyName("follow_selection")] public bool FollowSelection { get; set; } = true;
+
     [JsonPropertyName("debug_logging")] public bool DebugLogging { get; set; }
 
     private static readonly object Gate = new();

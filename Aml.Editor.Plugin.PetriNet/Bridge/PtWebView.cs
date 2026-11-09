@@ -52,6 +52,16 @@ public sealed class PtWebView : IDisposable
     /// <summary>A simulation started (true) or stopped (false) on the canvas.</summary>
     public event Action<bool>? SimulationChanged;
 
+    /// <summary>
+    /// What the user selected on the canvas, by its PNML id, or null where the
+    /// selection was cleared. The counterpart of SelectElement, which points
+    /// the canvas at an element the host picked.
+    /// </summary>
+    public event Action<string?>? ElementSelected;
+
+    /// <summary>The transitions that just fired, while a simulation is running.</summary>
+    public event Action<string[]>? TransitionsFired;
+
     public PtWebView(WebView2 view) => _view = view;
 
     public bool IsReady => _ready;
@@ -294,6 +304,14 @@ public sealed class PtWebView : IDisposable
                 // document finds the answer in the log.
                 SimulationChanged?.Invoke(message.Active ?? false);
                 OnInfo?.Invoke(message.Active == true ? "Simulation started" : "Simulation stopped");
+                break;
+
+            case JsMessageType.Selected:
+                ElementSelected?.Invoke(string.IsNullOrEmpty(message.Id) ? null : message.Id);
+                break;
+
+            case JsMessageType.Fired:
+                TransitionsFired?.Invoke(message.Ids ?? Array.Empty<string>());
                 break;
 
             default:

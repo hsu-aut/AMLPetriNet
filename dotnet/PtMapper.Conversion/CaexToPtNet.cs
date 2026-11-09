@@ -200,6 +200,55 @@ public static class CaexToPtNet
     /// content. Exposed so the updater can tell its own elements from foreign
     /// ones sharing the hierarchy.
     /// </summary>
+    /// <summary>
+    /// The net elements of a hierarchy, in the order the nets of
+    /// <see cref="Read(InstanceHierarchyType)"/> come out, so an index into one
+    /// is an index into the other.
+    /// </summary>
+    public static List<InternalElementType> NetElements(InstanceHierarchyType ih)
+    {
+        ArgumentNullException.ThrowIfNull(ih);
+        return ih.InternalElement.Where(IsNet).ToList();
+    }
+
+    /// <summary>
+    /// The document element a net element came from, found by the id the
+    /// diagram knows it under.
+    /// </summary>
+    /// <remarks>
+    /// The way back from the canvas into the tree. The diagram carries the
+    /// normalised id, so the lookup has to normalise the same way and in the
+    /// same order: the net is claimed first and then the children in document
+    /// order, exactly as <c>ReadNet</c> does it. Anything else and two elements
+    /// that reduce to one name would be paired up differently here than they
+    /// were there, and a click would select the wrong element.
+    /// </remarks>
+    public static InternalElementType? FindElement(InternalElementType netIE, string? netElementId)
+    {
+        ArgumentNullException.ThrowIfNull(netIE);
+        if (string.IsNullOrEmpty(netElementId)) return null;
+
+        var names = new HashSet<string>(StringComparer.Ordinal);
+        PtIdText.ToDistinctXmlName(IdentificationId(netIE) ?? netIE.Name ?? "net", names);
+
+        foreach (var child in netIE.InternalElement)
+        {
+            var raw = PnmlIdOf(child);
+            if (raw == null) continue;
+
+            // Exactly the kinds the reader claims a name for; see ReadNet.
+            var kind = ElementKind(child);
+            if (kind is not (PtNames.Place or PtNames.Transition or PtNames.Arc)) continue;
+
+            if (string.Equals(PtIdText.ToDistinctXmlName(raw, names), netElementId, StringComparison.Ordinal))
+            {
+                return child;
+            }
+        }
+
+        return null;
+    }
+
     internal static string? ElementKindOf(InternalElementType ie) => ElementKind(ie);
 
     /// <summary>

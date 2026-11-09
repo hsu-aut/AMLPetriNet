@@ -20,6 +20,12 @@
  *   { type: 'simulation', active } a run started or ended; the model is not
  *                                  touched by a run, so nothing is to be done
  *                                  about it
+ *   { type: 'selected', id, count } what the user clicked on the canvas, so the
+ *                                  host can point at the same thing in its own
+ *                                  view; id is null where nothing is selected
+ *                                  and count says how many were
+ *   { type: 'fired', ids }        the transitions that just fired, while a run
+ *                                  is going
  *   { type: 'log', level, message }
  *   { type: 'error', message }
  */
@@ -165,6 +171,21 @@ export function connectBridge(modeler) {
     }
     post({ type: 'imported', pnml: await exportPnml() });
   };
+
+  // What the user is looking at. The host embeds the modeler beside its own
+  // view of the same document, and a click on the canvas is the only place
+  // where the two views meet.
+  eventBus.on('selection.changed', (event) => {
+    const chosen = (event.newSelection ?? []).filter((element) => !element.labelTarget);
+    post({ type: 'selected', id: chosen[0]?.id ?? null, count: chosen.length });
+  });
+
+  // What fired, so a host can say so while a run is going. The model is not
+  // touched by it; see the simulation message below.
+  eventBus.on('simulation.fired', (event) => {
+    const ids = event.transitions ?? [];
+    if (ids.length) post({ type: 'fired', ids });
+  });
 
   eventBus.on(SIMULATION_EVENT, (event) => {
     const active = Boolean(event.active);

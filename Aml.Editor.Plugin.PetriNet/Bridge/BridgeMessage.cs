@@ -23,6 +23,12 @@ public class JsToHostMessage
 
     /// <summary>Whether a simulation is running, for "simulation" messages.</summary>
     [JsonPropertyName("active")] public bool? Active { get; set; }
+
+    /// <summary>The transitions that fired, for "fired" messages.</summary>
+    [JsonPropertyName("ids")] public string[]? Ids { get; set; }
+
+    /// <summary>How many elements are selected, for "selected" messages.</summary>
+    [JsonPropertyName("count")] public int? Count { get; set; }
 }
 
 /// <summary>Type tags on the wire, kept as constants rather than loose strings.</summary>
@@ -36,6 +42,8 @@ public static class JsMessageType
     public const string Log = "log";
     public const string Svg = "svg";
     public const string Simulation = "simulation";
+    public const string Selected = "selected";
+    public const string Fired = "fired";
 
     // host -> modeler
     public const string ImportPnml = "importPNML";

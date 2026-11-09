@@ -41,7 +41,11 @@ export default class TokenFlow {
     this._running = null;
     this._dots = [];
 
-    eventBus.on('simulation.fired', (event) => this.show(event.transitions));
+    // The return value is deliberately dropped: diagram-js stops an event at
+    // the first listener that returns anything, so handing back the number of
+    // dots would take the firing away from everybody behind this module, the
+    // host bridge included.
+    eventBus.on('simulation.fired', (event) => { this.show(event.transitions); });
 
     // A run that ends, a net that is replaced: whatever is in flight belongs to
     // a marking that is no longer on screen.

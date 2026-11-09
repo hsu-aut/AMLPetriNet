@@ -236,6 +236,13 @@
                              Margin="0,0,12,0"
                              ToolTip="How many added or removed elements count as a large change."
                              LostFocus="ThresholdInput_Changed"/>
+                    <CheckBox x:Name="FollowSelectionToggle"
+                              Content="Follow the canvas in the tree"
+                              VerticalAlignment="Center"
+                              Margin="0,0,12,0"
+                              ToolTip="Select the element in the editor's tree when it is clicked on the canvas."
+                              Checked="SettingsToggle_Changed"
+                              Unchecked="SettingsToggle_Changed"/>
                     <CheckBox x:Name="DebugToggle"
                               Content="Verbose debug logging"
                               VerticalAlignment="Center"

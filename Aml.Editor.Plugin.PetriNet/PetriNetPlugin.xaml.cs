@@ -131,6 +131,7 @@ public partial class PetriNetPlugin : PluginViewBase, ISupportsThemes, INotifyAM
             if (LogFilePathLabel != null) LogFilePathLabel.Text = "→ " + PluginLog.FilePath;
             if (DebugToggle != null) DebugToggle.IsChecked = PluginLog.DebugEnabled;
             if (SaveAfterUpdateToggle != null) SaveAfterUpdateToggle.IsChecked = _settings.SaveAfterUpdate;
+            if (FollowSelectionToggle != null) FollowSelectionToggle.IsChecked = _settings.FollowSelection;
             if (AskBeforeLargeUpdatesToggle != null) AskBeforeLargeUpdatesToggle.IsChecked = _settings.AskBeforeLargeUpdates;
             if (LargeUpdateThresholdInput != null)
                 LargeUpdateThresholdInput.Text = _settings.LargeUpdateThreshold.ToString(System.Globalization.CultureInfo.InvariantCulture);
@@ -196,6 +197,8 @@ public partial class PetriNetPlugin : PluginViewBase, ISupportsThemes, INotifyAM
             UpdatePendingLabel();
         };
         _bridge.OnDiagramChanged += OnDiagramChanged;
+        _bridge.ElementSelected += OnElementSelected;
+        _bridge.TransitionsFired += OnTransitionsFired;
         _bridge.Ready += OnModelerReady;
     }
 
@@ -228,6 +231,71 @@ public partial class PetriNetPlugin : PluginViewBase, ISupportsThemes, INotifyAM
     {
         CreateBridge();
         await _bridge!.InitAsync();
+    }
+
+    /// <summary>
+    /// A click on the canvas, pointed at the same element in the editor tree.
+    ///
+    /// The canvas knows its elements by the id the reader derived for them,
+    /// which is not always the id the document carries, so the element is looked
+    /// up the way the reader found it (CaexToPtNet.FindElement) rather than by
+    /// handing the diagram's id to the editor.
+    ///
+    /// An unsaved diagram is a special case worth naming: an element the user
+    /// has just drawn is not in the document yet, so there is nothing to select
+    /// and nothing to report either. Silence is right here; a user clicking
+    /// around a net does not want a message per click.
+    /// </summary>
+    private void OnElementSelected(string? id)
+    {
+        if (!_settings.FollowSelection || string.IsNullOrEmpty(id)) return;
+
+        try
+        {
+            var hierarchy = CurrentHierarchy();
+            if (hierarchy == null) return;
+
+            var nets = CaexToPtNet.NetElements(hierarchy);
+            var netIE = _selectedNetIndex >= 0 && _selectedNetIndex < nets.Count
+                ? nets[_selectedNetIndex]
+                : nets.FirstOrDefault();
+            if (netIE == null) return;
+
+            var element = CaexToPtNet.FindElement(netIE, id);
+            if (element?.ID == null)
+            {
+                PluginLog.Debug($"Selected '{id}' is not in the document (yet).");
+                return;
+            }
+
+            if (!EditorTree.TrySelect(element.ID))
+            {
+                PluginLog.Debug($"The editor did not take the selection of '{element.Name}'.");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Following along is a convenience; losing it must not cost the user
+            // anything else.
+            PluginLog.Debug("Following the canvas selection failed: " + ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// What fired, in the status line. A run never writes to the document, so
+    /// this is the only trace of it on the host side.
+    /// </summary>
+    private void OnTransitionsFired(string[] ids)
+    {
+        if (ids.Length == 0) return;
+
+        var net = CurrentNet();
+        string Name(string id) =>
+            net?.Transitions.FirstOrDefault(t => string.Equals(t.Id, id, StringComparison.Ordinal))?.Name ?? id;
+
+        SetStatus(ids.Length == 1
+            ? $"Fired {Name(ids[0])}."
+            : $"Fired {ids.Length} transitions at once: {string.Join(", ", ids.Select(Name))}.");
     }
 
     private void OnDiagramChanged(string pnml)
@@ -1095,6 +1163,7 @@ public partial class PetriNetPlugin : PluginViewBase, ISupportsThemes, INotifyAM
     private void SettingsToggle_Changed(object sender, RoutedEventArgs e)
     {
         _settings.SaveAfterUpdate = SaveAfterUpdateToggle?.IsChecked == true;
+        _settings.FollowSelection = FollowSelectionToggle?.IsChecked == true;
         _settings.AskBeforeLargeUpdates = AskBeforeLargeUpdatesToggle?.IsChecked == true;
         _settings.Save();
     }

@@ -108,6 +108,18 @@ const selected = await page.evaluate(() =>
 check(selected.includes('p_waiting'), 'selectElement selects the element by its PNML id');
 check((await messagesOfType('error')).length === 0, 'selectElement does not raise an error');
 
+// And the other way round: what the user selects on the canvas is reported, so
+// the host can point at the same element in its own view.
+const told = await messagesOfType('selected');
+check(told.some((m) => m.id === 'p_waiting' && m.count === 1),
+  `the selection was reported as ${JSON.stringify(told)}`);
+
+await clearMessages();
+await page.evaluate(() => window.ptn.get('selection').select(null));
+await page.waitForTimeout(200);
+check((await messagesOfType('selected')).some((m) => m.id === null && m.count === 0),
+  'clearing the selection was not reported');
+
 await clearMessages();
 await page.evaluate(() => window.__hostSend({ type: 'selectElement', id: 'does_not_exist' }));
 await page.waitForTimeout(200);
@@ -151,6 +163,11 @@ check(fired === true, 'a transition really fired (otherwise the next checks prov
 check(await page.evaluate(() => window.ptn.get('simulation').steps.length) === 1,
   'the firing is recorded as a step of the run');
 check((await messagesOfType('changed')).length === 0, 'firing a transition reports no edit');
+
+// What fired, by name, so the host can say so while a run is going.
+const firings = await messagesOfType('fired');
+check(firings.length === 1 && Array.isArray(firings[0].ids) && firings[0].ids.length === 1,
+  `the firing was reported as ${JSON.stringify(firings)}`);
 
 const markingDuring = await page.evaluate(async () => (await window.ptn.savePNML()));
 check(markingDuring === markingBefore, 'the model is unchanged while the net runs');
