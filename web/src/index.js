@@ -1,46 +1,8 @@
-import { PnModeler, UpdatePropertyHandler, UpdateLabelHandler } from 'petrinet-js';
+import { PnModeler } from 'petrinet-js';
 
 export { connectBridge, installDiagnostics, post, showFatal } from './bridge.js';
 export { exportSvg } from './svg.js';
 export { convertModdleXmlToPnmlXml, convertPnmlXmlToModdleXml } from 'petrinet-js';
-
-// Upstream bug: UpdatePropertyHandler is the one DI component in the package
-// that never declares $inject, although its sibling UpdateLabelHandler does.
-// didi then falls back to reading the constructor's parameter names, which a
-// minifier renames, and the command stack dies while registering handlers.
-// Declaring it here fixes that one case. It is not enough to make a minified
-// build work (see the note in build.mjs), but it is the right thing to do and
-// becomes a no-op if upstream adds the annotation.
-if (!UpdatePropertyHandler.$inject) {
-  UpdatePropertyHandler.$inject = ['eventBus'];
-}
-
-// Upstream bug: when a label is cleared, UpdateLabelHandler.postExecute sets
-// the text "1", the default arc weight, whatever the element is. A place whose
-// name was deleted was then called "1", and that name went into the document.
-// An arc still gets its default weight back; a place or a transition is left
-// without a name. The flag keeps a second bundle on the page from wrapping the
-// wrapper.
-if (!UpdateLabelHandler.prototype.postExecute.scopedToArcs) {
-  const postExecute = UpdateLabelHandler.prototype.postExecute;
-  const scoped = function postExecuteScopedToArcs(context) {
-    const target = context.element?.labelTarget || context.element;
-    if (target?.businessObject?.$instanceOf?.('ptn:Arc')) {
-      return postExecute.call(this, context);
-    }
-
-    // The only text postExecute sets is that default, so it becomes no name.
-    const setText = this.setText;
-    this.setText = (element) => setText.call(this, element, undefined);
-    try {
-      return postExecute.call(this, context);
-    } finally {
-      delete this.setText;
-    }
-  };
-  scoped.scopedToArcs = true;
-  UpdateLabelHandler.prototype.postExecute = scoped;
-}
 
 export { PnModeler };
 
