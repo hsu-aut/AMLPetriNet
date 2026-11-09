@@ -32,6 +32,22 @@ const modelSchema = {
       name: "ModelElement",
       isAbstract: true,
       superClass: ["Schema"],
+      properties: [
+        // What a PNML file said about this element that the modeler has no use
+        // for but must not lose: which page it was on, and the tool-specific
+        // sections other tools wrote. Both are carried through unread and put
+        // back on export, so a file from another tool survives a visit here.
+        // See src/pnml/index.js.
+        {
+          name: "pnmlPage",
+          isAttr: true,
+          type: "String",
+        },
+        {
+          name: "pnmlTool",
+          type: "String",
+        },
+      ],
     },
     {
       name: "Node",
@@ -93,6 +109,20 @@ const modelSchema = {
           name: "inscription",
           type: "String",
         },
+        // An arc may not cross a page boundary in PNML, so a file reaches a
+        // node on another page through a reference node. The import resolves
+        // those to the real node; these two remember what the arc said, so the
+        // export can say it again.
+        {
+          name: "pnmlSourceRef",
+          isAttr: true,
+          type: "String",
+        },
+        {
+          name: "pnmlTargetRef",
+          isAttr: true,
+          type: "String",
+        },
       ],
     },
     {
@@ -103,6 +133,21 @@ const modelSchema = {
           name: "modelElements",
           type: "ModelElement",
           isMany: true,
+        },
+        // The page tree of the file this net came from, its reference nodes and
+        // the net's own tool-specific sections. Carried through unread; see
+        // src/pnml/index.js.
+        {
+          name: "pnmlPages",
+          type: "String",
+        },
+        {
+          name: "pnmlRefs",
+          type: "String",
+        },
+        {
+          name: "pnmlTool",
+          type: "String",
         },
       ],
     },

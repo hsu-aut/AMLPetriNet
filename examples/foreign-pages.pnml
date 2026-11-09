@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A net as another tool writes one: two nested pages, a reference place so
+     that an arc can reach a node on the other page, tool-specific sections of
+     a tool that is not this one, and no <dimension> anywhere. Used by
+     web/tools/verify-pages.mjs. -->
+<pnml xmlns="http://www.pnml.org/version-2009/grammar/pnml">
+  <net id="plant" type="http://www.pnml.org/version-2009/grammar/ptnet">
+    <name><text>Plant</text></name>
+    <toolspecific tool="WoPeD" version="1.0"><simulation runs="20"/></toolspecific>
+    <page id="overview">
+      <name><text>Overview</text></name>
+      <place id="raw">
+        <name><text>Raw</text></name>
+        <initialMarking><text>1</text></initialMarking>
+        <graphics><position x="100" y="100"/></graphics>
+        <toolspecific tool="WoPeD" version="1.0"><time unit="s">5</time></toolspecific>
+      </place>
+      <transition id="mill">
+        <name><text>Mill</text></name>
+        <graphics><position x="220" y="100"/></graphics>
+      </transition>
+      <arc id="a1" source="raw" target="mill"/>
+      <referencePlace id="done_ref" ref="done">
+        <name><text>Done, on the detail page</text></name>
+      </referencePlace>
+      <arc id="a2" source="mill" target="done_ref"/>
+      <page id="detail">
+        <name><text>Detail</text></name>
+        <place id="done">
+          <name><text>Done</text></name>
+          <graphics><position x="360" y="100"/></graphics>
+        </place>
+      </page>
+    </page>
+  </net>
+</pnml>

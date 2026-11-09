@@ -39,6 +39,9 @@ const PTN_NS = 'http://bpt-lab.org/schemas/ptn';
 const PTN_DI_NS = 'http://bpt-lab.org/schemas/ptnDi';
 const DC_NS = 'https://www.omg.org/spec/BPMN/20100501/DC.xsd';
 
+/** What this modeler calls itself in a tool-specific section. */
+const OWN_TOOL = 'ptn-js';
+
 const DEFAULT_SIZE = { width: 50, height: 50 };
 const DEFAULT_SILENT_SIZE = { width: 20, height: 50 };
 /** The box the modeler lays a node label out in (diagram-js external label). */
@@ -309,9 +312,56 @@ export function convertModdleXmlToPnmlXml(moddleXml) {
   appendName(doc, net, childText(model, PTN_NS, 'name'));
   pnml.appendChild(net);
 
-  const page = doc.createElementNS(PNML_NS, 'page');
-  page.setAttribute('id', `${netId}_page`);
-  net.appendChild(page);
+  appendForeignTools(doc, net, childText(model, PTN_NS, 'pnmlTool'));
+
+  // The page the net came from, or the one page this modeler writes when the
+  // net never had any. Pages the file had are rebuilt with their names and
+  // their nesting; anything the modeler added since has no page and goes on
+  // the first one, which is where a reader of a one-page file expects it.
+  const declared = decodeRows(childText(model, PTN_NS, 'pnmlPages'));
+  const pages = new Map();
+
+  const pageFor = (path) => {
+    if (pages.has(path)) return pages.get(path);
+
+    const cut = path.lastIndexOf('/');
+    const parent = cut === -1 ? net : pageFor(path.slice(0, cut));
+    const element = doc.createElementNS(PNML_NS, 'page');
+    element.setAttribute('id', cut === -1 ? path : path.slice(cut + 1));
+    parent.appendChild(element);
+    pages.set(path, element);
+    return element;
+  };
+
+  for (const [path, name] of declared) {
+    appendName(doc, pageFor(path), name || undefined);
+  }
+
+  const page = declared.length > 0
+    ? pageFor(declared[0][0])
+    : (() => {
+        const only = doc.createElementNS(PNML_NS, 'page');
+        only.setAttribute('id', `${netId}_page`);
+        net.appendChild(only);
+        pages.set('', only);
+        return only;
+      })();
+
+  /** The page an element belongs on, by what it was carrying. */
+  const pageOf = (source) => {
+    const path = source.getAttribute('pnmlPage');
+    return path ? pageFor(path) : page;
+  };
+
+  // The reference nodes the import resolved away, back on their own page.
+  for (const [path, kind, id, ref, name] of decodeRows(childText(model, PTN_NS, 'pnmlRefs'))) {
+    if (!id || !ref) continue;
+    const reference = doc.createElementNS(PNML_NS, kind === 'referenceTransition' ? 'referenceTransition' : 'referencePlace');
+    reference.setAttribute('id', id);
+    reference.setAttribute('ref', ref);
+    appendName(doc, reference, name || undefined);
+    (path ? pageFor(path) : page).appendChild(reference);
+  }
 
   const labelOffset = (bounds) => {
     if (!bounds || !bounds.label) return undefined;
@@ -339,7 +389,7 @@ export function convertModdleXmlToPnmlXml(moddleXml) {
       // section so a round trip through this converter preserves it, while
       // foreign readers can ignore it.
       const toolspecific = doc.createElementNS(PNML_NS, 'toolspecific');
-      toolspecific.setAttribute('tool', 'ptn-js');
+      toolspecific.setAttribute('tool', OWN_TOOL);
       toolspecific.setAttribute('version', '1.0');
       const silent = doc.createElementNS(PNML_NS, 'silent');
       silent.textContent = 'true';
@@ -347,8 +397,9 @@ export function convertModdleXmlToPnmlXml(moddleXml) {
       node.appendChild(toolspecific);
     }
 
+    appendForeignTools(doc, node, childText(source, PTN_NS, 'pnmlTool'));
     appendNodeGraphics(doc, node, bounds);
-    page.appendChild(node);
+    pageOf(source).appendChild(node);
   }
 
   for (const source of kids(model, PTN_NS, 'arc')) {
@@ -364,8 +415,11 @@ export function convertModdleXmlToPnmlXml(moddleXml) {
     }
     const arc = doc.createElementNS(PNML_NS, 'arc');
     arc.setAttribute('id', id);
-    arc.setAttribute('source', from);
-    arc.setAttribute('target', to);
+    // An arc that reached its node through a reference says so again: the
+    // reference is on its page, the node may not be, and PNML does not let an
+    // arc cross a page boundary.
+    arc.setAttribute('source', source.getAttribute('pnmlSourceRef') || from);
+    arc.setAttribute('target', source.getAttribute('pnmlTargetRef') || to);
 
     appendName(doc, arc, childText(source, PTN_NS, 'name'));
 
@@ -399,7 +453,8 @@ export function convertModdleXmlToPnmlXml(moddleXml) {
       arc.appendChild(graphics);
     }
 
-    page.appendChild(arc);
+    appendForeignTools(doc, arc, childText(source, PTN_NS, 'pnmlTool'));
+    pageOf(source).appendChild(arc);
   }
 
   return serialize(doc);
@@ -408,7 +463,8 @@ export function convertModdleXmlToPnmlXml(moddleXml) {
 // ── PNML -> native modeler XML ──────────────────────────────────────────────
 
 /**
- * Nodes and arcs of a net, with pages flattened.
+ * Nodes and arcs of a net, with pages flattened, and everything the flattening
+ * would otherwise throw away.
  *
  * ISO/IEC 15909-2 forbids an arc from crossing a page boundary; a page reaches
  * a node on another page through a referencePlace/referenceTransition whose
@@ -416,6 +472,13 @@ export function convertModdleXmlToPnmlXml(moddleXml) {
  * makes the pages disappear, so the references are resolved to the concrete
  * node and the arcs are rewritten to point at it. An arc whose end cannot be
  * resolved is left out with a warning rather than imported half connected.
+ *
+ * The canvas has one plane and no pages, and it will stay that way: a page is a
+ * way of drawing a net on several sheets of paper, not a thing a net has. But a
+ * file that came in with pages has to leave with them, or a visit to this
+ * modeler silently reorganises somebody else's document. So the page of every
+ * element, the page tree with its names, and the reference nodes are read out
+ * and handed on; the model carries them unread and the export puts them back.
  */
 function collectPageContent(net) {
   const places = [];
@@ -423,20 +486,43 @@ function collectPageContent(net) {
   const arcs = [];
   const references = new Map();
 
-  const walk = (parent) => {
-    places.push(...kids(parent, PNML_NS, 'place'));
-    transitions.push(...kids(parent, PNML_NS, 'transition'));
-    arcs.push(...kids(parent, PNML_NS, 'arc'));
-    for (const tag of ['referencePlace', 'referenceTransition']) {
-      for (const ref of kids(parent, PNML_NS, tag)) {
-        const id = ref.getAttribute('id');
-        const target = ref.getAttribute('ref');
-        if (id && target) references.set(id, target);
+  /** element id -> page path, '' for an element sitting in the net itself. */
+  const pageOf = new Map();
+  /** every page, in document order, as {path, name}. */
+  const pages = [];
+  /** every reference node, as {path, kind, id, ref, name}. */
+  const refs = [];
+
+  let unnamed = 0;
+
+  const walk = (parent, path) => {
+    for (const [tag, into] of [['place', places], ['transition', transitions], ['arc', arcs]]) {
+      for (const element of kids(parent, PNML_NS, tag)) {
+        into.push(element);
+        pageOf.set(element.getAttribute('id'), path);
       }
     }
-    for (const page of kids(parent, PNML_NS, 'page')) walk(page);
+
+    for (const kind of ['referencePlace', 'referenceTransition']) {
+      for (const reference of kids(parent, PNML_NS, kind)) {
+        const id = reference.getAttribute('id');
+        const target = reference.getAttribute('ref');
+        if (!id || !target) continue;
+        references.set(id, target);
+        refs.push({ path, kind, id, ref: target, name: annotationValue(reference, 'name') });
+      }
+    }
+
+    for (const page of kids(parent, PNML_NS, 'page')) {
+      // PNML asks for an id on a page; a file that leaves it out gets one here
+      // rather than losing the page.
+      const id = page.getAttribute('id') || `page_${(unnamed += 1)}`;
+      const childPath = path ? `${path}/${id}` : id;
+      pages.push({ path: childPath, name: annotationValue(page, 'name') });
+      walk(page, childPath);
+    }
   };
-  walk(net);
+  walk(net, '');
 
   const nodeIds = new Set([...places, ...transitions].map((n) => n.getAttribute('id')));
   const resolve = (id) => {
@@ -452,20 +538,113 @@ function collectPageContent(net) {
   };
 
   const resolvedArcs = [];
+  /** arc id -> what it pointed at before the references were resolved. */
+  const ends = new Map();
+
   for (const arc of arcs) {
     const id = arc.getAttribute('id');
-    const from = resolve(arc.getAttribute('source'));
-    const to = resolve(arc.getAttribute('target'));
+    const said = { source: arc.getAttribute('source'), target: arc.getAttribute('target') };
+    const from = resolve(said.source);
+    const to = resolve(said.target);
     if (!from || !to) {
       console.warn(`arc ${id ?? '(no id)'} points at a node this net does not have; not imported`);
       continue;
     }
-    if (from !== arc.getAttribute('source')) arc.setAttribute('source', from);
-    if (to !== arc.getAttribute('target')) arc.setAttribute('target', to);
+    if (from !== said.source) {
+      arc.setAttribute('source', from);
+      ends.set(id, { ...(ends.get(id) ?? {}), source: said.source });
+    }
+    if (to !== said.target) {
+      arc.setAttribute('target', to);
+      ends.set(id, { ...(ends.get(id) ?? {}), target: said.target });
+    }
     resolvedArcs.push(arc);
   }
 
-  return { places, transitions, arcs: resolvedArcs };
+  return { places, transitions, arcs: resolvedArcs, pageOf, pages, refs, ends };
+}
+
+/**
+ * The tool-specific sections of an element that are not this modeler's own,
+ * as XML text.
+ *
+ * Another tool's section is none of our business and all of its own: a layout
+ * hint, a simulation setting, an identifier into its database. Dropping it
+ * turns a visit to this modeler into a loss for whoever wrote the file, so it
+ * is carried through as text and written back unchanged.
+ */
+function foreignTools(element) {
+  const foreign = kids(element, PNML_NS, 'toolspecific')
+    .filter((tool) => tool.getAttribute('tool') !== OWN_TOOL);
+  if (foreign.length === 0) return undefined;
+
+  const writer = new XMLSerializer();
+  return foreign.map((tool) => writer.serializeToString(tool)).join(ROW);
+}
+
+/** Puts carried-through tool-specific sections back on an element. */
+function appendForeignTools(doc, element, text) {
+  if (!text) return;
+
+  // Wrapped so that several sections parse as one document, and so that the
+  // fragments are read in the PNML namespace whether or not they carry it.
+  const wrapper = parse(`<wrap xmlns="${PNML_NS}">${text}</wrap>`, 'a tool-specific section');
+  for (const child of Array.from(wrapper.documentElement.childNodes)) {
+    if (child.nodeType !== 1) continue;
+
+    const copy = doc.importNode(child, true);
+    // The fragment was serialised on its own, so it carries a declaration of
+    // the namespace it is already in. Kept, it would show up as a redundant
+    // xmlns on every section this modeler writes back.
+    try {
+      copy.removeAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns');
+    } catch {
+      /* a DOM that will not have it keeps the declaration, which is still valid XML */
+    }
+    element.appendChild(copy);
+  }
+}
+
+/** The separators of the little table format below. */
+const FIELD = '\t';
+const ROW = '\n';
+
+/**
+ * Rows of text as one string: tabs between the fields, newlines between the
+ * rows, and the three characters that would break that escaped. Used for the
+ * page tree and the reference nodes, which the model carries as text because
+ * the modeler itself has nothing to do with them.
+ */
+function encodeRows(rows) {
+  const escape = (value) => String(value ?? '')
+    .split('\\').join('\\\\')
+    .split(FIELD).join('\\t')
+    .split(ROW).join('\\n');
+
+  // Trailing empty fields carry nothing and only make the text noisier; the
+  // reader hands back undefined for a field that is not there.
+  const trimmed = rows.map((row) => {
+    const fields = row.map(escape);
+    while (fields.length > 1 && fields[fields.length - 1] === '') fields.pop();
+    return fields;
+  });
+
+  return trimmed.map((row) => row.join(FIELD)).join(ROW);
+}
+
+function decodeRows(text) {
+  if (!text) return [];
+
+  const unescape = (value) => value.replace(/\\(.)/g, (whole, char) => {
+    if (char === 't') return FIELD;
+    if (char === 'n') return ROW;
+    return char;
+  });
+
+  return text
+    .split(ROW)
+    .filter((line) => line !== '')
+    .map((line) => line.split(FIELD).map(unescape));
 }
 
 /** PNML annotation value: <tag><text>value</text></tag>, or the tag's own text. */
@@ -565,7 +744,7 @@ export function convertPnmlXmlToModdleXml(pnmlXml) {
     throw new Error('PNML document contains no <net>');
   }
 
-  const { places, transitions, arcs } = collectPageContent(net);
+  const { places, transitions, arcs, pageOf, pages, refs, ends } = collectPageContent(net);
   const modelId = net.getAttribute('id') || 'model_1';
 
   const doc = document.implementation.createDocument(PTN_NS, 'ptn:definitions', null);
@@ -582,6 +761,18 @@ export function convertPnmlXmlToModdleXml(pnmlXml) {
     name.textContent = netName;
     model.appendChild(name);
   }
+  // Carried through unread, so that the export can write the file's own page
+  // structure, its reference nodes and its tool-specific sections back.
+  const carry = (parent, tag, text) => {
+    if (!text) return;
+    const element = doc.createElementNS(PTN_NS, `ptn:${tag}`);
+    element.textContent = text;
+    parent.appendChild(element);
+  };
+  carry(model, 'pnmlPages', encodeRows(pages.map((page) => [page.path, page.name])));
+  carry(model, 'pnmlRefs', encodeRows(refs.map((ref) => [ref.path, ref.kind, ref.id, ref.ref, ref.name])));
+  carry(model, 'pnmlTool', foreignTools(net));
+
   definitions.appendChild(model);
 
   // The diagram-interchange ids have to be unique across the whole file, and
@@ -623,6 +814,10 @@ export function convertPnmlXmlToModdleXml(pnmlXml) {
     if (silent) {
       node.setAttribute('isSilent', 'true');
     }
+
+    const page = pageOf.get(id);
+    if (page) node.setAttribute('pnmlPage', page);
+    carry(node, 'pnmlTool', foreignTools(source));
 
     if (tag === 'place') {
       const marking = annotationValue(source, 'initialMarking');
@@ -692,6 +887,13 @@ export function convertPnmlXmlToModdleXml(pnmlXml) {
     arc.setAttribute('id', id);
     arc.setAttribute('source', from);
     arc.setAttribute('target', to);
+
+    const arcPage = pageOf.get(id);
+    if (arcPage) arc.setAttribute('pnmlPage', arcPage);
+    const said = ends.get(id);
+    if (said?.source) arc.setAttribute('pnmlSourceRef', said.source);
+    if (said?.target) arc.setAttribute('pnmlTargetRef', said.target);
+    carry(arc, 'pnmlTool', foreignTools(source));
 
     // An arc carries a name like any other element (the moddle Arc type
     // inherits it, and the export writes it). Dropping it here once renamed
