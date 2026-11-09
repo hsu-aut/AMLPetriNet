@@ -12,9 +12,10 @@
  * findings say which of the two they are, and PT17 states it once more in the
  * list, because a reader takes "no deadlock" for a proof otherwise.
  */
-import { readKey } from './model.js';
+import { initialMarking, readKey } from './model.js';
 import { bounds, explore, OMEGA } from './explore.js';
 import { placeInvariants, transitionInvariants } from './invariants.js';
+import { holdsToken, maximalTrap, siphons, traps } from './structure.js';
 
 export const RULES = {
   PT12: 'Unbounded place',
@@ -25,7 +26,15 @@ export const RULES = {
   PT17: 'Partial result',
   PT18: 'Place invariant',
   PT19: 'Transition invariant',
+  PT20: 'Siphon',
+  PT21: 'Trap',
 };
+
+/**
+ * Most sets of one kind written out. A net of thirty places can have dozens of
+ * minimal traps, and a list nobody reads to the end is a list nobody reads.
+ */
+const MOST_SETS = 8;
 
 export function analyse(net, limits = {}) {
   const result = explore(net, limits);
@@ -115,6 +124,52 @@ export function analyse(net, limits = {}) {
       { cover: [...invariant], firings: [...invariant] });
   }
 
+  // Siphons and traps come from the structure rather than from the search, so
+  // they hold on nets whose state space is far too large to build, and they say
+  // why a net can get stuck rather than that it did.
+  const marking = initialMarking(net);
+  const structureLimits = limits.structure ?? {};
+  const foundSiphons = siphons(net, structureLimits);
+  const foundTraps = traps(net, structureLimits);
+
+  for (const set of foundSiphons.sets.slice(0, MOST_SETS)) {
+    const cover = { cover: set.map((id) => [id, 1]) };
+
+    if (!holdsToken(set, marking)) {
+      add('PT20', 'warning', null,
+        `${listed(set, name)} hold no token and can never hold one: every transition that fills one of them `
+        + 'also takes from one. No transition that needs a token from them can ever fire.', cover);
+    } else if (!holdsToken(maximalTrap(net, set), marking)) {
+      // Commoner's structure: a marked siphon without a marked trap inside it
+      // is what a deadlock needs. Stated as that and not as "the net
+      // deadlocks": the implication the other way holds for free choice nets
+      // only, and this tool does not know whether the net is one.
+      add('PT20', 'information', null,
+        `If ${listed(set, name)} ever run empty they stay empty: every transition that fills one of them also `
+        + 'takes from one, and no trap inside them keeps a token. This is the structure a deadlock comes from.',
+        cover);
+    }
+  }
+
+  for (const set of foundTraps.sets.slice(0, MOST_SETS)) {
+    if (!holdsToken(set, marking)) continue;
+    add('PT21', 'information', null,
+      `${listed(set, name)} always hold at least one token between them: every transition that takes from one `
+      + 'also fills one, so they can never all run empty.',
+      { cover: set.map((id) => [id, 1]) });
+  }
+
+  if (!foundSiphons.complete || !foundTraps.complete) {
+    add('PT20', 'information', null, foundSiphons.stopped === 'places'
+      ? `The net has more than 40 places, so its siphons and traps were not searched for. `
+        + 'The findings above come from the state space, which has its own limits.'
+      : 'The search for siphons and traps stopped at its limit, so the sets above are some of them, not all.');
+  } else if (foundSiphons.sets.length > MOST_SETS || foundTraps.sets.length > MOST_SETS) {
+    add('PT20', 'information', null,
+      `The net has ${foundSiphons.sets.length} minimal siphons and ${foundTraps.sets.length} minimal traps; `
+      + `the ${MOST_SETS} smallest of each are listed.`);
+  }
+
   if (!result.complete) {
     add('PT17', 'information', null, result.stopped === 'time'
       ? 'The search stopped at its time limit, so the findings above cover the markings it reached, not all of them.'
@@ -129,6 +184,17 @@ export function analyse(net, limits = {}) {
 }
 
 const tokens = (count) => (count === 1 ? 'one token' : `${count} tokens`);
+
+/** A set of elements as a list a reader can take in, cut off where it is long. */
+function listed(ids, name, most = 5) {
+  const labels = ids.map((id) => name.get(id) ?? id);
+  const shown = labels.slice(0, most);
+  const rest = labels.length - shown.length;
+  const joined = shown.length === 1
+    ? shown[0]
+    : `${shown.slice(0, -1).join(', ')} and ${shown[shown.length - 1]}`;
+  return rest > 0 ? `${joined} and ${rest} more` : joined;
+}
 
 /**
  * The transitions that are not live: from some reachable marking there is no

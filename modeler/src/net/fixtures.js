@@ -109,3 +109,46 @@ export const qualityCheck = {
     { id: 'e12', source: 'Discard', target: 'Idle' },
   ],
 };
+
+/**
+ * Two jobs and two resources, taken in opposite order: the textbook deadlock.
+ *
+ * Job one takes R1 and then wants R2, job two takes R2 and then wants R1. Each
+ * job alone runs for ever; together they can both hold one resource and wait
+ * for the other. The structure says so without being run: R1 and R2 form a
+ * siphon that holds no trap, which is where the deadlock comes from.
+ */
+export const resourceDeadlock = {
+  places: [
+    { id: 'idle1', name: 'Idle 1', marking: 1 },
+    { id: 'hold1', name: 'Holding R1', marking: 0 },
+    { id: 'idle2', name: 'Idle 2', marking: 1 },
+    { id: 'hold2', name: 'Holding R2', marking: 0 },
+    { id: 'r1', name: 'R1', marking: 1 },
+    { id: 'r2', name: 'R2', marking: 1 },
+  ],
+  transitions: [
+    { id: 'take1', name: 'Job 1 takes R1' },
+    { id: 'done1', name: 'Job 1 takes R2 and finishes' },
+    { id: 'take2', name: 'Job 2 takes R2' },
+    { id: 'done2', name: 'Job 2 takes R1 and finishes' },
+  ],
+  arcs: [
+    { id: 'f1', source: 'idle1', target: 'take1' },
+    { id: 'f2', source: 'r1', target: 'take1' },
+    { id: 'f3', source: 'take1', target: 'hold1' },
+    { id: 'f4', source: 'hold1', target: 'done1' },
+    { id: 'f5', source: 'r2', target: 'done1' },
+    { id: 'f6', source: 'done1', target: 'idle1' },
+    { id: 'f7', source: 'done1', target: 'r1' },
+    { id: 'f8', source: 'done1', target: 'r2' },
+    { id: 'g1', source: 'idle2', target: 'take2' },
+    { id: 'g2', source: 'r2', target: 'take2' },
+    { id: 'g3', source: 'take2', target: 'hold2' },
+    { id: 'g4', source: 'hold2', target: 'done2' },
+    { id: 'g5', source: 'r1', target: 'done2' },
+    { id: 'g6', source: 'done2', target: 'idle2' },
+    { id: 'g7', source: 'done2', target: 'r1' },
+    { id: 'g8', source: 'done2', target: 'r2' },
+  ],
+};

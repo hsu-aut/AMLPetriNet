@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { deadlock, loop, producer, qualityCheck } from './fixtures.js';
+import { deadlock, loop, producer, qualityCheck, resourceDeadlock } from './fixtures.js';
 import { enabled, fire, initialMarking, readNet } from './model.js';
 import { analyse } from './analyse.js';
 
@@ -114,8 +114,55 @@ test('every finding names a rule, a severity and a sentence', () => {
   const { findings } = analyse(readNet(qualityCheck));
 
   for (const finding of findings) {
-    assert.match(finding.rule, /^PT1[2-9]$/);
+    assert.match(finding.rule, /^PT(1[2-9]|2[01])$/);
     assert.ok(['error', 'warning', 'information'].includes(finding.severity), finding.severity);
     assert.match(finding.message, /\.$/, `message should be a sentence: ${finding.message}`);
   }
+});
+
+test('the deadlock net is told why it can get stuck, from the structure', () => {
+  const { findings } = analyse(readNet(resourceDeadlock));
+
+  const siphon = of(findings, 'PT20');
+  assert.equal(siphon.length >= 1, true, 'no siphon was reported');
+  // The two resources: marked now, and nothing inside them keeps them marked.
+  const resources = siphon.find((finding) => /R1 and R2 ever run empty/.test(finding.message));
+  assert.ok(resources, `expected the resources, got ${JSON.stringify(siphon.map((f) => f.message))}`);
+  assert.deepEqual(resources.cover, [['r1', 1], ['r2', 1]]);
+  assert.equal(resources.severity, 'information');
+});
+
+test('a set of places that can never hold a token is a warning', () => {
+  // The same net with the resources taken out of the initial marking: nothing
+  // can ever run.
+  const empty = readNet({
+    ...resourceDeadlock,
+    places: resourceDeadlock.places.map((place) =>
+      (place.id === 'r1' || place.id === 'r2' ? { ...place, marking: 0 } : place)),
+  });
+
+  // Several sets are unmarked siphons in this net, the two resources among
+  // them; each of them is a warning, and the resources are the one asked about
+  // here.
+  const warnings = of(analyse(empty).findings, 'PT20').filter((f) => f.severity === 'warning');
+  assert.ok(warnings.length > 0, 'an unmarked siphon was not reported as a warning');
+  assert.match(warnings[0].message, /can never hold one/);
+  assert.ok(warnings.some((f) => /^R1 and R2 hold no token/.test(f.message)),
+    `expected the resources among ${JSON.stringify(warnings.map((f) => f.message))}`);
+});
+
+test('a loop reports its places as a trap that never runs empty', () => {
+  const trap = of(analyse(readNet(loop)).findings, 'PT21');
+
+  assert.equal(trap.length, 1);
+  assert.match(trap[0].message, /Idle and Busy always hold at least one token/);
+  assert.deepEqual(trap[0].cover, [['idle', 1], ['busy', 1]]);
+});
+
+test('a net with no siphon and no marked trap says nothing about either', () => {
+  const findings = analyse(readNet(producer)).findings;
+
+  assert.deepEqual(of(findings, 'PT20'), []);
+  // Its one place is a trap, but an empty one, which is no statement at all.
+  assert.deepEqual(of(findings, 'PT21'), []);
 });
