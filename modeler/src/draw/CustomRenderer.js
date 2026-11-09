@@ -16,6 +16,18 @@ import { MODELER_PREFIX } from "../util/constants";
 
 const RENDERER_IDS = new Ids();
 
+/** Most tokens a place shows as dots; from one more on it shows the number. */
+const MOST_DOTS = 5;
+
+/** Token positions as fractions of the place's radius, like the faces of a die. */
+const TOKEN_LAYOUTS = {
+  1: [[0, 0]],
+  2: [[-0.35, 0], [0.35, 0]],
+  3: [[0, -0.35], [-0.35, 0.25], [0.35, 0.25]],
+  4: [[-0.3, -0.3], [0.3, -0.3], [-0.3, 0.3], [0.3, 0.3]],
+  5: [[-0.38, -0.38], [0.38, -0.38], [0, 0], [-0.38, 0.38], [0.38, 0.38]],
+};
+
 export default class CustomRenderer extends BaseRenderer {
   constructor(eventBus, styles, canvas, textRenderer) {
     super(eventBus, 2000);
@@ -114,7 +126,18 @@ export default class CustomRenderer extends BaseRenderer {
     return circle;
   }
 
+  /**
+   * Draws a place's tokens as black dots, as Petri nets are drawn, and as a
+   * number once the dots could no longer be counted at a glance. A marking
+   * that is not a whole number is written out. Only the drawing is affected:
+   * the marking itself stays the place's attribute.
+   */
   renderMarking(parentGfx, element, marking) {
+    const count = Number(marking);
+    if (Number.isInteger(count) && count >= 1 && count <= MOST_DOTS) {
+      return this.renderTokens(parentGfx, element, count);
+    }
+
     return this.renderLabel(parentGfx, marking, {
       box: element,
       align: "center-middle",
@@ -124,6 +147,26 @@ export default class CustomRenderer extends BaseRenderer {
         fontSize: 20,
       },
     });
+  }
+
+  renderTokens(parentGfx, element, count) {
+    const radius = Math.min(element.width, element.height) / 2;
+    const dot = radius * (count === 1 ? 0.28 : 0.2);
+    const group = svgCreate("g");
+    svgClasses(group).add("ptn-tokens");
+
+    for (const [dx, dy] of TOKEN_LAYOUTS[count]) {
+      const token = svgCreate("circle", {
+        cx: element.width / 2 + dx * radius,
+        cy: element.height / 2 + dy * radius,
+        r: dot,
+        fill: "black",
+      });
+      svgAppend(group, token);
+    }
+
+    svgAppend(parentGfx, group);
+    return group;
   }
 
   drawTransition = function (parentGfx, element) {
@@ -140,8 +183,26 @@ export default class CustomRenderer extends BaseRenderer {
     });
     svgAppend(parentGfx, shape);
 
-    if (!isSilent) {
-      this.renderEmbeddedLabel(parentGfx, element, "center-middle");
+    // The name goes underneath, not inside: the box is 50 pixels wide and the
+    // text layout breaks any longer word mid-word, so "Approve" came out as
+    // "Appr" over "ove". Underneath is how the literature draws it, and how
+    // this renderer already draws a place's name. Nothing but the drawing
+    // changes: the name stays the transition's attribute and no label element
+    // is created.
+    const name = element.businessObject?.name;
+    if (!isSilent && name) {
+      const text = this.renderLabel(parentGfx, name, {
+        // Text layout uses the box's size, never its position, so the text is
+        // laid out in a place-sized box and then moved below the transition.
+        box: { width: 90, height: 30 },
+        align: "center-top",
+        padding: 0,
+        style: { ...this._textRenderer.getExternalStyle(), fill: "black" },
+      });
+      text.setAttribute(
+        "transform",
+        `translate(${element.width / 2 - 45}, ${element.height + 2})`,
+      );
     }
     return parentGfx;
   };
