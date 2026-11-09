@@ -10,8 +10,9 @@
  * The fixture is examples/foreign-pages.pnml. Its grammar is checked separately
  * by tools/validate-pnml.mjs, which needs Java; this check needs a browser.
  */
-import { readFile, writeFile } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { serve } from './serve.mjs';
@@ -74,7 +75,9 @@ const result = await page.evaluate(async (text) => {
 await browser.close();
 server.close();
 
-const out = resolve(here, '..', 'dist', 'foreign-pages.out.pnml');
+// Outside the project: dist/ is what the plugin package is built from, and a
+// test must not put a file into a package.
+const out = join(await mkdtemp(join(tmpdir(), 'ptn-pages-')), 'foreign-pages.out.pnml');
 await writeFile(out, result.once, 'utf8');
 
 const problems = [];
