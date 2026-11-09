@@ -19,7 +19,7 @@
     "modeler"
   ],
   "scripts": {
-    "test": "node -e \"console.log('no tests yet; the analysis core brings its own')\"",
+    "test": "node --test src/net/",
     "demo": "node demo/serve.mjs"
   },
   "dependencies": {
