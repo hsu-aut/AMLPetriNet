@@ -7,12 +7,16 @@
  * way by hand. The buttons sit at the end of the row and say what they do; the
  * row itself keeps selecting the element it is about.
  */
+import { findingsToCsv } from '../net/report.js';
+import { offerFile } from '../ui/download.js';
+
 const SEVERITY_MARK = { error: '✖', warning: '⚠', information: 'ℹ' };
 
 export default class FindingsPanel {
   static $inject = ['eventBus', 'canvas', 'findings', 'selection', 'injector'];
 
   constructor(eventBus, canvas, findings, selection, injector) {
+    this._eventBus = eventBus;
     this._findings = findings;
     this._selection = selection;
     this._canvas = canvas;
@@ -33,6 +37,14 @@ export default class FindingsPanel {
     this._title = document.createElement('span');
     this._title.className = 'ptn-findings-title';
     head.appendChild(this._title);
+
+    const save = document.createElement('button');
+    save.type = 'button';
+    save.className = 'ptn-findings-save';
+    save.textContent = '⤓ CSV';
+    save.title = 'Save the findings as a table';
+    save.addEventListener('click', () => this.save());
+    head.appendChild(save);
 
     const close = document.createElement('button');
     close.type = 'button';
@@ -76,6 +88,25 @@ export default class FindingsPanel {
   analyse() {
     this._findings.analyse();
     this.open();
+  }
+
+  /** Hands the findings over as a table. Returns where they went. */
+  save() {
+    const findings = this._findings.all;
+    if (findings.length === 0) {
+      this._say('There are no findings to save. Analyse first.');
+      return 'nothing';
+    }
+
+    const went = offerFile(this._eventBus, {
+      name: 'findings.csv',
+      text: findingsToCsv(findings),
+      type: 'text/csv;charset=utf-8',
+    });
+
+    if (went === 'failed') this._say('The table could not be saved.');
+    else this._say(`${findings.length} finding(s) saved as findings.csv.`);
+    return went;
   }
 
   open() {

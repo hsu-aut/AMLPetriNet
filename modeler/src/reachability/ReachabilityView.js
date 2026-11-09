@@ -18,6 +18,8 @@ import { explore, OMEGA } from '../net/explore.js';
 import { netFromElements } from '../net/fromDiagram.js';
 import { readNet } from '../net/model.js';
 import { parseQuery, pathTo, wayTo } from '../net/paths.js';
+import { markingsToCsv, toDot } from '../net/report.js';
+import { offerFile } from '../ui/download.js';
 import { layoutStateSpace } from './layout.js';
 
 const SVG = 'http://www.w3.org/2000/svg';
@@ -39,6 +41,7 @@ export default class ReachabilityView {
   static $inject = ['eventBus', 'canvas', 'elementRegistry', 'simulation'];
 
   constructor(eventBus, canvas, elementRegistry, simulation) {
+    this._eventBus = eventBus;
     this._elementRegistry = elementRegistry;
     this._simulation = simulation;
     this._result = null;
@@ -53,6 +56,19 @@ export default class ReachabilityView {
     this._title = document.createElement('span');
     this._title.className = 'ptn-states-title';
     head.appendChild(this._title);
+
+    for (const [kind, text, title] of [
+      ['dot', '⤓ DOT', 'Save the state space for a graph tool, as Graphviz reads it'],
+      ['csv', '⤓ CSV', 'Save the reachable markings as a table'],
+    ]) {
+      const save = document.createElement('button');
+      save.type = 'button';
+      save.className = `ptn-states-save ptn-states-save-${kind}`;
+      save.textContent = text;
+      save.title = title;
+      save.addEventListener('click', () => this.save(kind));
+      head.appendChild(save);
+    }
 
     const close = document.createElement('button');
     close.type = 'button';
@@ -170,6 +186,28 @@ export default class ReachabilityView {
       ? 'That is the marking the net starts in.'
       : `Reachable in ${count(way.transitions.length, 'firing')}: ${way.transitions.map(this._nameOf, this).join(', ')}. `
         + 'The way there is loaded; press ▶ or ▶▶ in the simulation bar.');
+  }
+
+  /**
+   * Hands the state space over as a file: as DOT for a graph tool, as CSV for a
+   * table. Returns where it went.
+   */
+  save(kind) {
+    if (!this._result) {
+      this._note('There is no state space to save yet.');
+      return 'nothing';
+    }
+
+    const file = kind === 'dot'
+      ? { name: 'state-space.dot', text: toDot(this._result, this._net), type: 'text/vnd.graphviz' }
+      : { name: 'markings.csv', text: markingsToCsv(this._result, this._net), type: 'text/csv;charset=utf-8' };
+
+    const went = offerFile(this._eventBus, file);
+    this._note(went === 'failed'
+      ? `${file.name} could not be saved.`
+      : `${count(this._result.markings.length, 'marking')} saved as ${file.name}`
+        + (this._result.complete ? '.' : ', which is what the search reached before it stopped.'));
+    return went;
   }
 
   /** What is on screen, for a test or a host that wants to know. */
