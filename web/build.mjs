@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const dist = resolve(here, 'dist');
-const pkg = resolve(here, 'node_modules/@bptlab/openbpt-modeler-petri-net');
+const pkg = resolve(here, '..', 'modeler');
 
 await rm(dist, { recursive: true, force: true });
 await mkdir(dist, { recursive: true });
@@ -50,16 +50,9 @@ await esbuild.build({
   format: 'esm',
   splitting: false,
   outfile: resolve(dist, 'ptnjs.esm.js'),
-  // The upstream PNML converter is Node-only (xmlbuilder2 pulls in url/events)
-  // and drops node dimensions plus every arc waypoint. src/pnml provides a DOM
-  // based, lossless replacement; aliasing it here means the modeler's own
-  // importPNML()/savePNML() use it without patching the package.
-  alias: {
-    'pnml-moddle-converter': resolve(here, 'src/pnml/index.js'),
-  },
 });
 
-// pn-js.css @imports diagram-js, bpmn-font and the package's own icon font.
+// pn-js.css @imports diagram-js, bpmn-font and the modeler's own icon font.
 // Bundling resolves all of it into one stylesheet with the fonts inlined, so
 // the host needs a single <link> and no extra virtual host mappings.
 await esbuild.build({

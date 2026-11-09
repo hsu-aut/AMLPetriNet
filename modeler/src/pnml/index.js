@@ -1,5 +1,5 @@
 /**
- * Drop-in replacement for the upstream `pnml-moddle-converter`.
+ * PNML reader and writer, in place of the upstream `pnml-moddle-converter`.
  *
  * Two reasons this exists rather than using the package:
  *
@@ -8,15 +8,15 @@
  *     without polyfills.
  *  2. It is lossy in the direction that matters here: node graphics carry only
  *     <position> and never <dimension>, and arcs get no <graphics> at all, so
- *     every bendpoint is dropped. The AML side maps layout onto the shared
- *     OMG_DD library (DD_Bounds, DD_Waypoint), so losing it breaks round trips.
+ *     every bendpoint is dropped. A
+ *     consumer that maps layout onto its own format needs both, so losing them
+ *     breaks round trips.
  *
  * This implementation is DOM based (DOMParser/XMLSerializer, both available in
  * the WebView2 host) and writes the graphics elements ISO/IEC 15909-2 already
  * provides for, so the result stays standard PNML.
  *
- * The build aliases 'pnml-moddle-converter' onto this module, so the modeler's
- * own importPNML()/savePNML() pick it up unchanged.
+ * BaseViewer imports it directly, so importPNML() and savePNML() use it.
  *
  * Conventions, chosen to stay standard and to survive a round trip:
  *

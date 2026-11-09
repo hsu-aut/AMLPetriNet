@@ -4,11 +4,19 @@ This project includes or redistributes the following components. The license
 of this project (MIT, see [LICENSE](LICENSE)) does not apply to them; each is
 used under its own license, reproduced or referenced below.
 
+## Forked into this repository (`modeler/`)
+
+`modeler/` is a fork of [ptn-js](https://github.com/bptlab/openbpt-modeler-petri-net)
+(`@bptlab/openbpt-modeler-petri-net` 1.0.2, MIT, Copyright (c) 2024 Business
+Process Technology), modified: its own PNML reader and writer, two defects
+fixed, transition names drawn below the box, markings drawn as dots, unused
+helpers removed. The license text is reproduced below and in `modeler/LICENSE`.
+The fork is bundled into `ptnjs.esm.js` and `ptnjs.css`.
+
 ## Bundled into the modeler bundle (`ptnjs.esm.js`, `ptnjs.css`)
 
 | Component | Version | License | Copyright |
 |---|---|---|---|
-| [@bptlab/openbpt-modeler-petri-net](https://github.com/bptlab/openbpt-modeler-petri-net) | 1.0.2 | MIT | 2024 Business Process Technology |
 | [diagram-js](https://github.com/bpmn-io/diagram-js) | 15.26.0 | MIT | 2014-present Camunda Services GmbH |
 | [diagram-js-direct-editing](https://github.com/bpmn-io/diagram-js-direct-editing) | 3.5.1 | MIT | 2014-2017 camunda Services GmbH |
 | [@bpmn-io/diagram-js-ui](https://github.com/bpmn-io/diagram-js-ui) | 0.2.4 | MIT | 2022-present Camunda Services GmbH |
@@ -94,7 +102,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Reproduced from the npm packages the modeler bundle is built from, as their licenses require for
 redistribution in binary form.
 
-### @bptlab/openbpt-modeler-petri-net 1.0.2
+### ptn-js (@bptlab/openbpt-modeler-petri-net 1.0.2), forked into `modeler/`
 
 `LICENSE`:
 

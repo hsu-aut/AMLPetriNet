@@ -1,10 +1,8 @@
-import PnModeler from '@bptlab/openbpt-modeler-petri-net';
-import UpdatePropertyHandler from '@bptlab/openbpt-modeler-petri-net/lib/modeling/UpdatePropertyHandler';
-import UpdateLabelHandler from '@bptlab/openbpt-modeler-petri-net/lib/modeling/UpdateLabelHandler';
+import { PnModeler, UpdatePropertyHandler, UpdateLabelHandler } from 'petrinet-js';
 
 export { connectBridge, installDiagnostics, post, showFatal } from './bridge.js';
 export { exportSvg } from './svg.js';
-export { convertModdleXmlToPnmlXml, convertPnmlXmlToModdleXml } from './pnml/index.js';
+export { convertModdleXmlToPnmlXml, convertPnmlXmlToModdleXml } from 'petrinet-js';
 
 // Upstream bug: UpdatePropertyHandler is the one DI component in the package
 // that never declares $inject, although its sibling UpdateLabelHandler does.

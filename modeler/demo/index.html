@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>petrinet-js</title>
+  <link rel="stylesheet" href="./demo.css">
+  <style>
+    html, body { margin: 0; height: 100%; font: 14px system-ui, sans-serif; }
+    body { display: grid; grid-template-rows: auto 1fr; }
+    header { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-bottom: 1px solid #d8dbe0; }
+    h1 { font-size: 15px; margin: 0; font-weight: 600; }
+    .spacer { flex: 1 1 auto; }
+    button, label.file { padding: 6px 12px; border: 1px solid #d8dbe0; border-radius: 4px; background: #fff; cursor: pointer; }
+    label.file input { display: none; }
+    #canvas { height: 100%; }
+    #status { color: #6b7280; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>petrinet-js</h1>
+    <label class="file">Open PNML<input id="file" type="file" accept=".pnml,.xml"></label>
+    <button id="new">New net</button>
+    <span class="spacer"></span>
+    <span id="status"></span>
+    <button id="save">Download PNML</button>
+  </header>
+  <div id="canvas"></div>
+  <script type="module" src="./demo.js"></script>
+</body>
+</html>
