@@ -1,9 +1,9 @@
 /**
  * Clearing a label, in a real browser.
  *
- * The modeler sets the text "1" whenever a label is emptied, which is the
- * default weight of an arc and nonsense as the name of a place. src/index.js
- * scopes that default to arcs. This checks all three element types, and that
+ * The modeler set the text "1" whenever a label was emptied, which is the
+ * default weight of an arc and nonsense as the name of a place. The fork
+ * scopes that default to arcs (UpdateLabelHandler.postExecute). This checks all three element types, and that
  * undo brings a cleared name back.
  */
 import { chromium } from 'playwright';

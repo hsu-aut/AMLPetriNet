@@ -134,7 +134,7 @@ export default class CustomRenderer extends BaseRenderer {
    */
   renderMarking(parentGfx, element, marking) {
     const count = Number(marking);
-    if (Number.isInteger(count) && count >= 1 && count <= MOST_DOTS) {
+    if (Number.isInteger(count) && count >= 1 && count <= MOST_DOTS && TOKEN_LAYOUTS[count]) {
       return this.renderTokens(parentGfx, element, count);
     }
 

@@ -46,10 +46,10 @@ jobs:
       - name: Test the mapper
         run: dotnet test dotnet/PtMapper.Tests -c Release --no-build
 
-      # npm test runs the analysis core in Node, then installs Chromium (see
-      # the pretest script) and runs the PNML round trip, the interop fixtures,
-      # the host bridge, the label behaviour, the markings, the number formats
-      # and the picture export in a real browser.
+      # npm test installs Chromium first (see the pretest script), then runs the
+      # analysis core in Node and the PNML round trip, the interop fixtures, the
+      # host bridge, the label behaviour, the markings, the number formats and
+      # the picture export in a real browser.
       - name: Test the modeler
         working-directory: web
         run: npm test

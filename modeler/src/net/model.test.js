@@ -61,6 +61,58 @@ test('a self-loop leaves its place unchanged', () => {
   assert.deepEqual(tokens(fire(net, start, 't')), { p: 1 });
 });
 
+test('two arcs from the same place need both their weights at once', () => {
+  const net = readNet({
+    places: [{ id: 'p', marking: 1 }],
+    transitions: [{ id: 't' }],
+    arcs: [
+      { id: '1', source: 'p', target: 't' },
+      { id: '2', source: 'p', target: 't' },
+    ],
+  });
+
+  // One token, two arcs of weight one: the transition needs two.
+  assert.deepEqual(enabled(net, initialMarking(net)), []);
+
+  const two = new Map([['p', 2]]);
+  assert.deepEqual(enabled(net, two), ['t']);
+  assert.deepEqual(tokens(fire(net, two, 't')), {});
+});
+
+test('parallel arcs out of a transition add up as well', () => {
+  const net = readNet({
+    places: [{ id: 'p', marking: 1 }, { id: 'q' }],
+    transitions: [{ id: 't' }],
+    arcs: [
+      { id: '1', source: 'p', target: 't' },
+      { id: '2', source: 't', target: 'q' },
+      { id: '3', source: 't', target: 'q', weight: 2 },
+    ],
+  });
+
+  const after = fire(net, initialMarking(net), 't');
+  assert.deepEqual(tokens(after), { q: 3 });
+  assert.deepEqual(tokens(unfire(net, after, 't')), { p: 1 });
+});
+
+test('a marking that is not a number is rejected', () => {
+  // null and undefined mean the place brought no marking, which is none.
+  for (const marking of [true, [], {}, 'two']) {
+    assert.throws(
+      () => readNet({ places: [{ id: 'p', marking }], transitions: [], arcs: [] }),
+      /marking of place p/,
+      `marking ${JSON.stringify(marking)} should be refused`,
+    );
+  }
+});
+
+test('an identifier holding a comma or a colon keeps its own marking', () => {
+  const odd = new Map([['a:1,b', 2]]);
+  const plain = new Map([['a', 1], ['b', 2]]);
+
+  assert.notEqual(markingKey(odd), markingKey(plain));
+});
+
 test('an arc weight of zero or less is rejected', () => {
   const net = { places: [{ id: 'p' }], transitions: [{ id: 't' }], arcs: [{ id: '1', source: 'p', target: 't' }] };
 

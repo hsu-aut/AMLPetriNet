@@ -2,8 +2,8 @@
  * Nets whose behaviour is known by hand, used by the tests of this folder.
  *
  * Each one is small enough to check with a pencil, and each shows one thing:
- * a cycle, a choice, growth without a bound, a net that gets stuck, and a real
- * one taken from a plant model.
+ * a cycle, a choice, growth without a bound, a net that gets stuck, and one
+ * that is written after a station of a production plant.
  */
 
 /** Two places and two transitions in a cycle: one token goes round for ever. */
@@ -73,7 +73,7 @@ export const deadlock = {
 };
 
 /**
- * The behaviour of a quality check station: idle, check, then release or
+ * Written after the behaviour of a quality check station: idle, check, then release or
  * discard, and back to idle. Six places, five transitions, twelve arcs, one
  * token in Idle. Two further tokens stand for the two possible results of the
  * check, which the station reads from its sensors.

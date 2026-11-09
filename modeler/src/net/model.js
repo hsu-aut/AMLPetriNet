@@ -63,7 +63,7 @@ function claim(kind, id, what) {
 }
 
 function whole(value, what, least) {
-  const number = Number(value);
+  const number = typeof value === 'number' || typeof value === 'string' ? Number(value) : NaN;
   if (!Number.isInteger(number) || number < least) {
     throw new Error(`the ${what} is ${value}; it has to be a whole number of at least ${least}`);
   }
@@ -75,12 +75,24 @@ export function initialMarking(net) {
   return new Map(net.places.map((place) => [place.id, place.marking]));
 }
 
-/** The arcs that bring tokens to a transition, and the ones that take them away. */
-function arcsOf(net, transitionId) {
-  return {
-    taking: net.arcs.filter((arc) => arc.target === transitionId),
-    giving: net.arcs.filter((arc) => arc.source === transitionId),
-  };
+/**
+ * What firing the transition takes from each place and gives to each place.
+ *
+ * The weights are summed per place rather than kept per arc: two arcs from the
+ * same place to the same transition mean the transition needs both weights at
+ * once. Checking them one at a time would let a place with one token enable a
+ * transition that takes two, and the marking would go negative.
+ */
+function flowOf(net, transitionId) {
+  const taking = new Map();
+  const giving = new Map();
+
+  for (const arc of net.arcs) {
+    if (arc.target === transitionId) taking.set(arc.source, (taking.get(arc.source) ?? 0) + arc.weight);
+    if (arc.source === transitionId) giving.set(arc.target, (giving.get(arc.target) ?? 0) + arc.weight);
+  }
+
+  return { taking, giving };
 }
 
 /**
@@ -92,8 +104,8 @@ function arcsOf(net, transitionId) {
  * weights are equal. That falls out of taking first and giving afterwards.
  */
 export function isEnabled(net, marking, transitionId) {
-  const { taking } = arcsOf(net, transitionId);
-  return taking.every((arc) => (marking.get(arc.source) ?? 0) >= arc.weight);
+  const { taking } = flowOf(net, transitionId);
+  return [...taking].every(([place, weight]) => (marking.get(place) ?? 0) >= weight);
 }
 
 /** The transitions that can fire, in the order the net lists them. */
@@ -112,10 +124,10 @@ export function fire(net, marking, transitionId) {
     throw new Error(`transition ${transitionId} is not enabled in this marking`);
   }
 
-  const { taking, giving } = arcsOf(net, transitionId);
+  const { taking, giving } = flowOf(net, transitionId);
   const next = new Map(marking);
-  for (const arc of taking) next.set(arc.source, (next.get(arc.source) ?? 0) - arc.weight);
-  for (const arc of giving) next.set(arc.target, (next.get(arc.target) ?? 0) + arc.weight);
+  for (const [place, weight] of taking) next.set(place, (next.get(place) ?? 0) - weight);
+  for (const [place, weight] of giving) next.set(place, (next.get(place) ?? 0) + weight);
   return next;
 }
 
@@ -130,16 +142,16 @@ export function unfire(net, marking, transitionId) {
     throw new Error(`${transitionId} is not a transition of this net`);
   }
 
-  const { taking, giving } = arcsOf(net, transitionId);
+  const { taking, giving } = flowOf(net, transitionId);
   const previous = new Map(marking);
-  for (const arc of giving) {
-    const left = (previous.get(arc.target) ?? 0) - arc.weight;
+  for (const [place, weight] of giving) {
+    const left = (previous.get(place) ?? 0) - weight;
     if (left < 0) {
-      throw new Error(`this marking cannot have come from firing ${transitionId}: ${arc.target} holds too few tokens`);
+      throw new Error(`this marking cannot have come from firing ${transitionId}: ${place} holds too few tokens`);
     }
-    previous.set(arc.target, left);
+    previous.set(place, left);
   }
-  for (const arc of taking) previous.set(arc.source, (previous.get(arc.source) ?? 0) + arc.weight);
+  for (const [place, weight] of taking) previous.set(place, (previous.get(place) ?? 0) + weight);
   return previous;
 }
 
@@ -148,9 +160,17 @@ export function unfire(net, marking, transitionId) {
  * put in, so that a marking can be a key of a map or a member of a set.
  */
 export function markingKey(marking) {
-  return [...marking.entries()]
-    .filter(([, tokens]) => tokens !== 0)
-    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-    .map(([place, tokens]) => `${place}:${tokens}`)
-    .join(',');
+  // JSON, not "place:tokens" joined by commas: an identifier that holds a comma
+  // or a colon would otherwise make two different markings look like one.
+  return JSON.stringify(
+    [...marking.entries()]
+      .filter(([, tokens]) => tokens !== 0)
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([place, tokens]) => [place, tokens === Infinity ? 'omega' : tokens]),
+  );
+}
+
+/** The places and counts a key was built from, for a message a reader sees. */
+export function readKey(key) {
+  return JSON.parse(key).map(([place, tokens]) => [place, tokens === 'omega' ? Infinity : tokens]);
 }

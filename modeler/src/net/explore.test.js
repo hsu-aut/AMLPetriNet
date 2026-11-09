@@ -65,9 +65,46 @@ test('a transition without an input place does not run away', () => {
 
   const result = explore(net, { markings: 500, milliseconds: 1000 });
 
-  assert.ok(result.unbounded.includes('p') || result.unbounded.includes('q'),
-    `expected growth to be seen, got ${JSON.stringify(result.unbounded)}`);
+  // Both places grow: the free transition fills p, and move carries it to q.
+  assert.deepEqual([...result.unbounded].sort(), ['p', 'q']);
   assert.ok(result.markings.length < 500, `expected the search to settle, got ${result.markings.length}`);
+});
+
+test('an arc weight above one is respected while exploring', () => {
+  const net = readNet({
+    places: [{ id: 'p', marking: 4 }, { id: 'q' }],
+    transitions: [{ id: 't' }],
+    arcs: [
+      { id: '1', source: 'p', target: 't', weight: 2 },
+      { id: '2', source: 't', target: 'q', weight: 3 },
+    ],
+  });
+
+  const result = explore(net);
+  const held = (key) => Object.fromEntries(
+    [...result.markings.find((entry) => entry.key === key).marking].filter(([, n]) => n),
+  );
+
+  // Two firings: 4 tokens in steps of two, 3 tokens out each time.
+  assert.deepEqual(result.markings.map(({ key }) => held(key)), [{ p: 4 }, { p: 2, q: 3 }, { q: 6 }]);
+  assert.deepEqual(result.deadlocks.map(held), [{ q: 6 }]);
+});
+
+test('the limit on markings is not passed', () => {
+  // One place, four transitions that each take its token: a single expansion
+  // offers four successors, so a limit checked between expansions would let
+  // more through than it allows.
+  const net = readNet({
+    places: [{ id: 'p', marking: 8 }],
+    transitions: ['t1', 't2', 't3', 't4'].map((id) => ({ id })),
+    arcs: ['t1', 't2', 't3', 't4'].map((id, i) => ({ id: `a${i}`, source: 'p', target: id })),
+  });
+
+  for (const limit of [1, 3, 5]) {
+    const result = explore(net, { markings: limit });
+    assert.equal(result.markings.length, limit);
+    assert.equal(result.stopped, 'markings');
+  }
 });
 
 test('a net that gets stuck names the marking it is stuck in', () => {

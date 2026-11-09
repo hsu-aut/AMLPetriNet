@@ -10,7 +10,9 @@
     "src",
     "assets",
     "LICENSE",
-    "README.md"
+    "README.md",
+    "!src/net/*.test.js",
+    "!src/net/fixtures.js"
   ],
   "keywords": [
     "petri-net",

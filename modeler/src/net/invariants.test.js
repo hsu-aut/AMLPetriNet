@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { conflict, loop, producer, qualityCheck } from './fixtures.js';
-import { initialMarking, readNet } from './model.js';
+import { enabled, fire, initialMarking, readNet } from './model.js';
 import { placeInvariants, transitionInvariants } from './invariants.js';
 
 /** An invariant as a plain object, so a test can write out what it expects. */
@@ -53,12 +53,34 @@ test('the quality check net conserves the station and both results', () => {
     Idle: 1, Checking: 1, Approved: 1, Rejected: 1,
   })), `expected the station invariant, got ${JSON.stringify(invariants.map(plain))}`);
 
-  // Every invariant is a conservation law: it weighs the same before and after
-  // any firing, which is what makes it worth reporting.
+  // Exactly one, computed by hand: the station is in one of its four states.
+  // A second invariant in the output, or a missing one, is a defect.
+  assert.equal(invariants.length, 1);
+
+  // A conservation law has to survive firing, so fire through the net and
+  // weigh after every step.
   for (const invariant of invariants) {
-    assert.equal(typeof weigh(invariant, marking), 'number');
+    const start = weigh(invariant, marking);
+    let current = marking;
+    for (let step = 0; step < 20; step += 1) {
+      const ready = enabled(net, current);
+      if (ready.length === 0) break;
+      current = fire(net, current, ready[0]);
+      assert.equal(weigh(invariant, current), start,
+        `the weighted token count changed after firing ${ready[0]}`);
+    }
     for (const [, weight] of invariant) assert.ok(weight > 0, 'weights are positive');
   }
+});
+
+test('a weighting that is not an invariant does change when the net fires', () => {
+  // The guard for the test above: if weighing were wrong, or if the net never
+  // moved, the conservation check would pass for anything.
+  const net = readNet(qualityCheck);
+  const wrong = new Map([['Idle', 1], ['Checking', 2]]);
+  const start = initialMarking(net);
+
+  assert.notEqual(weigh(wrong, fire(net, start, 'Start')), weigh(wrong, start));
 });
 
 test('the quality check net repeats nothing while its results are consumed', () => {

@@ -54,7 +54,6 @@ export function explore(net, limits = {}) {
   let stopped = null;
 
   while (queue.length) {
-    if (seen.size >= maxMarkings) { stopped = 'markings'; break; }
     if (now() > until) { stopped = 'time'; break; }
 
     const { key, marking, ancestors } = queue.shift();
@@ -75,10 +74,16 @@ export function explore(net, limits = {}) {
       edges.push({ from: key, to: nextKey, transition });
 
       if (!seen.has(nextKey)) {
+        // Checked here rather than once per expansion: one marking can have as
+        // many successors as the net has transitions, and a limit that is only
+        // looked at between expansions is not a limit.
+        if (seen.size >= maxMarkings) { stopped = 'markings'; break; }
         seen.set(nextKey, next);
         queue.push({ key: nextKey, marking: next, ancestors: [...ancestors, marking] });
       }
     }
+
+    if (stopped) break;
   }
 
   return {

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { deadlock, loop, producer, qualityCheck } from './fixtures.js';
-import { readNet } from './model.js';
+import { enabled, fire, initialMarking, readNet } from './model.js';
 import { analyse } from './analyse.js';
 
 const rules = (findings) => findings.map((finding) => finding.rule);
@@ -58,14 +58,42 @@ test('the quality check net reports its dead end and no unbounded place', () => 
   assert.match(of(findings, 'PT15')[0].message, /Checking 1/);
 });
 
-test('a cut off search still reports what it reached, and says that it stopped', () => {
-  const { findings, complete } = analyse(readNet(producer), { markings: 1 });
+test('a cut off search says so and claims nothing it cannot know', () => {
+  const { findings, complete } = analyse(readNet(deadlock), { markings: 1 });
 
   assert.equal(complete, false);
-  assert.ok(rules(findings).includes('PT17'));
   assert.match(of(findings, 'PT17')[0].message, /stopped at its limit on markings/);
-  // The places are still described, from the one marking that was reached.
-  assert.ok(rules(findings).includes('PT13') || rules(findings).includes('PT12'));
+
+  // Pair never fired, but with one marking searched that is an observation,
+  // not the warning "can never fire" the full search is allowed to make.
+  const notFired = of(findings, 'PT14');
+  assert.deepEqual(notFired.map((f) => [f.element, f.severity]), [['pair', 'information']]);
+  assert.match(notFired[0].message, /did not fire in the markings the search reached/);
+
+  // Nothing is claimed about liveness from a search that stopped early.
+  assert.deepEqual(of(findings, 'PT16'), []);
+});
+
+test('a net with an unbounded place does not claim to be fully searched', () => {
+  const { findings, complete } = analyse(readNet(producer));
+
+  assert.equal(complete, false, 'omega stands for markings rather than listing them');
+  assert.match(of(findings, 'PT17')[0].message, /a deadlock it did not find can still exist/);
+});
+
+test('a transition that stops being available is reported as not live', () => {
+  const { findings } = analyse(readNet(qualityCheck));
+
+  const notLive = of(findings, 'PT16').map((f) => f.element).sort();
+  // Each round consumes a result token, so every transition of the station
+  // eventually has nothing left to do.
+  assert.deepEqual(notLive, ['Approve', 'Discard', 'Reject', 'Release', 'Start'].sort());
+});
+
+test('a live net reports no transition as not live', () => {
+  const { findings } = analyse(readNet(loop));
+
+  assert.deepEqual(of(findings, 'PT16'), []);
 });
 
 test('the invariants of a net are reported', () => {

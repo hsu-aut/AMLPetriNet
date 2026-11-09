@@ -40,4 +40,5 @@ await cp(resolve(here, 'index.html'), resolve(out, 'index.html'));
 
 const context = await esbuild.context({ outdir: out });
 const served = await context.serve({ servedir: out, host: '127.0.0.1', port });
-console.log(`demo on http://${served.host}:${served.port}`);
+// esbuild answers with the addresses it listens on, not with a single host.
+console.log(`demo on http://${served.hosts?.[0] ?? '127.0.0.1'}:${served.port}`);
