@@ -68,11 +68,25 @@ test('a cut off search still reports what it reached, and says that it stopped',
   assert.ok(rules(findings).includes('PT13') || rules(findings).includes('PT12'));
 });
 
+test('the invariants of a net are reported', () => {
+  const { findings } = analyse(readNet(loop));
+
+  const conservation = of(findings, 'PT18');
+  assert.equal(conservation.length, 1);
+  assert.equal(conservation[0].message,
+    'The token count of Idle and Busy is the same in every reachable marking.');
+
+  const cycle = of(findings, 'PT19');
+  assert.equal(cycle.length, 1);
+  assert.equal(cycle[0].message,
+    'Firing Start once and Stop once returns the net to the marking it started from.');
+});
+
 test('every finding names a rule, a severity and a sentence', () => {
   const { findings } = analyse(readNet(qualityCheck));
 
   for (const finding of findings) {
-    assert.match(finding.rule, /^PT1[2-7]$/);
+    assert.match(finding.rule, /^PT1[2-9]$/);
     assert.ok(['error', 'warning', 'information'].includes(finding.severity), finding.severity);
     assert.match(finding.message, /\.$/, `message should be a sentence: ${finding.message}`);
   }

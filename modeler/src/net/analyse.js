@@ -11,6 +11,7 @@
  * "no deadlock" as a proof when it is only a report.
  */
 import { bounds, explore, OMEGA } from './explore.js';
+import { placeInvariants, transitionInvariants } from './invariants.js';
 
 export const RULES = {
   PT12: 'Unbounded place',
@@ -19,6 +20,8 @@ export const RULES = {
   PT15: 'Deadlock',
   PT16: 'Not live',
   PT17: 'Exploration cut off',
+  PT18: 'Place invariant',
+  PT19: 'Transition invariant',
 };
 
 export function analyse(net, limits = {}) {
@@ -59,6 +62,17 @@ export function analyse(net, limits = {}) {
       add('PT16', 'information', transition,
         `${name.get(transition)} is not live: from some reachable marking it can never fire again.`);
     }
+  }
+
+  // Invariants come from the matrix, not from the search, so they hold even
+  // where the search was cut off.
+  for (const invariant of placeInvariants(net)) {
+    add('PT18', 'information', null,
+      `The token count of ${weighted(invariant, name)} is the same in every reachable marking.`);
+  }
+  for (const invariant of transitionInvariants(net)) {
+    add('PT19', 'information', null,
+      `Firing ${weighted(invariant, name, 'once', 'times')} returns the net to the marking it started from.`);
   }
 
   if (!result.complete) {
@@ -106,6 +120,20 @@ function successors(result) {
   }
 
   return next;
+}
+
+/** An invariant as a sentence: the elements it covers with their weights. */
+function weighted(invariant, name, one = '', many = '') {
+  return [...invariant]
+    .map(([id, weight]) => {
+      const label = name.get(id) ?? id;
+      if (!one) return weight === 1 ? label : `${weight} times ${label}`;
+      return weight === 1 ? `${label} ${one}` : `${label} ${weight} ${many}`;
+    })
+    .reduce((text, part, i, all) => {
+      if (i === 0) return part;
+      return i === all.length - 1 ? `${text} and ${part}` : `${text}, ${part}`;
+    }, '');
 }
 
 /** A marking key as a sentence a reader can follow. */
