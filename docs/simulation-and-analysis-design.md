@@ -41,15 +41,17 @@ would add more of the same. The package is 69 files and about 6400 lines, and
 upstream has published one dependency bump in the last year, so little is lost
 by forking and much is gained in clarity.
 
-The fork is developed in `web/src/modeler/`. It keeps its own LICENSE and README
-naming the original, has no imports from the AML side of this repository, and is
-reached through a single file (`web/src/modeler/index.js`), so that it can later
-be lifted into a repository of its own without touching anything else.
+The fork lives in `modeler/`, beside `web/` and `dotnet/`, as a package of its
+own: its own `package.json`, LICENSE, README, tests and a demo page that runs
+without the rest of this repository. It mentions AutomationML nowhere. The
+bundle in `web/` takes it as a file dependency. Hosting it on its own later is a
+move, a publish and one line in `web/package.json`.
 
 Open: whether the fork becomes a separate public repository, under which account,
-and under which name. Nothing in this design depends on the answer. Recommended
-when the question comes up: a public fork on the author's own account, named
-`PetriNet.js`, so the lineage stays visible on GitHub.
+and under which name. The author expects to host it separately once it carries
+simulation and analysis. Nothing in this design depends on the answer.
+Recommended when the question comes up: a public fork on the author's own
+account, named `PetriNet.js`, so the lineage stays visible on GitHub.
 
 The two defects we work around are reported upstream as pull requests,
 independent of the fork:
@@ -60,7 +62,7 @@ independent of the fork:
   label is cleared, so a place without a name is called "1".
 
 **D-2: The analysis core knows nothing about the canvas.**
-A module `web/src/net/` takes a net as plain data (places with initial markings,
+A module `modeler/src/net/` takes a net as plain data (places with initial markings,
 transitions, arcs with weights) and answers questions about it. It has no
 dependency on diagram-js, the DOM or AML, and is tested without a browser. The
 modeler, the panels and the graph view are built on it. The command line tool
@@ -91,18 +93,21 @@ complete or cut off.
 ## 3. Architecture
 
 ```
-web/src/
-  modeler/        the fork: canvas, rendering, rules, palette, context pad
-  net/            analysis core, no UI: model, simulation, state space, invariants
-  ui/             panels and views on top of both: simulation bar, findings, graph
-  pnml/           PNML reader and writer (exists)
-  bridge.js       messages to and from the plugin host (exists)
-  svg.js          picture export (exists)
-  index.js        what the host and the page import
+modeler/            the fork, a package of its own, no AutomationML in it
+  src/              canvas, rendering, rules, palette, context pad
+  src/pnml/         PNML reader and writer (moved here from web/src)
+  src/net/          analysis core, no UI: model, simulation, state space, invariants
+  src/ui/           panels and views: simulation bar, findings, graph
+  demo/             a page that shows the modeler on its own
+web/
+  src/bridge.js     messages to and from the plugin host (exists)
+  src/svg.js        picture export (exists)
+  src/index.js      what the host and the page import
 ```
 
-Dependencies point downwards only: `ui` uses `net` and `modeler`, `modeler` uses
-neither `ui` nor `net`, `net` uses nothing of the three.
+Dependencies point downwards only: `ui` uses `net` and the canvas, the canvas
+uses neither, and `net` uses nothing at all. The AML side of the repository uses
+the package, never the other way round.
 
 ### 3.1 The analysis core
 
@@ -132,7 +137,7 @@ Functions, all pure:
 
 ### 3.2 The simulation
 
-A service in `ui/` holds the current marking, the recorded run and the mode. It
+A service in `modeler/src/ui/` holds the current marking, the recorded run and the mode. It
 listens to the canvas for clicks on transitions and asks the core what is
 enabled. Firing is a step in its own history, not in the modeler's undo stack, so
 that undo never mixes editing with simulation.
@@ -218,11 +223,12 @@ grammar check.
 
 Each stage leaves the tool working and shippable.
 
-1. **Fork in place.** The package is replaced by `web/src/modeler/`, the run-time
-   patches become ordinary code, the PNML alias disappears, unused parts of the
-   package are removed. No new function. Proof: the whole suite green, the plugin
-   package built and installed once by hand.
-2. **Analysis core.** `web/src/net/` with its own tests. No UI. Proof: the core
+1. **Fork in place.** The package is replaced by `modeler/`, the run-time patches
+   become ordinary code, the PNML converter moves into it, the alias disappears,
+   unused parts are removed. No new function. Proof: the whole suite green, the
+   demo page running on its own, the plugin package built and installed once by
+   hand.
+2. **Analysis core.** `modeler/src/net/` with its own tests. No UI. Proof: the core
    tests, including the known answers for the five nets.
 3. **Simulation.** Bar, highlighting, stepping, play, reset, deadlock report.
    Proof: a browser check that fires a recorded sequence and compares markings,
@@ -242,5 +248,7 @@ and are added as they become useful, each with its own check.
 - Whether the command line tool gets `ptmap analyze` from the same core, which
   would mean a second implementation in C# or running the JavaScript core in the
   tool. Not decided; nothing in stages 1 to 5 depends on it.
+- When `modeler/` moves into its own repository. Expected, not scheduled; the
+  layout above keeps the cost at a move and a publish.
 - Whether the reachability view belongs beside the net or in a separate tab when
   the plugin window is narrow.
