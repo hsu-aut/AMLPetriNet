@@ -66,9 +66,14 @@ const result = await page.evaluate(async () => {
   const deadlockRow = [...document.querySelectorAll('.ptn-finding')]
     .find((item) => item.querySelector('.ptn-finding-rule')?.textContent === 'PT15');
   const offered = deadlockRow?.querySelector('.ptn-finding-action')?.textContent ?? null;
-  const rowsWithActions = [...document.querySelectorAll('.ptn-finding-action')].length;
 
-  deadlockRow?.querySelector('.ptn-finding-action')?.click();
+  // Other findings offer other actions; what belongs to a marking is the way
+  // into it, and only the deadlock is about a marking here.
+  const waysOffered = [...document.querySelectorAll('.ptn-finding-action')]
+    .filter((button) => button.textContent.includes('Way there')).length;
+
+  [...deadlockRow?.querySelectorAll('.ptn-finding-action') ?? []]
+    .find((button) => button.textContent.includes('Way there'))?.click();
   const loaded = { note: note(), marking: marking(), running: simulation.active, steps: simulation.steps.length };
 
   // Playing the loaded way ends in the deadlock, and in the deadlock the bar
@@ -107,7 +112,7 @@ const result = await page.evaluate(async () => {
 
   return {
     offered,
-    rowsWithActions,
+    waysOffered,
     loaded,
     walked,
     back,
@@ -129,7 +134,7 @@ const problems = [];
 const check = (condition, message) => { if (!condition) problems.push(message); };
 
 check(result.offered === '▶ Way there', `the deadlock finding offers '${result.offered}'`);
-check(result.rowsWithActions === 1, `${result.rowsWithActions} findings offer a way there; only the deadlock should`);
+check(result.waysOffered === 1, `${result.waysOffered} findings offer a way there; only the deadlock should`);
 
 check(/One firing leads there/.test(result.loaded.note ?? ''), `loading the way said '${result.loaded.note}'`);
 check(result.loaded.running === true, 'loading the way did not start the run');

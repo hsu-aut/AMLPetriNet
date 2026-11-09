@@ -18,6 +18,8 @@
  * The matrix of a drawn net is small, so the simple form is fast enough.
  */
 
+import { fire, isEnabled } from './model.js';
+
 /** C[p][t]: what firing t does to the tokens in p. */
 function incidence(net) {
   const places = net.places.map((place) => place.id);
@@ -123,4 +125,45 @@ export function transitionInvariants(net) {
 
 function named(weights, ids) {
   return new Map(weights.flatMap((value, i) => (value !== 0 ? [[ids[i], value]] : [])));
+}
+
+/**
+ * An order in which a count of firings can actually be fired.
+ *
+ * A transition invariant says how often each transition fires to bring the
+ * marking back; it does not say in which order, and most orders do not work:
+ * the firings have to be enabled one after another. The search is a depth first
+ * walk over the orders, which is small because an invariant counts a handful of
+ * firings, and capped so that a pathological net cannot hang the page.
+ *
+ * @param counts Map from transition id to how often it fires.
+ * @param marking the marking to start from.
+ * @returns the transition ids in a fireable order, or null where no order of
+ *   exactly these firings is fireable from this marking.
+ */
+export function sequenceFor(net, counts, marking, limit = 20000) {
+  const order = [];
+  let steps = 0;
+
+  const walk = (at, remaining) => {
+    if (remaining.size === 0) return true;
+    if ((steps += 1) > limit) return false;
+
+    for (const [transition, times] of remaining) {
+      if (!isEnabled(net, at, transition)) continue;
+
+      const left = new Map(remaining);
+      if (times === 1) left.delete(transition);
+      else left.set(transition, times - 1);
+
+      order.push(transition);
+      if (walk(fire(net, at, transition), left)) return true;
+      order.pop();
+    }
+
+    return false;
+  };
+
+  const remaining = new Map([...counts].filter(([, times]) => times > 0));
+  return walk(marking, remaining) ? order : null;
 }

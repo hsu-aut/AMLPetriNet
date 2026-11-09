@@ -19,6 +19,13 @@ const RENDERER_IDS = new Ids();
 /** The colour of a transition that can fire while the simulation runs. */
 const ENABLED_COLOUR = "#13ae4d";
 
+/**
+ * The colour of an element an answer is about: a place of an invariant, a place
+ * of a siphon. Violet rather than green or red, which the simulation and the
+ * findings already use, so that the three can be on screen at once.
+ */
+const MARKED_COLOUR = "#6f42c1";
+
 /** Most tokens a place shows as dots; from one more on it shows the number. */
 const MOST_DOTS = 5;
 
@@ -39,6 +46,10 @@ export default class CustomRenderer extends BaseRenderer {
     // one the document holds. Asked for lazily, and optional, so that a host
     // can leave the simulation module out.
     this._simulation = injector.get('simulation', false);
+
+    // Elements an answer covers are drawn with a ring around them. Optional in
+    // the same way: a host can leave the module out.
+    this._highlight = injector.get('highlight', false);
 
     this._styles = styles;
     this._canvas = canvas;
@@ -96,6 +107,8 @@ export default class CustomRenderer extends BaseRenderer {
     if (marking) {
       this.renderMarking(parentGfx, element, marking.toString());
     }
+
+    this.renderMarked(parentGfx, element, true);
 
     return circle;
   };
@@ -204,6 +217,8 @@ export default class CustomRenderer extends BaseRenderer {
     // this renderer already draws a place's name. Nothing but the drawing
     // changes: the name stays the transition's attribute and no label element
     // is created.
+    this.renderMarked(parentGfx, element, false);
+
     const name = element.businessObject?.name;
     if (!isSilent && name) {
       const text = this.renderLabel(parentGfx, name, {
@@ -221,6 +236,55 @@ export default class CustomRenderer extends BaseRenderer {
     }
     return parentGfx;
   };
+
+  /**
+   * A ring around an element an answer is about, with its weight where the
+   * weight is not one. Drawn here rather than in the stylesheet for the same
+   * reason the enabled colour is: the drawing writes its colours inline.
+   */
+  renderMarked(parentGfx, element, round) {
+    const weight = this._highlight?.of(element.id);
+    if (weight === undefined) return undefined;
+
+    const gap = 5;
+    const ring = round
+      ? svgCreate("circle", {
+          cx: element.width / 2,
+          cy: element.height / 2,
+          r: Math.round((element.width + element.height) / 4) + gap,
+        })
+      : svgCreate("rect", {
+          x: -gap,
+          y: -gap,
+          width: element.width + gap * 2,
+          height: element.height + gap * 2,
+          rx: 3,
+        });
+
+    svgAttr(ring, {
+      fill: "none",
+      stroke: MARKED_COLOUR,
+      strokeWidth: 2,
+      strokeDasharray: "4 3",
+    });
+    svgClasses(ring).add("ptn-marked-ring");
+    svgAppend(parentGfx, ring);
+
+    if (weight !== 1) {
+      const text = svgCreate("text", {
+        x: element.width + gap + 2,
+        y: -gap,
+        fill: MARKED_COLOUR,
+        fontSize: 12,
+        fontWeight: 600,
+        fontFamily: "Arial, sans-serif",
+      });
+      text.textContent = String(weight);
+      svgAppend(parentGfx, text);
+    }
+
+    return ring;
+  }
 
   drawArc = function (parentGfx, element) {
     const pathData = this.getPathDataFromConnection(element);

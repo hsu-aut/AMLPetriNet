@@ -45,6 +45,8 @@ import SimulationModule from "./simulation";
 import FindingsModule from "./findings";
 // Every marking the net can reach, as a graph beside the drawing.
 import ReachabilityModule from "./reachability";
+// Elements an answer is about, marked in the drawing.
+import HighlightModule from "./highlight";
 
 import emptyDiagram from "./util/emptyDiagram";
 
@@ -88,6 +90,7 @@ export default class CustomModeler extends BaseViewer {
       SimulationModule,
       FindingsModule,
       ReachabilityModule,
+      HighlightModule,
     ];
 
     const modules = [...builtinModules, ...customModules, ...additionalModules];

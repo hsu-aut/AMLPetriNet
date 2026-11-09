@@ -18,10 +18,11 @@ export default class FindingsPanel {
     this._canvas = canvas;
     this._open = false;
 
-    // Playing a way there needs the simulation. Asked for lazily and
-    // optionally, so that a host can leave the simulation module out and still
-    // get the list.
+    // Playing a way there needs the simulation, marking a set of elements needs
+    // the highlight. Asked for lazily and optionally, so that a host can leave
+    // either module out and still get the list.
     this._simulation = injector.get('simulation', false);
+    this._highlight = injector.get('highlight', false);
 
     this._container = document.createElement('div');
     this._container.className = 'ptn-findings';
@@ -138,7 +139,29 @@ export default class FindingsPanel {
         title: way.transitions.length === 1
           ? 'Load the firing that leads to this marking'
           : `Load the ${way.transitions.length} firings that lead to this marking`,
-        run: () => this._playWay(way),
+        run: () => this._playWay(way.transitions, 'lead there'),
+      });
+    }
+
+    // A set of elements is marked in the drawing rather than read out of a
+    // sentence. Only where every element of it is still on the canvas: half a
+    // marked set says the wrong thing about the net.
+    const cover = this._highlight && finding.cover?.length ? finding.cover : null;
+    if (cover && cover.every(([id]) => this._findings.canShow({ element: id }))) {
+      actions.push({
+        text: '◎ Mark',
+        title: 'Ring the elements this finding is about, in the drawing',
+        run: () => this._mark(cover),
+      });
+    }
+
+    // A firing sequence the finding stands for, where one is fireable at all.
+    const firings = this._simulation && finding.firings?.length ? this._findings.runFor(finding) : null;
+    if (firings) {
+      actions.push({
+        text: '▶ Play',
+        title: `Load the ${firings.length} firings in an order the net can fire them in`,
+        run: () => this._playWay(firings, 'return the marking'),
       });
     }
 
@@ -162,15 +185,33 @@ export default class FindingsPanel {
     item.appendChild(box);
   }
 
-  _playWay(way) {
-    if (!this._simulation?.loadRun(way.transitions)) {
-      this._say('The way there could not be loaded: the net is not the one that was analysed.');
+  _playWay(transitions, what) {
+    if (!this._simulation?.loadRun(transitions)) {
+      this._say('The firings could not be loaded: the net is not the one that was analysed.');
       return;
     }
 
-    this._say(way.transitions.length === 1
-      ? 'One firing leads there. Press ▶ in the simulation bar.'
-      : `${way.transitions.length} firings lead there. Press ▶ in the simulation bar, or ▶▶ to watch them.`);
+    this._say(transitions.length === 1
+      ? `One firing ${what === 'lead there' ? 'leads there' : what}. Press ▶ in the simulation bar.`
+      : `${transitions.length} firings ${what}. Press ▶ in the simulation bar, or ▶▶ to watch them.`);
+  }
+
+  /** Marks a set of elements, or unmarks it where it is already marked. */
+  _mark(cover) {
+    const ids = cover.map(([id]) => id);
+    const marked = this._highlight.size === ids.length && ids.every((id) => this._highlight.of(id) !== undefined);
+
+    if (marked) {
+      this._highlight.clear();
+      this._say(null);
+      return;
+    }
+
+    const count = this._highlight.show(cover);
+    const weighted = cover.some(([, weight]) => weight !== 1);
+    this._say(`${count} element(s) ringed in the drawing`
+      + (weighted ? ', each with the weight it counts for.' : '.')
+      + ' Click Mark again to clear them.');
   }
 }
 

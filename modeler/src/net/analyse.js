@@ -102,11 +102,17 @@ export function analyse(net, limits = {}) {
   // the search did.
   for (const invariant of placeInvariants(net)) {
     add('PT18', 'information', null,
-      `The token count of ${weighted(invariant, name)} is the same in every reachable marking.`);
+      `The token count of ${weighted(invariant, name)} is the same in every reachable marking.`,
+      // The places and their weights, so that the set can be marked in the
+      // drawing rather than read out of a sentence.
+      { cover: [...invariant] });
   }
   for (const invariant of transitionInvariants(net)) {
     add('PT19', 'information', null,
-      `Firing ${weighted(invariant, name, 'once', 'times')} returns the net to the marking it started from.`);
+      `Firing ${weighted(invariant, name, 'once', 'times')} returns the net to the marking it started from.`,
+      // How often each transition fires. An order that fires them is searched
+      // for when a reader asks to see it, not here.
+      { cover: [...invariant], firings: [...invariant] });
   }
 
   if (!result.complete) {

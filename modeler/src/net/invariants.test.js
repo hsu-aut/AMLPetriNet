@@ -3,7 +3,7 @@ import { test } from 'node:test';
 
 import { conflict, loop, producer, qualityCheck } from './fixtures.js';
 import { enabled, fire, initialMarking, readNet } from './model.js';
-import { placeInvariants, transitionInvariants } from './invariants.js';
+import { placeInvariants, sequenceFor, transitionInvariants } from './invariants.js';
 
 /** An invariant as a plain object, so a test can write out what it expects. */
 const plain = (invariant) => Object.fromEntries(invariant);
@@ -112,4 +112,60 @@ test('a station that puts its results back repeats both rounds', () => {
     `expected the approve round, got ${JSON.stringify(invariants)}`);
   assert.ok(invariants.some((i) => JSON.stringify(i) === JSON.stringify({ Start: 1, Reject: 1, Discard: 1 })),
     `expected the reject round, got ${JSON.stringify(invariants)}`);
+});
+
+test('a transition invariant is handed back as an order that fires', () => {
+  const net = readNet(loop);
+  const [invariant] = transitionInvariants(net);
+
+  const sequence = sequenceFor(net, invariant, initialMarking(net));
+  assert.deepEqual(sequence, ['start', 'stop']);
+});
+
+test('firing the order of an invariant returns the marking it started from', () => {
+  const cyclic = readNet({
+    ...qualityCheck,
+    arcs: [
+      ...qualityCheck.arcs,
+      { id: 'e13', source: 'Release', target: 'Result_OK' },
+      { id: 'e14', source: 'Discard', target: 'Result_NOK' },
+    ],
+  });
+  const start = initialMarking(cyclic);
+
+  for (const invariant of transitionInvariants(cyclic)) {
+    const sequence = sequenceFor(cyclic, invariant, start);
+    assert.ok(sequence, `no order fires ${JSON.stringify(Object.fromEntries(invariant))}`);
+
+    let marking = start;
+    for (const transition of sequence) marking = fire(cyclic, marking, transition);
+    assert.deepEqual([...marking].sort(), [...start].sort(),
+      `firing ${sequence.join(', ')} did not return the marking`);
+  }
+});
+
+test('the order is searched for, not guessed at in the order given', () => {
+  // Hand-made rather than an invariant of a net: A empties the place, B needs it
+  // and puts it back. A before B does not fire, B before A does, and A is named
+  // first, so a search that takes the first enabled transition and keeps it
+  // fails here.
+  const net = readNet({
+    places: [{ id: 'p', marking: 1 }],
+    transitions: [{ id: 'A' }, { id: 'B' }],
+    arcs: [
+      { id: 'x1', source: 'p', target: 'A' },
+      { id: 'x2', source: 'p', target: 'B' },
+      { id: 'x3', source: 'B', target: 'p' },
+    ],
+  });
+
+  const sequence = sequenceFor(net, new Map([['A', 1], ['B', 1]]), initialMarking(net));
+  assert.deepEqual(sequence, ['B', 'A']);
+});
+
+test('firings no order can fire are refused rather than half done', () => {
+  const net = readNet(loop);
+
+  // Stop fires only after Start, so two firings of Stop are not a run.
+  assert.equal(sequenceFor(net, new Map([['stop', 2]]), initialMarking(net)), null);
 });

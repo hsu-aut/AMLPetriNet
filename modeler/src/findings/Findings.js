@@ -10,7 +10,8 @@
  */
 import { analyse } from '../net/analyse.js';
 import { netFromElements } from '../net/fromDiagram.js';
-import { readNet } from '../net/model.js';
+import { sequenceFor } from '../net/invariants.js';
+import { initialMarking, readNet } from '../net/model.js';
 import { pathTo } from '../net/paths.js';
 
 const ORDER = { error: 0, warning: 1, information: 2 };
@@ -121,6 +122,16 @@ export default class Findings {
   wayTo(finding) {
     if (!finding?.marking || !this._analysis) return null;
     return pathTo(this._analysis.result, finding.marking);
+  }
+
+  /**
+   * The firings a finding stands for, in an order that fires from the initial
+   * marking, or null where the finding stands for no firings or no order of
+   * them is fireable.
+   */
+  runFor(finding) {
+    if (!finding?.firings || !this._net) return null;
+    return sequenceFor(this._net, new Map(finding.firings), initialMarking(this._net));
   }
 
   /** Whether the element a finding is about is on the canvas. */
