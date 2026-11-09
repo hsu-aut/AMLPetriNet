@@ -1,0 +1,28 @@
+From f54ab3f11d27ea374611b754a988325fd0a8528d Mon Sep 17 00:00:00 2001
+From: Hamied Nabizada <h.nabizada1@googlemail.com>
+Date: Mon, 9 Nov 2026 20:00:23 +0100
+Subject: [PATCH 1/2] fix: declare $inject on UpdatePropertyHandler
+
+Every other component registered with didi declares its dependencies, this one
+does not, so didi falls back to reading the constructor's parameter names. A
+minified build renames them, and the injector then fails while the command
+stack registers its handlers. Its sibling UpdateLabelHandler already declares
+the annotation.
+---
+ lib/modeling/UpdatePropertyHandler.js | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/lib/modeling/UpdatePropertyHandler.js b/lib/modeling/UpdatePropertyHandler.js
+index 3ad7ea3..103cbc8 100644
+--- a/lib/modeling/UpdatePropertyHandler.js
++++ b/lib/modeling/UpdatePropertyHandler.js
+@@ -1,4 +1,6 @@
+ export default class UpdatePropertyHandler {
++  static $inject = ["eventBus"];
++
+   constructor(eventBus) {
+     this._eventBus = eventBus;
+   }
+-- 
+2.49.0.windows.1
+

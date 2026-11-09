@@ -1,0 +1,36 @@
+From 86f24ac645b3cbad4bbc8b1ffb29229f60f79a6a Mon Sep 17 00:00:00 2001
+From: Hamied Nabizada <h.nabizada1@googlemail.com>
+Date: Mon, 9 Nov 2026 20:00:23 +0100
+Subject: [PATCH 2/2] fix: keep a cleared node name empty instead of naming it
+ 1
+
+Clearing any label calls setText(element, "1"), the default arc weight,
+whatever the element is, so clearing a place's name renames the place to "1"
+and that name travels into every export.
+
+Reproduce: draw a place, name it, clear the name, then look at the place or at
+savePNML(). Clearing an arc inscription still falls back to weight 1.
+---
+ lib/modeling/UpdateLabelHandler.js | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/lib/modeling/UpdateLabelHandler.js b/lib/modeling/UpdateLabelHandler.js
+index 094b9eb..e63959f 100644
+--- a/lib/modeling/UpdateLabelHandler.js
++++ b/lib/modeling/UpdateLabelHandler.js
+@@ -84,8 +84,10 @@ export default class UpdateLabelHandler {
+       if (hints.removeShape !== false) {
+         this._modeling.removeShape(label, { unsetLabel: false });
+       }
+-      // Set default weight of 1
+-      this.setText(element, "1");
++      // An arc whose inscription was cleared falls back to the default weight
++      // of 1. A place or a transition has no such default: clearing its name
++      // leaves it without one.
++      this.setText(element, is(element, `${MODELER_PREFIX}:Arc`) ? "1" : undefined);
+       return;
+     }
+ 
+-- 
+2.49.0.windows.1
+
