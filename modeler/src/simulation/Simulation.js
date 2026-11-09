@@ -19,7 +19,7 @@
  * simulated as it is now.
  */
 import { netFromElements } from '../net/fromDiagram.js';
-import { enabled, fire, initialMarking, isEnabled, readNet, unfire } from '../net/model.js';
+import { enabled, fire, initialMarking, isEnabled, markingKey, readNet, unfire } from '../net/model.js';
 
 const ENABLED_CLASS = 'ptn-enabled';
 
@@ -155,6 +155,27 @@ export default class Simulation {
     const ready = this.enabled;
     if (ready.length === 0) return false;
     return this.fire(ready[Math.floor(Math.random() * ready.length)]);
+  }
+
+  /** The marking as a key, for whoever wants to compare it with a state space. */
+  get markingKey() {
+    return this._active ? markingKey(this._marking) : null;
+  }
+
+  /**
+   * Puts the net into a marking that was computed, rather than fired into.
+   *
+   * The state space view uses this to jump: a marking there is one the net can
+   * reach, so showing it is honest, but the run that led to it is not known,
+   * and the steps are cleared rather than invented.
+   */
+  setMarking(marking) {
+    if (!this._active) return false;
+
+    this._marking = new Map(marking);
+    this._steps = [];
+    this._redraw();
+    return true;
   }
 
   /** Whether the renderer should draw the transition as one that can fire. */

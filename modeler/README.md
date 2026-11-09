@@ -34,6 +34,11 @@ it work is theirs; the changes below are this fork's.
   original, which wrote the simulated marking into the model, kept no history
   and took the undo stack for its own. This one holds the marking beside the
   model, so a document saved during a run is the net the user drew.
+- **A findings list** (`src/findings/`) that says what the net does and leads to
+  the element a finding is about. A host can add its own findings to it.
+- **The state space** (`src/reachability/`) as a second view: every marking the
+  net can reach, the firings between them, and a click to put the net into one
+  of them.
 
 ## Use
 
@@ -59,6 +64,12 @@ simulation.stop();
 
 The bar on the canvas does the same. While a simulation runs the net cannot be
 edited, and `simulation.changed` says what the net is doing.
+
+```js
+modeler.get('findings').analyse();          // boundedness, deadlocks, invariants
+modeler.get('findings').setHostFindings([]) // findings of your own, in the same list
+modeler.get('reachabilityView').show();     // the state space beside the net
+```
 
 ## Demo
 

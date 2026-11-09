@@ -20,7 +20,7 @@ The counterpart for the Formalised Process Description (VDI/VDE 3682) is
 | `dotnet/PtMapper.Tool/` | Command line tool `ptmap` |
 | `dotnet/PtMapper.Web/` | Web application |
 | `dotnet/PtMapper.Tests/` | Mapper tests |
-| `modeler/` | The Petri net modeler as a package of its own: canvas, PNML reader and writer, simulation, analysis core, demo page |
+| `modeler/` | The Petri net modeler as a package of its own: canvas, PNML reader and writer, simulation, analysis core, state space view, demo page |
 | `web/` | The bundle for plugin and web application, host bridge, browser tests |
 | `libraries/` | `ISO_PT` domain library and the libraries it references |
 | `examples/` | Example documents, including the MPS500 quality check in `examples/paper/` |
@@ -52,6 +52,11 @@ Editor and install the plugin from there. It opens as the tab "AMLPetriNet".
 - **Simulate** fires the net on the canvas: enabled transitions are marked, a
   click fires one, and the run can be stepped back or played. The document is
   not touched by a run; the marking it holds is the one the user typed.
+- **Analyse** lists what the net does: how many tokens a place can hold,
+  transitions that can never fire, deadlocks, liveness and invariants. A finding
+  leads to the element it is about.
+- **State space** draws every marking the net can reach and the firings between
+  them; a click puts the net into that marking.
 - **Update** writes the net into the document. Elements are updated in place,
   so attributes and links added by others are kept.
 - **Refresh** reloads the net from the document.

@@ -43,6 +43,8 @@ import CustomPopupMenuModule from "./popup-menu";
 import SimulationModule from "./simulation";
 // What the net does, as a list beside the drawing.
 import FindingsModule from "./findings";
+// Every marking the net can reach, as a graph beside the drawing.
+import ReachabilityModule from "./reachability";
 
 import emptyDiagram from "./util/emptyDiagram";
 
@@ -85,6 +87,7 @@ export default class CustomModeler extends BaseViewer {
       CustomPopupMenuModule,
       SimulationModule,
       FindingsModule,
+      ReachabilityModule,
     ];
 
     const modules = [...builtinModules, ...customModules, ...additionalModules];

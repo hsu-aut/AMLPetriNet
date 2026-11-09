@@ -5,9 +5,9 @@ about their behaviour: whether a transition can ever fire, whether the net
 deadlocks, how many tokens a place can hold. This design adds that, and brings
 the editing comfort of a current modeler with it.
 
-Status: design. Nothing here is built yet. Decisions are listed so that the
-reasons survive; stages are ordered so that work can stop after any of them and
-leave a working tool.
+Status: stages 1 to 5 are built; editing comfort is not. Decisions are listed so
+that the reasons survive; stages are ordered so that work can stop after any of
+them and leave a working tool.
 
 ## 1. Scope
 

@@ -21,7 +21,7 @@
     "modeler"
   ],
   "scripts": {
-    "test": "node --test src/net/",
+    "test": "node --test src/net/ src/reachability/",
     "demo": "node demo/serve.mjs"
   },
   "dependencies": {

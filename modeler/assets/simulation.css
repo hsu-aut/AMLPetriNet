@@ -73,6 +73,13 @@
   cursor: pointer;
 }
 
+/* `display: flex` below beats the browser's own rule for [hidden], so a panel
+   that is closed has to be hidden here as well. */
+.ptn-findings[hidden],
+.ptn-states[hidden] {
+  display: none;
+}
+
 .ptn-findings {
   position: absolute;
   top: 48px;
@@ -145,3 +152,97 @@
 .ptn-finding-error .ptn-finding-mark { color: #d93025; }
 .ptn-finding-warning .ptn-finding-mark { color: #e8a33d; }
 .ptn-finding-information .ptn-finding-mark { color: #5f6368; }
+
+/* The state space: a second view of the same model, beside the drawing. */
+
+.ptn-states-button {
+  position: absolute;
+  top: 10px;
+  right: 92px;
+  z-index: 10;
+  font: 13px system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding: 5px 10px;
+  border: 1px solid #d8dbe0;
+  border-radius: 4px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.ptn-states {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 10;
+  width: 460px;
+  max-height: 55%;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid #d8dbe0;
+  border-radius: 4px;
+  font: 13px system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.ptn-states-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-bottom: 1px solid #eceef1;
+}
+
+.ptn-states-title {
+  flex: 1 1 auto;
+  font-weight: 600;
+}
+
+.ptn-states-close {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #5f6368;
+  font-size: 14px;
+}
+
+.ptn-states-picture {
+  overflow: auto;
+  padding: 6px;
+}
+
+.ptn-states-message {
+  margin: 4px 6px;
+  color: #d93025;
+}
+
+.ptn-states-edge {
+  fill: none;
+  stroke: #9aa0a6;
+  stroke-width: 1.5;
+}
+
+.ptn-states-edge-label {
+  fill: #5f6368;
+  font-size: 10px;
+  text-anchor: middle;
+}
+
+.ptn-states-node circle {
+  fill: #ffffff;
+  stroke: #1a1a2e;
+  stroke-width: 1.5;
+  cursor: pointer;
+}
+
+.ptn-states-initial circle {
+  stroke-width: 3;
+}
+
+.ptn-states-deadlock circle {
+  fill: #fdecea;
+  stroke: #d93025;
+}
+
+.ptn-states-current circle {
+  fill: #13ae4d;
+  stroke: #0f8f3f;
+}
