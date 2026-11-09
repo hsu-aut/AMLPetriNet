@@ -47,6 +47,8 @@ import FindingsModule from "./findings";
 import ReachabilityModule from "./reachability";
 // Elements an answer is about, marked in the drawing.
 import HighlightModule from "./highlight";
+// Tidying up: a layout for the whole net, aligning for a selection.
+import ArrangeModule from "./arrange";
 
 import emptyDiagram from "./util/emptyDiagram";
 
@@ -91,6 +93,7 @@ export default class CustomModeler extends BaseViewer {
       FindingsModule,
       ReachabilityModule,
       HighlightModule,
+      ArrangeModule,
     ];
 
     const modules = [...builtinModules, ...customModules, ...additionalModules];

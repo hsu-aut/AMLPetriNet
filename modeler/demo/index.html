@@ -14,6 +14,14 @@
     label.file input { display: none; }
     #canvas { height: 100%; }
     #status { color: #6b7280; }
+    #keys { position: relative; }
+    #keys summary { cursor: pointer; padding: 6px 12px; border: 1px solid #d8dbe0; border-radius: 4px; list-style: none; }
+    #keys summary::-webkit-details-marker { display: none; }
+    #keys div { position: absolute; right: 0; top: 36px; z-index: 20; width: 320px; padding: 8px 12px;
+                background: #fff; border: 1px solid #d8dbe0; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    #keys dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; margin: 0; }
+    #keys dt { font-family: ui-monospace, Consolas, monospace; color: #374151; white-space: nowrap; }
+    #keys dd { margin: 0; color: #4b5563; }
   </style>
 </head>
 <body>
@@ -23,6 +31,21 @@
     <button id="new">New net</button>
     <span class="spacer"></span>
     <span id="status"></span>
+    <details id="keys">
+      <summary>Keys</summary>
+      <div>
+        <dl>
+          <dt>Ctrl+Z, Ctrl+Y</dt><dd>undo, redo</dd>
+          <dt>Ctrl+C, Ctrl+V</dt><dd>copy, paste</dd>
+          <dt>Ctrl+A</dt><dd>select everything</dd>
+          <dt>Ctrl+F</dt><dd>search by name</dd>
+          <dt>Ctrl+Shift+L</dt><dd>lay the net out by its flow</dd>
+          <dt>Arrow keys</dt><dd>move what is selected</dd>
+          <dt>Click a transition</dt><dd>fire it, while the net runs</dd>
+          <dt>Escape</dt><dd>leave the simulation</dd>
+        </dl>
+      </div>
+    </details>
     <button id="save">Download PNML</button>
   </header>
   <div id="canvas"></div>
