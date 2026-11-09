@@ -25,14 +25,8 @@ import { exportSvg } from './svg.js';
 
 const CHANGE_DEBOUNCE_MS = 300;
 
-/** The modeler's token replay events; see its lib/replay/EventHelper.js. */
-const TOGGLE_SIMULATION_EVENT = 'tokenSimulation.toggleMode';
-
-/**
- * Below the simulator's own handlers (it uses 5000 for the mode toggle), so our
- * listener sees the state after the simulator has restored the marking.
- */
-const AFTER_SIMULATOR = 100;
+/** The modeler says when a simulation starts and stops; see its src/simulation. */
+const SIMULATION_EVENT = 'simulation.changed';
 
 /** Preserved before console is patched so the forwarder cannot recurse. */
 const nativeConsole = {
@@ -127,13 +121,10 @@ export function connectBridge(modeler) {
   let importing = false;
   let pending = null;
 
-  // Token replay moves tokens by writing initialMarking through the command
-  // stack (the package notes this as a known shortcut), so a simulation looks
-  // exactly like a user editing every marking in the net. Reporting that would
-  // let someone save a mid-simulation state into the AML document. The
-  // simulator restores the original marking when the mode is switched off, so
-  // suppressing changes for the duration and exporting once afterwards keeps
-  // the host on the real model throughout.
+  // A running simulation writes nothing: the modeler keeps the current marking
+  // beside the model and draws that, so an export during a run is the document
+  // the user drew. Nothing has to be suppressed or refused; the flag is kept
+  // only to tell the host when a run starts and ends.
   let simulating = false;
 
   const exportPnml = async () => {
@@ -146,7 +137,7 @@ export function connectBridge(modeler) {
   };
 
   const scheduleChange = () => {
-    if (importing || simulating) return;
+    if (importing) return;
     clearTimeout(pending);
     pending = setTimeout(async () => {
       const pnml = await exportPnml();
@@ -172,17 +163,11 @@ export function connectBridge(modeler) {
     post({ type: 'imported', pnml: await exportPnml() });
   };
 
-  eventBus.on(TOGGLE_SIMULATION_EVENT, AFTER_SIMULATOR, (event) => {
-    simulating = Boolean(event.active);
-    if (simulating) {
-      // Anything already queued describes the pre-simulation net, which the
-      // host either has or is about to get on the way out.
-      clearTimeout(pending);
-    } else {
-      // The marking is back to where it started; let the host confirm that
-      // rather than leaving it with whatever it last saw.
-      scheduleChange();
-    }
+  eventBus.on(SIMULATION_EVENT, (event) => {
+    const active = Boolean(event.active);
+    if (active === simulating) return;
+    simulating = active;
+    post({ type: 'simulation', active: simulating });
   });
 
   window.chrome?.webview?.addEventListener('message', async (e) => {
@@ -199,20 +184,10 @@ export function connectBridge(modeler) {
         importQueue = importQueue.then(() => runImport(msg.pnml));
         await importQueue;
       } else if (msg.type === 'requestExport') {
-        // Same reason the change listener stays quiet during a replay: the
-        // marking on the canvas is the simulator's, not the model's, and
-        // handing it to the host would let someone save a mid-simulation
-        // state into the AML document.
-        if (simulating) {
-          post({
-            type: 'error',
-            message: 'The token simulation is running; leave it before exporting so the '
-              + 'original marking is back.',
-          });
-        } else {
-          const pnml = await exportPnml();
-          if (pnml !== null) post({ type: 'changed', pnml });
-        }
+        // Safe during a simulation as well: the export is the model, and the
+        // model does not hold the marking the canvas is showing.
+        const pnml = await exportPnml();
+        if (pnml !== null) post({ type: 'changed', pnml });
       } else if (msg.type === 'requestSvg') {
         post({ type: 'svg', svg: await exportSvg(modeler) });
       } else if (msg.type === 'setTheme') {

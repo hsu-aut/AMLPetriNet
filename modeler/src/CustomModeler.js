@@ -37,13 +37,10 @@ import CustomRulesModule from "./rules";
 import CustomAutoPlaceModule from "./auto-place";
 import CustomPopupMenuModule from "./popup-menu";
 
-// Token replay modules
-import ToggleSimulationModeModule from "./replay/toggle-simulation-mode";
-import ContextPadsModule from "./replay/context-pads";
-import SimulatorModule from "./replay/simulator";
-import TokenSimulationPaletteModule from "./replay/palette";
-import ResetSimulationModule from "./replay/reset-simulation";
-import UndoModule from "./replay/undo";
+// Firing the net on the canvas. This replaces the token replay of the package
+// this is forked from, which wrote the simulated marking into the model, had
+// no history and took the undo stack for its own.
+import SimulationModule from "./simulation";
 
 import emptyDiagram from "./util/emptyDiagram";
 
@@ -84,13 +81,7 @@ export default class CustomModeler extends BaseViewer {
       CustomAutoPlaceModule,
       CustomRulesModule,
       CustomPopupMenuModule,
-      ToggleSimulationModeModule,
-      // Note that order is important here! SimulatorModule must be before ContextPadsModule
-      SimulatorModule,
-      ContextPadsModule,
-      TokenSimulationPaletteModule,
-      ResetSimulationModule,
-      UndoModule,
+      SimulationModule,
     ];
 
     const modules = [...builtinModules, ...customModules, ...additionalModules];

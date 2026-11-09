@@ -129,41 +129,48 @@ check((await messagesOfType('imported')).length === 2, 'both imports are acknowl
 check((await messagesOfType('changed')).length === 0, 'back-to-back imports report no edits');
 check((await messagesOfType('error')).length === 0, 'back-to-back imports raise no error');
 
-// ── token replay ────────────────────────────────────────────────────────────
-// The simulator moves tokens by writing initialMarking through the command
-// stack, so without special handling a simulation would look like the user
-// editing every marking, and the host could save a mid-simulation state.
+// ── simulation ──────────────────────────────────────────────────────────────
+// The simulation keeps the current marking beside the model and draws that, so
+// firing is not an edit and the model never holds a half-finished run. The
+// host is told that a run is on, and an export during a run is still the
+// document the user drew.
 await clearMessages();
 const markingBefore = await page.evaluate(async () => (await window.ptn.savePNML()));
 
-await page.evaluate(() => window.ptn.get('toggleSimulationMode').toggleMode(true));
-await page.evaluate(() => {
-  const registry = window.ptn.get('elementRegistry');
-  const enabled = registry.filter((e) => e.type === 'ptn:Transition')[0];
-  window.ptn.get('eventBus').fire('tokenSimulation.fire', { element: enabled });
-});
+await page.evaluate(() => window.ptn.get('simulation').start());
+await page.waitForTimeout(300);
+check((await messagesOfType('simulation')).some((m) => m.active === true),
+  'the host is told that a simulation started');
+
+const fired = await page.evaluate(() => window.ptn.get('simulation').fireOne());
 await page.waitForTimeout(700);
 
-// Guard against a hollow assertion: if firing changed nothing, "no edit
-// reported" would pass for the wrong reason.
-const markingDuring = await page.evaluate(async () => (await window.ptn.savePNML()));
-check(markingDuring !== markingBefore, 'firing really moved tokens (otherwise the next check proves nothing)');
-check((await messagesOfType('changed')).length === 0, 'firing a transition in replay mode reports no edit');
+// Guard against a hollow assertion: if nothing fired, "no edit reported" and
+// "the document is unchanged" would both pass for the wrong reason.
+check(fired === true, 'a transition really fired (otherwise the next checks prove nothing)');
+check(await page.evaluate(() => window.ptn.get('simulation').steps.length) === 1,
+  'the firing is recorded as a step of the run');
+check((await messagesOfType('changed')).length === 0, 'firing a transition reports no edit');
 
-// The host asking for an export during a replay must be refused for the same
-// reason: the answer would be the simulator's marking, not the model's.
+const markingDuring = await page.evaluate(async () => (await window.ptn.savePNML()));
+check(markingDuring === markingBefore, 'the model is unchanged while the net runs');
+
+// An export during a run is safe now, and the host gets the model.
 await clearMessages();
 await page.evaluate(() => window.__hostSend({ type: 'requestExport' }));
 await page.waitForTimeout(500);
-check((await messagesOfType('changed')).length === 0, 'requestExport during a replay reports no net');
-check((await messagesOfType('error')).length > 0, 'requestExport during a replay says why');
+const during = await messagesOfType('changed');
+check(during.length === 1, 'requestExport during a run answers with the net');
+check(during[0]?.pnml === markingBefore, 'the export during a run is the model, not the run');
+check((await messagesOfType('error')).length === 0, 'requestExport during a run raises no error');
 
 await clearMessages();
-await page.evaluate(() => window.ptn.get('toggleSimulationMode').toggleMode(false));
-await page.waitForTimeout(700);
-const afterReplay = await messagesOfType('changed');
-check(afterReplay.length > 0, 'leaving replay mode reports the restored net');
-check(afterReplay.at(-1).pnml === markingBefore, 'the restored net equals the one before the simulation');
+await page.evaluate(() => window.ptn.get('simulation').stop());
+await page.waitForTimeout(300);
+check((await messagesOfType('simulation')).some((m) => m.active === false),
+  'the host is told that the simulation stopped');
+const afterRun = await page.evaluate(async () => (await window.ptn.savePNML()));
+check(afterRun === markingBefore, 'the net after the run is the one before it');
 
 // ── theme ───────────────────────────────────────────────────────────────────
 await page.evaluate(() => window.__hostSend({ type: 'setTheme', theme: 'dark' }));

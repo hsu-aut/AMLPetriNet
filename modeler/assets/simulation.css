@@ -1,0 +1,59 @@
+/* The simulation bar and what a running net looks like. */
+
+.ptn-simulation {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  background: #ffffff;
+  border: 1px solid #d8dbe0;
+  border-radius: 4px;
+  font: 13px system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.ptn-simulation button {
+  font: inherit;
+  min-width: 28px;
+  padding: 3px 8px;
+  border: 1px solid #d8dbe0;
+  border-radius: 3px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.ptn-simulation button:disabled {
+  color: #9aa0a6;
+  cursor: default;
+}
+
+.ptn-simulation-active .ptn-simulation-toggle {
+  background: #1a1a2e;
+  border-color: #1a1a2e;
+  color: #ffffff;
+}
+
+.ptn-simulation-status {
+  color: #5f6368;
+  padding-left: 4px;
+}
+
+/* A transition that can fire carries the class ptn-enabled, for a host that
+   wants to style a running net. Its own colour comes from the renderer: the
+   drawing writes colours as inline styles, which a rule here cannot override
+   without !important. */
+
+/* While the net runs it cannot be edited, so the tools that would edit it are
+   greyed and do not answer. The simulation bar itself stays live. */
+.ptn-simulation-running .djs-palette,
+.ptn-simulation-running .djs-context-pad {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.ptn-simulation-running .djs-element {
+  cursor: pointer;
+}

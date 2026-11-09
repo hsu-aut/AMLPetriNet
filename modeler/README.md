@@ -1,8 +1,8 @@
 # petrinet-js
 
 A Petri net modeler for the browser: places, transitions, arcs with weights,
-markings, PNML import and export. Built on
-[diagram-js](https://github.com/bpmn-io/diagram-js).
+markings, PNML import and export, and a simulation that fires the net on the
+canvas. Built on [diagram-js](https://github.com/bpmn-io/diagram-js).
 
 This is a fork of [ptn-js](https://github.com/bptlab/openbpt-modeler-petri-net)
 (`@bptlab/openbpt-modeler-petri-net`) by Maximilian König and the Business
@@ -27,6 +27,13 @@ it work is theirs; the changes below are this fork's.
   are drawn.
 - **Unused code removed**: the file and HTML helpers, which nothing imported and
   which were the only reason the package depended on jQuery.
+- **An analysis core** (`src/net/`) that knows nothing about the canvas: the
+  firing rule, the reachable markings within a limit, boundedness, deadlocks,
+  dead transitions, liveness and place and transition invariants.
+- **Its own simulation** (`src/simulation/`) in place of the token replay of the
+  original, which wrote the simulated marking into the model, kept no history
+  and took the undo stack for its own. This one holds the marking beside the
+  model, so a document saved during a run is the net the user drew.
 
 ## Use
 
@@ -38,6 +45,20 @@ const modeler = new PnModeler({ container: document.querySelector('#canvas') });
 await modeler.createNew();              // or: await modeler.importPNML(xml)
 const pnml = await modeler.savePNML();
 ```
+
+## Simulation
+
+```js
+const simulation = modeler.get('simulation');
+simulation.start();            // reads the net from the canvas
+simulation.fire(transitionId); // or click an enabled transition
+simulation.stepBack();
+simulation.reset();
+simulation.stop();
+```
+
+The bar on the canvas does the same. While a simulation runs the net cannot be
+edited, and `simulation.changed` says what the net is doing.
 
 ## Demo
 

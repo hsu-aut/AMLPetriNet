@@ -16,6 +16,9 @@ import { MODELER_PREFIX } from "../util/constants";
 
 const RENDERER_IDS = new Ids();
 
+/** The colour of a transition that can fire while the simulation runs. */
+const ENABLED_COLOUR = "#13ae4d";
+
 /** Most tokens a place shows as dots; from one more on it shows the number. */
 const MOST_DOTS = 5;
 
@@ -29,8 +32,13 @@ const TOKEN_LAYOUTS = {
 };
 
 export default class CustomRenderer extends BaseRenderer {
-  constructor(eventBus, styles, canvas, textRenderer) {
+  constructor(eventBus, styles, canvas, textRenderer, injector) {
     super(eventBus, 2000);
+
+    // While the simulation runs a place shows the marking it holds now, not the
+    // one the document holds. Asked for lazily, and optional, so that a host
+    // can leave the simulation module out.
+    this._simulation = injector.get('simulation', false);
 
     this._styles = styles;
     this._canvas = canvas;
@@ -83,7 +91,8 @@ export default class CustomRenderer extends BaseRenderer {
       {},
     );
 
-    const marking = element.businessObject.initialMarking;
+    const simulated = this._simulation?.markingOf(element.id);
+    const marking = simulated === undefined ? element.businessObject.initialMarking : simulated;
     if (marking) {
       this.renderMarking(parentGfx, element, marking.toString());
     }
@@ -172,14 +181,20 @@ export default class CustomRenderer extends BaseRenderer {
   drawTransition = function (parentGfx, element) {
     const isSilent = element.businessObject.isSilent;
 
+    // A transition that can fire while the simulation runs is drawn in the
+    // colour of a running net. It is set here rather than in the stylesheet
+    // because the drawing writes its colours as inline styles, which no
+    // stylesheet rule can override without shouting.
+    const ready = this._simulation?.isReady(element.id);
+
     const fillColor = isSilent ? "black" : "white";
     const shape = svgCreate("path");
     svgAttr(shape, {
       d: getTransitionPath(0, 0, element.width, element.height),
       fill: fillColor,
       fillOpacity: 0.95,
-      stroke: "black",
-      strokeWidth: 2,
+      stroke: ready ? ENABLED_COLOUR : "black",
+      strokeWidth: ready ? 3 : 2,
     });
     svgAppend(parentGfx, shape);
 
@@ -360,7 +375,7 @@ export default class CustomRenderer extends BaseRenderer {
   }
 }
 
-CustomRenderer.$inject = ["eventBus", "styles", "canvas", "textRenderer"];
+CustomRenderer.$inject = ["eventBus", "styles", "canvas", "textRenderer", "injector"];
 
 // helpers
 function colorEscape(colorString) {
