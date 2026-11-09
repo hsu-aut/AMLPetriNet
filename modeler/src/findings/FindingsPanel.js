@@ -1,20 +1,27 @@
 /**
  * The findings, on the canvas, one line each.
  *
- * A finding that names an element is a button: it selects the element and
- * scrolls to it, because a list of problems is only useful if the reader can
- * get to the thing the problem is about.
+ * A finding is not only a sentence. One about an element can select it, one
+ * about a marking can be played: the state space knows the firings that lead
+ * there, so the panel offers them rather than leaving the reader to find the
+ * way by hand. The buttons sit at the end of the row and say what they do; the
+ * row itself keeps selecting the element it is about.
  */
 const SEVERITY_MARK = { error: '✖', warning: '⚠', information: 'ℹ' };
 
 export default class FindingsPanel {
-  static $inject = ['eventBus', 'canvas', 'findings', 'selection'];
+  static $inject = ['eventBus', 'canvas', 'findings', 'selection', 'injector'];
 
-  constructor(eventBus, canvas, findings, selection) {
+  constructor(eventBus, canvas, findings, selection, injector) {
     this._findings = findings;
     this._selection = selection;
     this._canvas = canvas;
     this._open = false;
+
+    // Playing a way there needs the simulation. Asked for lazily and
+    // optionally, so that a host can leave the simulation module out and still
+    // get the list.
+    this._simulation = injector.get('simulation', false);
 
     this._container = document.createElement('div');
     this._container.className = 'ptn-findings';
@@ -34,10 +41,14 @@ export default class FindingsPanel {
     close.addEventListener('click', () => this.close());
     head.appendChild(close);
 
+    this._note = document.createElement('p');
+    this._note.className = 'ptn-findings-note';
+    this._note.hidden = true;
+
     this._list = document.createElement('ul');
     this._list.className = 'ptn-findings-list';
 
-    this._container.append(head, this._list);
+    this._container.append(head, this._note, this._list);
 
     this._button = document.createElement('button');
     this._button.type = 'button';
@@ -76,8 +87,14 @@ export default class FindingsPanel {
     this._container.hidden = true;
   }
 
+  _say(message) {
+    this._note.textContent = message ?? '';
+    this._note.hidden = !message;
+  }
+
   _update({ findings, problem, stale }) {
     this._list.replaceChildren();
+    this._say(null);
 
     if (problem) {
       this._title.textContent = 'The net could not be read';
@@ -105,8 +122,55 @@ export default class FindingsPanel {
         item.classList.add('ptn-findings-clickable');
         item.addEventListener('click', () => this._findings.show(finding));
       }
+      this._addActions(item, finding);
       this._list.appendChild(item);
     }
+  }
+
+  /** The buttons a finding offers, if any. */
+  _addActions(item, finding) {
+    const actions = [];
+
+    const way = this._simulation ? this._findings.wayTo(finding) : null;
+    if (way) {
+      actions.push({
+        text: '▶ Way there',
+        title: way.transitions.length === 1
+          ? 'Load the firing that leads to this marking'
+          : `Load the ${way.transitions.length} firings that lead to this marking`,
+        run: () => this._playWay(way),
+      });
+    }
+
+    if (actions.length === 0) return;
+
+    const box = document.createElement('span');
+    box.className = 'ptn-finding-actions';
+    for (const action of actions) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'ptn-finding-action';
+      button.textContent = action.text;
+      button.title = action.title;
+      button.addEventListener('click', (event) => {
+        // The row below selects an element; a button is not that click.
+        event.stopPropagation();
+        action.run();
+      });
+      box.appendChild(button);
+    }
+    item.appendChild(box);
+  }
+
+  _playWay(way) {
+    if (!this._simulation?.loadRun(way.transitions)) {
+      this._say('The way there could not be loaded: the net is not the one that was analysed.');
+      return;
+    }
+
+    this._say(way.transitions.length === 1
+      ? 'One firing leads there. Press ▶ in the simulation bar.'
+      : `${way.transitions.length} firings lead there. Press ▶ in the simulation bar, or ▶▶ to watch them.`);
   }
 }
 

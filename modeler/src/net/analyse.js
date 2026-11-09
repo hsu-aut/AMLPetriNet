@@ -30,7 +30,11 @@ export const RULES = {
 export function analyse(net, limits = {}) {
   const result = explore(net, limits);
   const findings = [];
-  const add = (rule, severity, element, message) => findings.push({ rule, severity, element, message });
+  // `extra` carries what a view can act on: the marking a finding is about, the
+  // elements it covers, a firing sequence it stands for. A finding without them
+  // is a sentence, which is all most of them are.
+  const add = (rule, severity, element, message, extra = {}) =>
+    findings.push({ rule, severity, element, message, ...extra });
 
   const name = new Map([...net.places, ...net.transitions].map((e) => [e.id, e.name || e.id]));
   const largest = bounds(result);
@@ -77,7 +81,10 @@ export function analyse(net, limits = {}) {
     const abstract = readKey(key).some(([, held]) => held === OMEGA);
     add('PT15', abstract ? 'information' : 'warning', null, abstract
       ? `No transition is enabled in the marking ${describe(key, name)}, which stands for a family of markings.`
-      : `No transition is enabled in the marking ${describe(key, name)}.`);
+      : `No transition is enabled in the marking ${describe(key, name)}.`,
+      // The marking, so that a reader can be shown the way into it rather than
+      // being told that it exists.
+      abstract ? {} : { marking: key });
   }
 
   // Liveness needs the whole picture: from a marking that was never expanded,

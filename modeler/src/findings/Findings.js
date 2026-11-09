@@ -11,6 +11,7 @@
 import { analyse } from '../net/analyse.js';
 import { netFromElements } from '../net/fromDiagram.js';
 import { readNet } from '../net/model.js';
+import { pathTo } from '../net/paths.js';
 
 const ORDER = { error: 0, warning: 1, information: 2 };
 
@@ -25,6 +26,10 @@ export default class Findings {
     this._fromHost = [];
     this._problem = null;
     this._stale = false;
+    // The exploration the findings came from, kept so that a finding about a
+    // marking can be turned into the way to that marking.
+    this._analysis = null;
+    this._net = null;
 
     // An edited net makes the findings stale, which is worse than no findings:
     // a reader trusts a list that is on the screen. Saying so is not the same
@@ -61,10 +66,14 @@ export default class Findings {
   analyse(limits = {}) {
     try {
       const net = readNet(netFromElements(this._elementRegistry.getAll()));
-      this._own = analyse(net, limits).findings;
+      this._analysis = analyse(net, limits);
+      this._net = net;
+      this._own = this._analysis.findings;
       this._problem = null;
       this._stale = false;
     } catch (error) {
+      this._analysis = null;
+      this._net = null;
       this._own = [];
       this._problem = error.message;
       this._stale = false;
@@ -94,7 +103,24 @@ export default class Findings {
     this._fromHost = [];
     this._problem = null;
     this._stale = false;
+    this._analysis = null;
+    this._net = null;
     this._changed();
+  }
+
+  /** The net the findings are about, as the core read it, or null. */
+  get net() {
+    return this._net;
+  }
+
+  /**
+   * The firings that lead to the marking a finding is about, or null where the
+   * finding is about no marking, where nothing was analysed, or where the
+   * search recorded no way into it.
+   */
+  wayTo(finding) {
+    if (!finding?.marking || !this._analysis) return null;
+    return pathTo(this._analysis.result, finding.marking);
   }
 
   /** Whether the element a finding is about is on the canvas. */

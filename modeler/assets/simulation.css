@@ -123,9 +123,21 @@
   overflow: auto;
 }
 
+.ptn-findings-note {
+  margin: 0;
+  padding: 6px 8px;
+  color: #5f6368;
+  border-bottom: 1px solid #eceef1;
+  background: #f8f9fb;
+}
+
+.ptn-findings-note[hidden] {
+  display: none;
+}
+
 .ptn-finding {
   display: grid;
-  grid-template-columns: 16px 44px 1fr;
+  grid-template-columns: 16px 44px 1fr auto;
   gap: 6px;
   padding: 5px 8px;
   border-bottom: 1px solid #f3f4f6;
@@ -147,6 +159,27 @@
 .ptn-finding-rule {
   color: #5f6368;
   font-variant-numeric: tabular-nums;
+}
+
+/* What a finding offers: a button at the end of its row. */
+.ptn-finding-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.ptn-finding-action {
+  font: inherit;
+  font-size: 12px;
+  padding: 1px 6px;
+  border: 1px solid #d8dbe0;
+  border-radius: 3px;
+  background: #ffffff;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ptn-finding-action:hover {
+  background: #eef1f6;
 }
 
 .ptn-finding-error .ptn-finding-mark { color: #d93025; }
@@ -202,6 +235,32 @@
   cursor: pointer;
   color: #5f6368;
   font-size: 14px;
+}
+
+/* The query line: a marking a reader has in mind, and the way to it. */
+.ptn-states-query {
+  display: flex;
+  gap: 4px;
+  padding: 6px 8px;
+  border-bottom: 1px solid #eceef1;
+}
+
+.ptn-states-query-input {
+  font: inherit;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 3px 6px;
+  border: 1px solid #d8dbe0;
+  border-radius: 3px;
+}
+
+.ptn-states-query-find {
+  font: inherit;
+  padding: 3px 8px;
+  border: 1px solid #d8dbe0;
+  border-radius: 3px;
+  background: #ffffff;
+  cursor: pointer;
 }
 
 .ptn-states-picture {

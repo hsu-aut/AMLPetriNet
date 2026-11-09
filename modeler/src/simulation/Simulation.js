@@ -238,6 +238,39 @@ export default class Simulation {
     return true;
   }
 
+  /**
+   * Puts a firing sequence on the net without firing it: back to the initial
+   * marking, with the sequence ready to be stepped through or played.
+   *
+   * This is how a computed answer is shown. The state space knows that a
+   * marking is reachable and by which firings; the user then watches that
+   * happen, instead of being put into a marking whose history is unknown.
+   * Starts the run where it is off.
+   *
+   * The sequence is fired through on a copy first, so a sequence this net
+   * cannot fire is refused here rather than halfway through, in front of the
+   * user.
+   *
+   * @param sequence transition ids in the order they fire.
+   * @returns whether the net can fire the sequence from its initial marking.
+   */
+  loadRun(sequence) {
+    if (!this._active && !this.start()) return false;
+
+    let marking = initialMarking(this._net);
+    for (const transition of sequence) {
+      if (!isEnabled(this._net, marking, transition)) return false;
+      marking = fire(this._net, marking, transition);
+    }
+
+    this._marking = initialMarking(this._net);
+    this._steps = [];
+    // Taken from the end, so the firing that comes first has to be last.
+    this._undone = [...sequence].reverse();
+    this._redraw();
+    return true;
+  }
+
   /** Whether the renderer should draw the transition as one that can fire. */
   isReady(transitionId) {
     return this._active && isEnabled(this._net, this._marking, transitionId);
