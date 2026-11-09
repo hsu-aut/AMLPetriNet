@@ -26,7 +26,9 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: web/package-lock.json
+          cache-dependency-path: |
+            web/package-lock.json
+            modeler/package-lock.json
 
       # The .NET build refuses to run without the bundle: the plugin and the
       # web application ship it.
@@ -44,9 +46,10 @@ jobs:
       - name: Test the mapper
         run: dotnet test dotnet/PtMapper.Tests -c Release --no-build
 
-      # npm test installs Chromium first (see the pretest script) and then runs
-      # the PNML round trip, the interop fixtures, the host bridge, the label
-      # behaviour and the number formats in a real browser.
+      # npm test runs the analysis core in Node, then installs Chromium (see
+      # the pretest script) and runs the PNML round trip, the interop fixtures,
+      # the host bridge, the label behaviour, the markings, the number formats
+      # and the picture export in a real browser.
       - name: Test the modeler
         working-directory: web
         run: npm test

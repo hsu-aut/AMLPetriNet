@@ -20,7 +20,8 @@ The counterpart for the Formalised Process Description (VDI/VDE 3682) is
 | `dotnet/PtMapper.Tool/` | Command line tool `ptmap` |
 | `dotnet/PtMapper.Web/` | Web application |
 | `dotnet/PtMapper.Tests/` | Mapper tests |
-| `web/` | Modeler bundle, PNML converter, browser tests |
+| `modeler/` | The Petri net modeler as a package of its own: canvas, PNML reader and writer, analysis core, demo page |
+| `web/` | The bundle for plugin and web application, host bridge, browser tests |
 | `libraries/` | `ISO_PT` domain library and the libraries it references |
 | `examples/` | Example documents, including the MPS500 quality check in `examples/paper/` |
 | `docs/` | Round-trip validation and PNML conformance |
@@ -39,7 +40,7 @@ dotnet build Aml.Editor.Plugin.PetriNet.sln
 ```
 
 The modeler bundle is built first because the plugin and the web application
-include it. The plugin package ends up in
+include it. `npm ci` in `web` also installs what `modeler/` needs. The plugin package ends up in
 `build/Plugins/Aml.Editor.Plugin.PetriNet/<configuration>/`.
 
 ## Plugin
@@ -132,6 +133,10 @@ dotnet test dotnet/PtMapper.Tests
 cd web && npm test
 ```
 
+`npm test` runs the analysis core in Node and the modeler in Chromium. The core
+can be run on its own with `npm test` in `modeler/`, and `npm run demo` there
+opens the modeler without the rest of this repository.
+
 `web/tools/validate-pnml.mjs` checks PNML files against the ISO/IEC 15909-2
 grammar and needs Java. Results are described in
 [docs/roundtrip-validation.md](docs/roundtrip-validation.md) and
@@ -141,9 +146,11 @@ grammar and needs Java. Results are described in
 
 MIT, see [LICENSE](LICENSE).
 
-The modeler is the
-[OpenBPT Petri net modeler](https://github.com/bptlab/openbpt-modeler-petri-net)
-(MIT) of the Business Process Technology group at the Hasso Plattner Institute,
-based on [diagram-js](https://github.com/bpmn-io/diagram-js). It is used as a
-package and extended in `web/src/`. All third-party components are listed in
+`modeler/` is a fork of
+[ptn-js](https://github.com/bptlab/openbpt-modeler-petri-net) (MIT) by Maximilian
+König and the Business Process Technology group at the Hasso Plattner Institute,
+based on [diagram-js](https://github.com/bpmn-io/diagram-js). What the fork
+changes is listed in [modeler/README.md](modeler/README.md); fixes that belong
+to the original are prepared in [docs/upstream/](docs/upstream/). All
+third-party components are listed in
 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
