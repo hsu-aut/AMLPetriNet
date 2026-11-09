@@ -21,7 +21,7 @@
  * simulated as it is now.
  */
 import { netFromElements } from '../net/fromDiagram.js';
-import { enabled, fire, initialMarking, isEnabled, markingKey, readNet, unfire } from '../net/model.js';
+import { enabled, fire, initialMarking, isEnabled, markingKey, maximalStep, readNet, unfire } from '../net/model.js';
 
 const ENABLED_CLASS = 'ptn-enabled';
 const RUNNING_CLASS = 'ptn-simulation-running';
@@ -165,7 +165,38 @@ export default class Simulation {
     // back cannot be put back on top of a different history.
     this._undone = [];
     this._redraw();
+    this._fired([transitionId]);
     return true;
+  }
+
+  /**
+   * Fires everything that can fire at once, which is how a concurrent net is
+   * read: a step rather than a single firing. See `maximalStep`.
+   *
+   * The firings are recorded one after another, not as a block, so stepping
+   * back walks out of the step one firing at a time. That is a deliberate
+   * choice: a step is a legal run of its firings, and a reader who wants to see
+   * what happened wants the firings.
+   *
+   * A conflict inside a step is decided by chance, as it is for a single
+   * firing: the net does not say which of two transitions wanting the same
+   * token goes first.
+   *
+   * @returns how many transitions fired.
+   */
+  fireStep() {
+    if (!this._active) return 0;
+
+    const order = shuffled(this._net.transitions.map((transition) => transition.id));
+    const step = maximalStep(this._net, this._marking, order);
+    if (step.length === 0) return 0;
+
+    for (const transition of step) this._marking = fire(this._net, this._marking, transition);
+    this._steps.push(...step);
+    this._undone = [];
+    this._redraw();
+    this._fired(step);
+    return step.length;
   }
 
   /** Takes back the last firing. Returns whether there was one. */
@@ -193,6 +224,7 @@ export default class Simulation {
     this._marking = fire(this._net, this._marking, next);
     this._steps.push(next);
     this._redraw();
+    this._fired([next]);
     return true;
   }
 
@@ -285,6 +317,15 @@ export default class Simulation {
     this._eventBus.fire('simulation.said', { message });
   }
 
+  /**
+   * Says what just fired, for whoever wants to show it happening. The marking
+   * has already been redrawn: a firing is a fact by the time it is announced,
+   * and an animation is decoration on top of it, so nothing waits for it.
+   */
+  _fired(transitions) {
+    this._eventBus.fire('simulation.fired', { transitions, marking: this.marking });
+  }
+
   _redraw() {
     this._changing = true;
     const ready = new Set(this.enabled);
@@ -322,3 +363,13 @@ export default class Simulation {
 }
 
 const name = (element) => element.businessObject?.name || 'The transition';
+
+/** A copy in random order, so that a conflict inside a step is not always decided the same way. */
+function shuffled(ids) {
+  const copy = [...ids];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}

@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { conflict, loop, qualityCheck } from './fixtures.js';
+import { conflict, loop, qualityCheck, resourceDeadlock } from './fixtures.js';
 import {
   enabled,
   fire,
   initialMarking,
   markingKey,
+  maximalStep,
   readNet,
   unfire,
 } from './model.js';
@@ -207,4 +208,42 @@ test('the quality check net fires through one round', () => {
 
   // Back at the start, minus the result token the check consumed.
   assert.deepEqual(tokens(marking), { Idle: 1, Result_NOK: 1 });
+});
+
+test('a step fires everything that can fire at once', () => {
+  // Two jobs, both idle, both resources free: each takes its own resource, and
+  // the two firings do not get in each other's way.
+  const net = readNet(resourceDeadlock);
+  const step = maximalStep(net, initialMarking(net));
+
+  assert.deepEqual(step, ['take1', 'take2']);
+});
+
+test('two transitions that want the same token are not both in a step', () => {
+  const net = readNet(conflict);
+  const step = maximalStep(net, initialMarking(net));
+
+  assert.equal(step.length, 1);
+  // The order decides which, and the default order is the net's own.
+  assert.deepEqual(step, ['toLeft']);
+  assert.deepEqual(maximalStep(net, initialMarking(net), ['toRight', 'toLeft']), ['toRight']);
+});
+
+test('a step is a run of firings, so firing it through is a legal run', () => {
+  const net = readNet(resourceDeadlock);
+  let marking = initialMarking(net);
+
+  for (const transition of maximalStep(net, marking)) marking = fire(net, marking, transition);
+
+  // Both jobs hold their resource and both resources are gone: the deadlock the
+  // net is named after, reached in one step.
+  assert.deepEqual(tokens(marking), { hold1: 1, hold2: 1 });
+  assert.deepEqual(enabled(net, marking), []);
+});
+
+test('a step in a marking where nothing is enabled is empty', () => {
+  const net = readNet(loop);
+  const stuck = new Map([['idle', 0], ['busy', 0]]);
+
+  assert.deepEqual(maximalStep(net, stuck), []);
 });

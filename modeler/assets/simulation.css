@@ -36,6 +36,26 @@
   color: #ffffff;
 }
 
+.ptn-simulation-speed {
+  font: inherit;
+  padding: 2px 4px;
+  border: 1px solid #d8dbe0;
+  border-radius: 3px;
+  background: #ffffff;
+}
+
+.ptn-simulation-animate {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: #5f6368;
+  cursor: pointer;
+}
+
+.ptn-simulation-animate input {
+  margin: 0;
+}
+
 .ptn-simulation-status {
   color: #5f6368;
   padding-left: 4px;

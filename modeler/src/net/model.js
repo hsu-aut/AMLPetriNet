@@ -115,6 +115,49 @@ export function enabled(net, marking) {
     .map((transition) => transition.id);
 }
 
+/**
+ * A set of firings that can all happen at once.
+ *
+ * Concurrent nets are read in steps rather than in single firings: everything
+ * that can happen together does. Together means together, so the tokens are
+ * taken from the marking the step starts in: a transition that would need a
+ * token another transition of the step produces belongs to the next step, not
+ * to this one. Each transition fires at most once per step.
+ *
+ * The step is maximal but not the only maximal one: two transitions that want
+ * the same token cannot both be in it, and which of them is depends on the
+ * order they are tried in.
+ *
+ * Firing the result one transition after another in the order given is a legal
+ * run, because every firing only adds tokens to what the others need. That is
+ * what lets a step be recorded as single firings and stepped back one at a
+ * time.
+ *
+ * @param order the transition ids to try, in the order to try them. The
+ *   default is the order the net lists them, which makes the result the same
+ *   from one run to the next; a caller that wants a conflict decided by chance
+ *   hands in a shuffled order.
+ * @returns the transition ids of the step, in the order they fire.
+ */
+export function maximalStep(net, marking, order = net.transitions.map((transition) => transition.id)) {
+  const step = [];
+  // What is left to take, counted down as the step is built up. The tokens the
+  // step produces are deliberately not added here.
+  const left = new Map(marking);
+
+  for (const transition of order) {
+    if (!net.transitions.some((candidate) => candidate.id === transition)) continue;
+
+    const { taking } = flowOf(net, transition);
+    if (![...taking].every(([place, weight]) => (left.get(place) ?? 0) >= weight)) continue;
+
+    for (const [place, weight] of taking) left.set(place, (left.get(place) ?? 0) - weight);
+    step.push(transition);
+  }
+
+  return step;
+}
+
 /** The marking after the transition fired. Throws when it could not fire. */
 export function fire(net, marking, transitionId) {
   if (!net.transitions.some((transition) => transition.id === transitionId)) {
