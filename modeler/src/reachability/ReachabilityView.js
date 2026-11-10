@@ -19,7 +19,7 @@ import { netFromElements } from '../net/fromDiagram.js';
 import { readNet } from '../net/model.js';
 import { parseQuery, pathTo, wayTo } from '../net/paths.js';
 import { markingsToCsv, toDot } from '../net/report.js';
-import { offerFile } from '../ui/download.js';
+import { nameFor, offerFile } from '../ui/download.js';
 import { layoutStateSpace } from './layout.js';
 
 const SVG = 'http://www.w3.org/2000/svg';
@@ -42,6 +42,7 @@ export default class ReachabilityView {
 
   constructor(eventBus, canvas, elementRegistry, simulation) {
     this._eventBus = eventBus;
+    this._canvas = canvas;
     this._elementRegistry = elementRegistry;
     this._simulation = simulation;
     this._result = null;
@@ -128,11 +129,15 @@ export default class ReachabilityView {
     return line;
   }
 
-  /** Explores the net on the canvas and draws its state space. */
-  show() {
+  /**
+   * Explores the net on the canvas and draws its state space.
+   * @param limits passed to the search; see explore(). A host with more time
+   *   than a browser tab, or a test that wants the search cut off, says so here.
+   */
+  show(limits = {}) {
     try {
       const net = readNet(netFromElements(this._elementRegistry.getAll()));
-      this._result = explore(net);
+      this._result = explore(net, limits);
       this._net = net;
       if (this._result.markings.length > MOST_NODES) this._tooBig();
       else this._draw();
@@ -199,8 +204,16 @@ export default class ReachabilityView {
     }
 
     const file = kind === 'dot'
-      ? { name: 'state-space.dot', text: toDot(this._result, this._net), type: 'text/vnd.graphviz' }
-      : { name: 'markings.csv', text: markingsToCsv(this._result, this._net), type: 'text/csv;charset=utf-8' };
+      ? {
+          name: nameFor(this._canvas, 'state-space.dot'),
+          text: toDot(this._result, this._net),
+          type: 'text/vnd.graphviz',
+        }
+      : {
+          name: nameFor(this._canvas, 'markings.csv'),
+          text: markingsToCsv(this._result, this._net),
+          type: 'text/csv;charset=utf-8',
+        };
 
     const went = offerFile(this._eventBus, file);
     this._note(went === 'failed'
@@ -308,9 +321,13 @@ export default class ReachabilityView {
    * Walks the net into the marking a node stands for.
    *
    * The firings that lead there are loaded and done, so the net arrives with a
-   * history: stepping back from here walks the same way out again. Where the
-   * search recorded no way in, which happens when it stopped at its limit, the
-   * marking is set as it was before, and the view says that the way is unknown.
+   * history: stepping back from here walks the same way out again.
+   *
+   * The second branch is a safety net rather than a case: a marking the search
+   * kept was always reached by a firing it recorded, so the way to it exists,
+   * and no limit changes that. It stays because a node whose way is unknown
+   * should put the net into the marking rather than do nothing at all, should a
+   * later search ever produce one.
    */
   _goTo(key) {
     const entry = this._result.markings.find((marking) => marking.key === key);

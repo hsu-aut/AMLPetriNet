@@ -103,7 +103,8 @@ const check = (condition, message) => { if (!condition) problems.push(message); 
 check(empty.went === 'nothing', `saving nothing returned '${empty.went}'`);
 check(/no findings to save/.test(empty.note ?? ''), `saving nothing said '${empty.note}'`);
 
-check(findings.name === 'findings.csv', `the findings came out as '${findings.name}'`);
+// Named after the net, so that two nets do not both produce "findings.csv".
+check(findings.name === 'model-1-findings.csv', `the findings came out as '${findings.name}'`);
 check(findings.text.startsWith('rule,severity,element,message\n'),
   `the table starts with '${findings.text.split('\n')[0]}'`);
 check(/PT14,warning,[^,]+,Pair can never fire/.test(findings.text), 'the dead transition is not in the table');
@@ -111,24 +112,24 @@ check(/PT14,warning,[^,]+,Pair can never fire/.test(findings.text), 'the dead tr
 // checked where a message does hold one, in the writer's own tests.
 check(/^PT15,warning,,No transition is enabled in the marking \(Mid 1\)\.$/m.test(findings.text),
   'the deadlock is not in the table');
-check(/saved as findings.csv/.test(findingsNote ?? ''), `saving the findings said '${findingsNote}'`);
+check(/saved as model-1-findings.csv/.test(findingsNote ?? ''), `saving the findings said '${findingsNote}'`);
 
-check(dot.name === 'state-space.dot', `the state space came out as '${dot.name}'`);
+check(dot.name === 'model-1-state-space.dot', `the state space came out as '${dot.name}'`);
 check(dot.text.startsWith('digraph state_space {'), `the DOT starts with '${dot.text.split('\n')[0]}'`);
 check(/label="In 1", shape=doublecircle/.test(dot.text), 'the initial marking is not the double circle');
 check(/label="Step"/.test(dot.text), 'the firing is not labelled in the DOT');
 
-check(markings.name === 'markings.csv', `the markings came out as '${markings.name}'`);
+check(markings.name === 'model-1-markings.csv', `the markings came out as '${markings.name}'`);
 check(markings.text.split('\n')[0] === 'marking,firings,deadlock,In,Mid,Out',
   `the table head is '${markings.text.split('\n')[0]}'`);
 check(/^initial,0,no,1,0,0$/m.test(markings.text), 'the initial marking is not the first row');
 check(/,1,yes,0,1,0$/m.test(markings.text), 'the marking the net is stuck in is not marked as a dead end');
-check(/saved as markings.csv/.test(statesNote ?? ''), `saving the markings said '${statesNote}'`);
+check(/saved as model-1-markings.csv/.test(statesNote ?? ''), `saving the markings said '${statesNote}'`);
 
 check(host.findings === 'host' && host.states === 'host',
   `a host that takes the file got '${host.findings}' and '${host.states}'`);
 check(host.taken.length === 2, `the host was handed ${host.taken.length} files`);
-check(host.taken[0]?.name === 'findings.csv' && host.taken[1]?.name === 'state-space.dot',
+check(host.taken[0]?.name === 'model-1-findings.csv' && host.taken[1]?.name === 'model-1-state-space.dot',
   `the host was handed ${JSON.stringify(host.taken.map((file) => file.name))}`);
 check(host.taken.every((file) => file.length > 0), 'a file handed to the host was empty');
 check(strayDownload === false, 'a file was downloaded although the host took it');

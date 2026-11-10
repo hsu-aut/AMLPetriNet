@@ -8,7 +8,7 @@
  * row itself keeps selecting the element it is about.
  */
 import { findingsToCsv } from '../net/report.js';
-import { offerFile } from '../ui/download.js';
+import { nameFor, offerFile } from '../ui/download.js';
 
 const SEVERITY_MARK = { error: '✖', warning: '⚠', information: 'ℹ' };
 
@@ -98,14 +98,15 @@ export default class FindingsPanel {
       return 'nothing';
     }
 
+    const name = nameFor(this._canvas, 'findings.csv');
     const went = offerFile(this._eventBus, {
-      name: 'findings.csv',
+      name,
       text: findingsToCsv(findings),
       type: 'text/csv;charset=utf-8',
     });
 
     if (went === 'failed') this._say('The table could not be saved.');
-    else this._say(`${findings.length} finding(s) saved as findings.csv.`);
+    else this._say(`${findings.length} finding(s) saved as ${name}.`);
     return went;
   }
 

@@ -93,6 +93,27 @@ const result = await page.evaluate(async () => {
   document.querySelector('.ptn-arrange-horizontal').click();
   const spread = [where(a), where(b), where(c)].map((spot) => spot.x).sort((x, y) => x - y);
 
+  // The same two things from the keyboard. Sent through the event bus, which is
+  // where the modeler's keyboard service delivers a key press: what is checked
+  // here is the binding, not the browser's focus handling.
+  const press = (key, shift = false) => modeler.get('eventBus').fire('keyboard.keydown', {
+    keyEvent: new KeyboardEvent('keydown', { key, ctrlKey: true, shiftKey: shift }),
+  });
+
+  modeling.moveElements([registry.get(b.id)], { x: 0, y: 55 });
+  selection.select([registry.get(a.id), registry.get(b.id)]);
+  const keyUsed = press('ArrowUp');
+  const keyAligned = [where(a), where(b)];
+
+  selection.select([registry.get(a.id), registry.get(b.id), registry.get(c.id)]);
+  press('ArrowRight', true);
+  const keySpread = [where(a), where(b), where(c)].map((spot) => spot.x).sort((x, y) => x - y);
+
+  // A key that cannot do anything is not swallowed, so a reader can still use it
+  // to scroll.
+  selection.select(registry.get(a.id));
+  const keyRefused = { used: press('ArrowUp'), note: note() };
+
   // Nothing but the first shape selected: the groups are not offered.
   selection.select(registry.get(a.id));
   const one = { topEnabled: !disabled('top'), spreadEnabled: !disabled('horizontal') };
@@ -119,6 +140,10 @@ const result = await page.evaluate(async () => {
     spreadWithTwo,
     spread,
     one,
+    keyUsed,
+    keyAligned,
+    keySpread,
+    keyRefused,
     running,
     duringRun,
     pnmlBefore,
@@ -157,6 +182,14 @@ check(Math.abs((result.spread[1] - result.spread[0]) - (result.spread[2] - resul
 
 check(result.one.topEnabled === false && result.one.spreadEnabled === false,
   'lining up is offered with one shape selected');
+
+check(result.keyUsed === true, 'the key for lining up was not used up');
+check(result.keyAligned[0].y === result.keyAligned[1].y,
+  `the key left the shapes at ${result.keyAligned.map((spot) => spot.y)}`);
+check(Math.abs((result.keySpread[1] - result.keySpread[0]) - (result.keySpread[2] - result.keySpread[1])) <= 1,
+  `the key for spreading left gaps of ${result.keySpread[1] - result.keySpread[0]} and ${result.keySpread[2] - result.keySpread[1]}`);
+check(result.keyRefused.used !== true, 'a key that could do nothing was still swallowed');
+check(/two shapes or more/.test(result.keyRefused.note), `the refused key said '${result.keyRefused.note}'`);
 
 check(result.running.tidyDisabled === true, 'tidying up is offered while the net runs');
 check(result.running.moved === 0 && result.running.aligned === 0,

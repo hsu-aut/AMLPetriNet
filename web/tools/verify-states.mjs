@@ -147,7 +147,18 @@ const result = await page.evaluate(async () => {
     nodes: nodes().length,
   };
 
-  return { before, shown, afterClick, afterFire, afterEdit, refused, omega, big };
+  // The same net with the search cut off: what is on screen is then some of the
+  // markings, not all of them, and the view says so instead of presenting a
+  // part as the whole.
+  modeler.get('reachabilityView').show({ markings: 4 });
+  const cut = {
+    title: document.querySelector('.ptn-states-title')?.textContent ?? '',
+    nodes: nodes().length,
+    complete: modeler.get('reachabilityView').state?.complete,
+    answer: modeler.get('reachabilityView').ask('P0 = 0'),
+  };
+
+  return { before, shown, afterClick, afterFire, afterEdit, refused, omega, big, cut };
 });
 
 await browser.close();
@@ -193,6 +204,12 @@ check(result.big.nodes === 0, `a state space too large to draw still drew ${resu
 check(/too many to draw/.test(result.big.title), `the title says '${result.big.title}'`);
 check(/markings with/.test(result.big.note), `the note says '${result.big.note}'`);
 check(result.big.milliseconds < 1500, `saying so took ${result.big.milliseconds} ms`);
+
+check(result.cut.complete === false, 'a search that was cut off reported itself as complete');
+check(/cut off at the limit/.test(result.cut.title), `the cut off search says '${result.cut.title}'`);
+check(result.cut.nodes === 4, `the cut off search drew ${result.cut.nodes} markings, not the four it kept`);
+check(/not an answer about every marking|Reachable in/.test(result.cut.answer ?? ''),
+  `the query on a cut off search answered '${result.cut.answer}'`);
 
 if (pageErrors.length) problems.push('page errors: ' + pageErrors.join('; '));
 

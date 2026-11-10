@@ -22,6 +22,7 @@ await page.waitForFunction(() => window.ptnReady === true, null, { timeout: 1500
 const result = await page.evaluate(async () => {
   const modeler = window.ptn;
   const factory = modeler.get('elementFactory');
+  const commandStack = modeler.get('commandStack');
   const modeling = modeler.get('modeling');
   const simulation = modeler.get('simulation');
   const tokenFlow = modeler.get('tokenFlow');
@@ -79,7 +80,21 @@ const result = await page.evaluate(async () => {
   click('back');
   const afterBoth = { steps: simulation.steps.length, marking: marking() };
 
-  // Turned off, nothing moves.
+  // An undo while the dots are in flight: the run ends, because the net it was
+  // running on is gone, and nothing of the animation is left behind on a canvas
+  // that now shows something else.
+  click('reset');
+  click('together');
+  const flying = { dots: dots(), running: simulation.active };
+  commandStack.undo();
+  const afterUndo = { dots: dots(), flying: tokenFlow.flying, running: simulation.active };
+  commandStack.redo();
+  await wait(600);
+  const settledAfterUndo = dots();
+
+  // Turned off, nothing moves. The undo above ended the run, so it is started
+  // again rather than toggled blindly.
+  if (!simulation.active) click('toggle');
   document.querySelector('.ptn-simulation-animate input').click();
   click('together');
   const switchedOff = { wanted: tokenFlow.wanted, dots: dots(), steps: simulation.steps.length };
@@ -112,6 +127,9 @@ const result = await page.evaluate(async () => {
     settled,
     afterOne,
     afterBoth,
+    flying,
+    afterUndo,
+    settledAfterUndo,
     switchedOff,
     conflict: { ...conflict, names },
     afterConflict,
@@ -147,6 +165,13 @@ check(result.afterOne.steps === 1
   `one step back left ${result.afterOne.steps} firings and ${JSON.stringify(half)}`);
 check(result.afterBoth.steps === 0 && result.afterBoth.marking?.A === 1 && result.afterBoth.marking?.C === 1,
   `two steps back left ${JSON.stringify(result.afterBoth.marking)}`);
+
+check(result.flying.dots > 0 && result.flying.running === true,
+  `the step before the undo drew ${result.flying.dots} dots with the run ${result.flying.running ? 'on' : 'off'}`);
+check(result.afterUndo.running === false, 'an undo left the run going on a net that had changed');
+check(result.afterUndo.dots === 0 && result.afterUndo.flying === 0,
+  `an undo during the animation left ${result.afterUndo.dots} dots on the canvas`);
+check(result.settledAfterUndo === 0, 'dots came back after the animation was cancelled');
 
 check(result.switchedOff.wanted === false, 'turning the animation off did not reach the service');
 check(result.switchedOff.dots === 0, `${result.switchedOff.dots} dots were drawn although the animation is off`);

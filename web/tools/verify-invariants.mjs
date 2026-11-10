@@ -107,6 +107,25 @@ const result = await page.evaluate(async () => {
       })),
   };
 
+  // An invariant whose firings cannot be fired from the marking the net is in:
+  // the same cycle with no token in it. The set is still worth marking, so Mark
+  // stays; Play does not, because there is nothing to play.
+  await modeler.createNew();
+  const empty = place(120, 'Empty');
+  const go = transition(240, 'Go');
+  const back = place(360, 'Back');
+  const ret = transition(480, 'Return');
+  modeling.connect(empty, go, { type: 'ptn:Arc' });
+  modeling.connect(go, back, { type: 'ptn:Arc' });
+  modeling.connect(back, ret, { type: 'ptn:Arc' });
+  modeling.connect(ret, empty, { type: 'ptn:Arc' });
+
+  document.querySelector('.ptn-findings-button').click();
+  const unfireable = {
+    hasRow: Boolean(rowFor('PT19')),
+    buttons: [...rowFor('PT19')?.querySelectorAll('.ptn-finding-action') ?? []].map((b) => b.textContent),
+  };
+
   // Editing the net drops the rings: they belong to the net they were computed on.
   modeling.updateLabel(outPlace, 'Finished');
   const afterEdit = { rings: rings(), marked: marked(), size: highlight.size };
@@ -120,6 +139,7 @@ const result = await page.evaluate(async () => {
     halfway,
     returned,
     weighted,
+    unfireable,
     afterEdit,
     inId: inPlace.id,
     outId: outPlace.id,
@@ -160,6 +180,12 @@ check(outRing !== undefined && !outRing.texts.includes('2'),
   `the place that counts once shows ${JSON.stringify(outRing?.texts)}`);
 check(/each with the weight it counts for/.test(result.weighted.note ?? ''),
   `the weighted invariant said '${result.weighted.note}'`);
+
+check(result.unfireable.hasRow === true, 'the empty cycle reported no transition invariant at all');
+check(result.unfireable.buttons.includes('◎ Mark'),
+  `an invariant that cannot be fired offers ${JSON.stringify(result.unfireable.buttons)}`);
+check(!result.unfireable.buttons.includes('▶ Play'),
+  'an invariant that cannot be fired from this marking still offers to play it');
 
 check(result.afterEdit.rings === 0, `editing the net left ${result.afterEdit.rings} rings on screen`);
 check(result.afterEdit.size === 0, 'editing the net left the marked set in the service');

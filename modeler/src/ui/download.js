@@ -10,6 +10,28 @@
  */
 
 /**
+ * A file name that says which net the file came from.
+ *
+ * Three files land in one download folder, and "markings.csv" from two nets is
+ * two files called markings.csv and markings(1).csv. The net's name is reduced
+ * to what every file system takes, and a net without a name falls back to its
+ * id and then to the word net.
+ */
+export function nameFor(canvas, suffix) {
+  const root = canvas.getRootElement?.();
+  const called = root?.businessObject?.name || root?.businessObject?.id || root?.id || 'net';
+
+  const slug = String(called)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40);
+
+  return `${slug || 'net'}-${suffix}`;
+}
+
+/**
  * @returns 'host' where a host took it, 'download' where the browser did,
  *   'failed' where neither could.
  */
