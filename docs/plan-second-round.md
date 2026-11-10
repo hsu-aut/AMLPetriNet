@@ -5,7 +5,8 @@
 > This plan covers what the author asked for after seeing them, in the order the
 > work depends on itself: the core first, the views on it, the host last.
 
-**Status: all eight stages are built, with 112 node tests and 15 browser checks.**
+**Status: all eight stages are built, with 112 node tests, 15 browser checks, 5
+mapper tests and a test project for the plugin (10 tests).**
 What was left open on purpose is named at the end.
 
 **Goal:** make the fork a Petri net tool rather than a Petri net editor: every

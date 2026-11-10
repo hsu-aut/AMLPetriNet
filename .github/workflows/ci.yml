@@ -46,6 +46,11 @@ jobs:
       - name: Test the mapper
         run: dotnet test dotnet/PtMapper.Tests -c Release --no-build
 
+      # The parts of the plugin that are plain data: the messages from the
+      # modeler and the stored settings. The rest of it needs an editor.
+      - name: Test the plugin
+        run: dotnet test Aml.Editor.Plugin.PetriNet.Tests -c Release --no-build
+
       # npm test installs Chromium first (see the pretest script), then runs the
       # analysis core in Node and the PNML round trip, the interop fixtures, the
       # host bridge, the label behaviour, the markings, the number formats and

@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- The plugin is a WPF assembly, so a project that references it has to be
+         one too. Nothing in these tests needs a window: they cover the parts of
+         the plugin that are plain data, which is where a defect would be silent
+         (a renamed JSON property, a setting that does not survive a save). -->
+    <TargetFramework>net8.0-windows7.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.*" />
+    <PackageReference Include="xunit" Version="2.*" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.*" />
+    <!-- The plugin resolves System.Text.Json 10 through its own dependencies, so
+         the test host has to load the same one; without this the SDK's older
+         copy is used and every deserialisation fails at run time. -->
+    <PackageReference Include="System.Text.Json" Version="10.0.*" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Aml.Editor.Plugin.PetriNet\Aml.Editor.Plugin.PetriNet.csproj" />
+  </ItemGroup>
+</Project>

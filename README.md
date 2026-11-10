@@ -146,8 +146,13 @@ for moved labels. Nodes without a position are arranged when a net is loaded.
 
 ```bash
 dotnet test dotnet/PtMapper.Tests
+dotnet test Aml.Editor.Plugin.PetriNet.Tests
 cd web && npm test
 ```
+
+The plugin's own tests cover the parts of it that are plain data: the messages
+the modeler sends and the settings that are stored between sessions. Everything
+else in the plugin needs a running AutomationML Editor.
 
 `npm test` runs the analysis core in Node and the modeler in Chromium. The core
 can be run on its own with `npm test` in `modeler/`, and `npm run demo` there
