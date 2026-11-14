@@ -291,7 +291,11 @@ public partial class PetriNetPlugin : PluginViewBase, ISupportsThemes, INotifyAM
     {
         if (_bridge == null) return;
 
-        if (_bridge.Analyse()) _analysisAsked = true;
+        if (_bridge.Analyse())
+        {
+            _analysisAsked = true;
+            SetStatus(NetMenuState.AnalysisRunning);
+        }
         else SetStatus("The modeler is not ready yet.");
     }
 

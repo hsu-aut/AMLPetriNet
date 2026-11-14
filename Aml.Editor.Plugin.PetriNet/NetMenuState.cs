@@ -30,6 +30,9 @@ public static class NetMenuState
         return reason == null ? "Simulation stopped." : "Cannot simulate: " + reason;
     }
 
+    /// <summary>The status line from the click on Analyse until the page answers. The search runs in a worker and can take a while.</summary>
+    public const string AnalysisRunning = "Analysing the net… The canvas stays usable; the list shows how far it is.";
+
     /// <summary>The status line after an analysis asked for from the menu.</summary>
     public static string AnalysisStatus(int errors, int warnings, int information, string? problem)
     {

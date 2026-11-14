@@ -57,6 +57,15 @@ public class NetMenuStateTests
         Assert.Equal("Simulation stopped.", NetMenuState.SimulationStatus(true, false, "  "));
 
     [Fact]
+    public void WhileTheAnalysisRunsTheStatusSaysSo() =>
+        Assert.StartsWith("Analysing the net", NetMenuState.AnalysisRunning);
+
+    [Fact]
+    public void AnAnalysisThatEndedWithoutAnAnswerSaysWhy() =>
+        Assert.Equal("Cannot analyse: The analysis was stopped, or the net changed while it ran. Analyse again.",
+            NetMenuState.AnalysisStatus(0, 0, 0, "The analysis was stopped, or the net changed while it ran. Analyse again."));
+
+    [Fact]
     public void AnAnalysisCountsWhatItFound() =>
         Assert.Equal("Analysis: 2 warnings, 9 notes. The list is on the canvas.",
             NetMenuState.AnalysisStatus(0, 2, 9, null));

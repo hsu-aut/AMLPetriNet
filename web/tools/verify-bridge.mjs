@@ -343,7 +343,8 @@ check((await messagesOfType('changed')).length === 0, 'a firing during a hosted 
 
 await clearMessages();
 await send({ type: 'analyse' });
-await page.waitForTimeout(300);
+await waitFor('analysed');
+await page.waitForTimeout(100);
 check(await runState() === true, 'analysing during a run leaves the run on');
 const duringAnalysis = await messagesOfType('analysed');
 check(duringAnalysis.length === 1, `analyse during a run was answered ${duringAnalysis.length} time(s)`);
@@ -387,10 +388,43 @@ check(answers.length === 1 && answers[0].active === false && typeof answers[0].p
   `a refused start was answered by ${JSON.stringify(answers)}`);
 await clearMessages();
 await send({ type: 'analyse' });
-await page.waitForTimeout(300);
+await waitFor('analysed');
+await page.waitForTimeout(100);
 const refused = await messagesOfType('analysed');
 check(refused.length === 1 && typeof refused[0].problem === 'string' && refused[0].errors + refused[0].warnings + refused[0].information === 0,
   `an analysis of a net that cannot be read was answered by ${JSON.stringify(refused)}`);
+
+// An import while the analysis runs ends it, and the request is still answered once, with the reason.
+await page.evaluate((pnml) => window.__hostSend({ type: 'importPNML', pnml }), samplePnml);
+await page.waitForTimeout(500);
+await page.evaluate(() => {
+  // Sixteen places that each lose their token: a search that takes a while.
+  const m = window.ptn;
+  const factory = m.get('elementFactory');
+  const modeling = m.get('modeling');
+  const root = m.get('canvas').getRootElement();
+  for (let i = 0; i < 16; i += 1) {
+    const p = modeling.createShape(factory.createShape({ type: 'ptn:Place' }), { x: 100 + (i % 8) * 110, y: 560 + Math.floor(i / 8) * 90 }, root);
+    modeling.updateProperty(p, 'initialMarking', 1, { rerender: true });
+    const t = modeling.createShape(factory.createShape({ type: 'ptn:Transition' }), { x: p.x + 90, y: p.y }, root);
+    modeling.connect(p, t, { type: 'ptn:Arc' });
+  }
+});
+await page.waitForTimeout(500);
+await clearMessages();
+await send({ type: 'analyse' });
+await page.waitForTimeout(150);
+const busyNow = await page.evaluate(() => window.ptn.get('findings').busy);
+await page.evaluate((pnml) => window.__hostSend({ type: 'importPNML', pnml }), samplePnml);
+await waitFor('analysed');
+await page.waitForTimeout(500);
+const ended = await messagesOfType('analysed');
+check(busyNow === true, 'the analysis of the large net was not still running 150 ms after the request');
+check(ended.length === 1 && typeof ended[0].problem === 'string' && /changed|stopped/.test(ended[0].problem)
+  && ended[0].errors + ended[0].warnings + ended[0].information === 0,
+  `an import during the analysis was answered by ${JSON.stringify(ended)}`);
+check(await page.evaluate(() => window.ptn.get('search').busy()) === false, 'the search is still running after the import');
+check(await page.evaluate(() => typeof window.ptn.get('search').mode) === 'string', 'the search service is missing');
 
 // A run that ends by itself says why.
 await page.evaluate((pnml) => window.__hostSend({ type: 'importPNML', pnml }), samplePnml);
@@ -410,7 +444,8 @@ await page.waitForTimeout(500);
 await send({ type: 'hostFindings', findings: [{ rule: 'PT05', severity: 'warning', element: null, message: 'From the host.' }] });
 await clearMessages();
 await send({ type: 'analyse' });
-await page.waitForTimeout(500);
+await waitFor('analysed');
+await page.waitForTimeout(100);
 const analysed = await messagesOfType('analysed');
 const counted = await page.evaluate(() => {
   const own = window.ptn.get('findings').all.filter((finding) => finding.rule !== 'PT05');

@@ -26,7 +26,12 @@ export function hostFindingsOf(findings) {
  * the analysis computed, and why it could not run if it could not. The host's
  * own findings are not counted; the host knows those.
  */
+/** What the host is told when the analysis ended without an answer. */
+export const ANALYSIS_ENDED = 'The analysis was stopped, or the net changed while it ran. Analyse again.';
+
 export function analysedOf(computed, problem) {
+  // null is an analysis that ended without an answer: stopped, or the net changed.
+  if (computed === null) problem = problem || ANALYSIS_ENDED;
   const count = (severity) => (computed ?? []).filter((finding) => finding.severity === severity).length;
   return {
     type: 'analysed',

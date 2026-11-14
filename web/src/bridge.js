@@ -242,10 +242,13 @@ export function connectBridge(modeler) {
     }
   };
 
-  const analyse = () => {
+  const analyse = async () => {
     const findings = modeler.get('findings');
-    const computed = findings.analyse();
+    // The list is open before the answer is there, so that it can say it is working. The
+    // search runs in a worker and the canvas stays usable; every request is answered once,
+    // with null where the search was stopped or the net changed meanwhile.
     modeler.get('findingsPanel').open();
+    const computed = await findings.analyse();
     post(analysedOf(computed, findings.problem));
   };
 
@@ -276,7 +279,7 @@ export function connectBridge(modeler) {
         simulate(msg.active);
       } else if (msg.type === 'analyse') {
         await importQueue;
-        analyse();
+        await analyse();
       } else if (msg.type === 'setTheme') {
         const theme = msg.theme === 'dark' ? 'dark' : 'light';
         document.documentElement.setAttribute('data-theme', theme);

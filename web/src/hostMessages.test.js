@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { analysedOf, hostFindingsOf, selectionOf } from './hostMessages.js';
+import { ANALYSIS_ENDED, analysedOf, hostFindingsOf, selectionOf } from './hostMessages.js';
 
 test('a list that is not a list is an empty one', () => {
   assert.deepEqual(hostFindingsOf(undefined), []);
@@ -46,4 +46,11 @@ test('a label is reported as the element it belongs to, once', () => {
 test('nothing selected is reported as no id and no count', () => {
   assert.deepEqual(selectionOf([]), { id: null, count: 0 });
   assert.deepEqual(selectionOf(undefined), { id: null, count: 0 });
+});
+
+test('an analysis that ended without an answer says so and counts nothing', () => {
+  const answer = analysedOf(null, null);
+  assert.equal(answer.problem, ANALYSIS_ENDED);
+  assert.equal(answer.errors + answer.warnings + answer.information, 0);
+  assert.match(answer.problem, /stopped, or the net changed/);
 });

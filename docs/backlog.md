@@ -89,15 +89,33 @@ Plan and decisions: `plan-net-classes.md`.
   differential test against the search (built; the tag waits for the push).
 - [x] H2. AMLPetriNet follows: `ptmap analyze` reports classes, proofs and the
   verdict; on a branch (`net-classes-follow`) with the lock on `file:` until the tag.
-- [ ] H3. Review done, merged, tag pushed, lock renewed.
+- [x] H3. Review of PetriNet.js 0.4.0 done and its findings fixed. Waits for the tag.
+
+## Block I: the properties panel
+
+Plan: `plan-properties-panel.md`.
+
+- [x] I1. PetriNet.js 0.5.0: the panel, a shared side of the canvas, a weight of 0 refused
+  (built, reviewed, findings fixed; the tag waits).
+- [x] I2. AMLPetriNet: a label click is reported as its element, the option is passed
+  through (`web/src`).
+- [ ] I3. Tried in the real AML Editor: a narrow pane, edit, Update, attribute window.
+
+## Block J: the search in a Web Worker
+
+Plan: `plan-web-worker.md`.
+
+- [x] J1. PetriNet.js 0.6.0: worker, progress, Stop, fall back, promises (built; its
+  review is running; the tag waits).
+- [x] J2. AMLPetriNet: the bridge awaits the analysis; an import during it is answered
+  once with the reason; the plugin says "Analysing the net" (on a branch with the lock
+  on `file:`).
+- [ ] J3. Tried in the real AML Editor: a large net, the canvas pans while it runs (this
+  tests the Blob worker under the virtual host); the proxy sends no CSP that blocks `blob:`.
 
 ## Planned, waiting to be built
 
-- A properties panel: `plan-properties-panel.md` (decided).
-- Search in a Web Worker: `plan-web-worker.md` (decided in 8a), breaking.
-
-Order of building, and with it the PetriNet.js versions: net classes 0.4.0,
-properties panel 0.5.0, Web Worker 0.6.0.
+Nothing: the three plans are built (blocks H, I, J).
 
 ## Later, by the author
 
