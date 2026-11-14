@@ -178,9 +178,10 @@ The plugin's own tests cover the parts of it that are plain data: the messages
 the modeler sends and the settings that are stored between sessions. Everything
 else in the plugin needs a running AutomationML Editor.
 
-`npm test` drives the bundled modeler in Chromium. The analysis core and the
-other parts of PetriNet.js that need no browser are tested in its own
-repository.
+`npm test` drives the bundled modeler in Chromium, as the plugin and the web
+application use it: the host bridge, the interop fixtures and the picture. What
+the modeler does on its own (the PNML round trip, simulation, analysis, exports,
+layout) is tested in PetriNet.js, in Node and in Chromium.
 
 `web/tools/validate-pnml.mjs` checks PNML files against the ISO/IEC 15909-2
 grammar and needs Java. Results are described in
