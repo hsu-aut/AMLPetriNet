@@ -19,15 +19,28 @@
  *                                  with its own findings. They stay until the
  *                                  host sends the list again, an empty one
  *                                  clears them
+ *   { type: 'simulate', active }   start (true) or end (false) a run, as the
+ *                                  Simulate button does; the canvas takes the
+ *                                  keyboard focus. Always answered by one
+ *                                  'simulation' message
+ *   { type: 'analyse' }            analyse the net and open the list on the
+ *                                  canvas; answered by 'analysed'
  *
  * Page -> host:
  *   { type: 'ready', url }
  *   { type: 'imported', pnml }     import finished; pnml is the echo baseline
  *   { type: 'changed', pnml }      user edit
  *   { type: 'svg', svg }           answer to requestSvg
- *   { type: 'simulation', active } a run started or ended; the model is not
+ *   { type: 'simulation', active, problem }
+ *                                  a run started or ended; the model is not
  *                                  touched by a run, so nothing is to be done
- *                                  about it
+ *                                  about it. problem is the modeler's reason
+ *                                  when a start was refused or a run ended by
+ *                                  itself, else null
+ *   { type: 'analysed', errors, warnings, information, problem }
+ *                                  answer to 'analyse': what the analysis
+ *                                  computed (not the host's own findings), or
+ *                                  why the net could not be analysed
  *   { type: 'selected', id, count } what the user clicked on the canvas, so the
  *                                  host can point at the same thing in its own
  *                                  view; id is null where nothing is selected
@@ -38,6 +51,7 @@
  *   { type: 'error', message }
  */
 
+import { analysedOf, hostFindingsOf } from './hostMessages.js';
 import { exportSvg } from './svg.js';
 
 const CHANGE_DEBOUNCE_MS = 300;
@@ -123,24 +137,6 @@ function showFatal(text) {
 }
 
 /**
- * The findings of a host message, as far as they can be read. The message comes
- * from outside the page, so a list that is not a list is an empty one, and an
- * entry that is not an object is left out rather than failing the others.
- */
-function hostFindingsOf(findings) {
-  if (!Array.isArray(findings)) return [];
-
-  return findings
-    .filter((finding) => finding && typeof finding === 'object')
-    .map((finding) => ({
-      rule: typeof finding.rule === 'string' ? finding.rule : '',
-      severity: finding.severity,
-      element: typeof finding.element === 'string' && finding.element ? finding.element : null,
-      message: typeof finding.message === 'string' ? finding.message : '',
-    }));
-}
-
-/**
  * Wires a modeler instance to the host. Returns nothing; the page keeps the
  * modeler on window for diagnostics.
  */
@@ -213,12 +209,46 @@ export function connectBridge(modeler) {
     if (ids.length) post({ type: 'fired', ids });
   });
 
+  // Why the last start was refused or the last run ended by itself. Kept even
+  // when `active` did not change, because a refused start leaves it false.
+  let simulationProblem = null;
+
   eventBus.on(SIMULATION_EVENT, (event) => {
     const active = Boolean(event.active);
+    simulationProblem = typeof event.problem === 'string' && event.problem ? event.problem : null;
     if (active === simulating) return;
     simulating = active;
-    post({ type: 'simulation', active: simulating });
+    post({ type: 'simulation', active: simulating, problem: simulationProblem });
   });
+
+  /** Starts or ends a run for the host, and always answers exactly once. */
+  const simulate = (active) => {
+    const simulation = modeler.get('simulation');
+    const was = simulating;
+    simulationProblem = null;
+
+    if (active === true && !simulating) simulation.start();
+    else if (active === false && simulating) simulation.stop();
+
+    // A change was answered by the listener above. Anything else (a start the
+    // modeler refused, a request that was already true) is answered here.
+    if (simulating === was) post({ type: 'simulation', active: simulating, problem: simulationProblem });
+
+    if (simulating) {
+      // The menu click left the focus in the host; the keys of a run (a click
+      // fires, Escape ends it) need it on the canvas.
+      const container = canvas.getContainer();
+      if (!container.hasAttribute('tabindex')) container.setAttribute('tabindex', '-1');
+      container.focus({ preventScroll: true });
+    }
+  };
+
+  const analyse = () => {
+    const findings = modeler.get('findings');
+    const computed = findings.analyse();
+    modeler.get('findingsPanel').open();
+    post(analysedOf(computed, findings.problem));
+  };
 
   window.chrome?.webview?.addEventListener('message', async (e) => {
     const msg = e.data;
@@ -242,6 +272,12 @@ export function connectBridge(modeler) {
         post({ type: 'svg', svg: await exportSvg(modeler) });
       } else if (msg.type === 'hostFindings') {
         modeler.get('findings').setHostFindings(hostFindingsOf(msg.findings));
+      } else if (msg.type === 'simulate') {
+        await importQueue;
+        simulate(msg.active);
+      } else if (msg.type === 'analyse') {
+        await importQueue;
+        analyse();
       } else if (msg.type === 'setTheme') {
         const theme = msg.theme === 'dark' ? 'dark' : 'light';
         document.documentElement.setAttribute('data-theme', theme);

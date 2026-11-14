@@ -271,6 +271,119 @@ check(odd.length === 1 && odd[0].rule === '', `a malformed finding was read as $
 check((await messagesOfType('error')).length === 0, 'malformed host findings raise no error');
 await page.evaluate(() => window.__hostSend({ type: 'hostFindings', findings: [] }));
 
+// ── the host drives the run and the analysis ───────────────────────────────
+// The Net menu of the plugin starts a run and an analysis by message. Each
+// request is answered exactly once, so that the menu can follow what happened.
+await page.evaluate((pnml) => window.__hostSend({ type: 'importPNML', pnml }), samplePnml);
+await page.waitForTimeout(500);
+await page.evaluate(() => window.__hostSend({ type: 'hostFindings', findings: [] }));
+await clearMessages();
+const pnmlBeforeMenu = await page.evaluate(() => window.ptn.savePNML());
+const send = (message) => page.evaluate((m) => window.__hostSend(m), message);
+const runState = () => page.evaluate(() => window.ptn.get('simulation').active);
+
+await send({ type: 'simulate', active: true });
+await page.waitForTimeout(300);
+let answers = await messagesOfType('simulation');
+check(answers.length === 1 && answers[0].active === true && answers[0].problem === null,
+  `simulate true was answered by ${JSON.stringify(answers)}`);
+check(await runState() === true, 'the run is on after simulate true');
+
+await clearMessages();
+await send({ type: 'simulate', active: true });
+await page.waitForTimeout(300);
+answers = await messagesOfType('simulation');
+check(answers.length === 1 && answers[0].active === true, `a repeated simulate true was answered by ${JSON.stringify(answers)}`);
+
+await page.evaluate(() => window.ptn.get('simulation').fireOne());
+await page.waitForTimeout(500);
+check((await messagesOfType('changed')).length === 0, 'a firing during a hosted run reports no edit');
+
+await clearMessages();
+await send({ type: 'analyse' });
+await page.waitForTimeout(300);
+check(await runState() === true, 'analysing during a run leaves the run on');
+const duringAnalysis = await messagesOfType('analysed');
+check(duringAnalysis.length === 1, `analyse during a run was answered ${duringAnalysis.length} time(s)`);
+
+await clearMessages();
+await send({ type: 'simulate', active: false });
+await page.waitForTimeout(300);
+answers = await messagesOfType('simulation');
+check(answers.length === 1 && answers[0].active === false && answers[0].problem === null,
+  `simulate false was answered by ${JSON.stringify(answers)}`);
+check(await runState() === false, 'the run is off after simulate false');
+check(await page.evaluate(() => window.ptn.savePNML()) === pnmlBeforeMenu,
+  'the document after a hosted run is the one before it');
+
+await clearMessages();
+await send({ type: 'simulate', active: false });
+await page.waitForTimeout(300);
+answers = await messagesOfType('simulation');
+check(answers.length === 1 && answers[0].active === false, `stopping a run that is not on was answered by ${JSON.stringify(answers)}`);
+
+await clearMessages();
+await send({ type: 'simulate', active: 'yes' });
+await page.waitForTimeout(300);
+check(await runState() === false, 'a request that is not true or false changes nothing');
+check((await messagesOfType('error')).length === 0, 'a malformed simulate raises no error');
+
+// A net the modeler refuses to run: the answer says why.
+await page.evaluate(() => {
+  const registry = window.ptn.get('elementRegistry');
+  const place = registry.filter((element) => element.type === 'ptn:Place')[0];
+  window.ptn.get('modeling').updateProperty(place, 'initialMarking', -1, { rerender: true });
+});
+await page.waitForTimeout(500);
+await clearMessages();
+await send({ type: 'simulate', active: true });
+await page.waitForTimeout(300);
+answers = await messagesOfType('simulation');
+check(answers.length === 1 && answers[0].active === false && typeof answers[0].problem === 'string' && answers[0].problem.length > 0,
+  `a refused start was answered by ${JSON.stringify(answers)}`);
+await clearMessages();
+await send({ type: 'analyse' });
+await page.waitForTimeout(300);
+const refused = await messagesOfType('analysed');
+check(refused.length === 1 && typeof refused[0].problem === 'string' && refused[0].errors + refused[0].warnings + refused[0].information === 0,
+  `an analysis of a net that cannot be read was answered by ${JSON.stringify(refused)}`);
+
+// A run that ends by itself says why.
+await page.evaluate((pnml) => window.__hostSend({ type: 'importPNML', pnml }), samplePnml);
+await page.waitForTimeout(500);
+await send({ type: 'simulate', active: true });
+await page.waitForTimeout(300);
+await clearMessages();
+await page.evaluate(() => window.ptn.get('simulation').stop('The net was replaced.'));
+await page.waitForTimeout(300);
+answers = await messagesOfType('simulation');
+check(answers.length === 1 && answers[0].active === false && answers[0].problem === 'The net was replaced.',
+  `a run that ended by itself was reported as ${JSON.stringify(answers)}`);
+
+// The analysis: counts that match the list, the list open, the host's findings kept.
+await page.evaluate((pnml) => window.__hostSend({ type: 'importPNML', pnml }), samplePnml);
+await page.waitForTimeout(500);
+await send({ type: 'hostFindings', findings: [{ rule: 'PT05', severity: 'warning', element: null, message: 'From the host.' }] });
+await clearMessages();
+await send({ type: 'analyse' });
+await page.waitForTimeout(500);
+const analysed = await messagesOfType('analysed');
+const counted = await page.evaluate(() => {
+  const own = window.ptn.get('findings').all.filter((finding) => finding.rule !== 'PT05');
+  return {
+    open: window.ptn.get('findingsPanel')._open,
+    own: own.length,
+    kept: window.ptn.get('findings').host.length,
+  };
+});
+check(analysed.length === 1, `analyse was answered ${analysed.length} time(s)`);
+check(analysed[0] && analysed[0].errors + analysed[0].warnings + analysed[0].information === counted.own && counted.own > 0,
+  `the counts ${JSON.stringify(analysed[0])} do not match the ${counted.own} computed findings`);
+check(analysed[0]?.problem === null, 'an analysis that ran carries no problem');
+check(counted.open === true, 'the list is open after analyse');
+check(counted.kept === 1, "the host's own findings are still there after analyse");
+await send({ type: 'hostFindings', findings: [] });
+
 // ── malformed input from the host ───────────────────────────────────────────
 await clearMessages();
 await page.evaluate(() => {
