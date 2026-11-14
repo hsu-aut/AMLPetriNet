@@ -56,12 +56,11 @@ that all findings appear in the panel.
 
 ## Block E: the Net menu
 
-- [x] E1. PetriNet.js 0.2.1: the play clock stops with the run (built, tag waits
-  for the push).
+- [x] E1. PetriNet.js 0.2.1: the play clock stops with the run (tagged v0.2.1).
 - [x] E2. The page answers `simulate` and `analyse` (`web/src/bridge.js`, checks in
   `verify-bridge.mjs`).
 - [x] E3. The plugin's Net menu has Simulate and Analyse (`NetMenuState`, tests).
-  On a branch (`plugin-menu`); the lock file stays on `file:` until 0.2.1 is tagged.
+  Merged into `main`; the lock file points at PetriNet.js v0.2.1.
 - [ ] E5. Export SVG during a run shows the document's marking (decision 8a.2 of
   the menu plan); needs a change in PetriNet.js.
 - [ ] E4. Tried in the real AML Editor; version, release note and tag.
