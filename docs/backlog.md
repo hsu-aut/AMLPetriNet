@@ -69,12 +69,11 @@ that all findings appear in the panel.
 
 Plan and decisions: `plan-ptmap-analyze.md`.
 
-- [x] F1. PetriNet.js 0.3.0: `net.js` and `analyseData` (built, tag waits for the push).
+- [x] F1. PetriNet.js 0.3.0: `net.js` and `analyseData` (tagged v0.3.0).
 - [x] F2. The analysis bundle (`web/src/analysis.js`, `dist-node/`, `verify-analysis.mjs`).
 - [x] F3. `ptmap analyze` with text and JSON (`dotnet/PtMapper.Tool/Analysis/`, tests
-  in `AnalyzeTests.cs`). On a branch (`ptmap-analyze`); the lock file stays on
-  `file:` until 0.3.0 is tagged.
-- [ ] F4. Review, merge, CI with `PTMAP_REQUIRE_NODE`.
+  in `AnalyzeTests.cs`). The lock file points at PetriNet.js v0.3.0.
+- [x] F4. Review done, merged; CI runs with `PTMAP_REQUIRE_NODE`.
 
 ## Not started, to be planned first
 
