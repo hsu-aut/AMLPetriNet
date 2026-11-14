@@ -36,3 +36,22 @@ export function analysedOf(computed, problem) {
     problem: typeof problem === 'string' && problem ? problem : null,
   };
 }
+
+/**
+ * What the host is told about a selection: the id of the first element and how
+ * many elements are selected. A label stands for the element it belongs to, so
+ * clicking a place's name selects the place for the host as well, and a place
+ * with its label in the selection counts once.
+ */
+export function selectionOf(elements) {
+  const seen = new Set();
+  const ids = [];
+  for (const element of elements ?? []) {
+    const target = element?.labelTarget ?? element;
+    if (target && !seen.has(target.id)) {
+      seen.add(target.id);
+      ids.push(target.id);
+    }
+  }
+  return { id: ids[0] ?? null, count: ids.length };
+}

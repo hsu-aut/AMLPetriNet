@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { analysedOf, hostFindingsOf } from './hostMessages.js';
+import { analysedOf, hostFindingsOf, selectionOf } from './hostMessages.js';
 
 test('a list that is not a list is an empty one', () => {
   assert.deepEqual(hostFindingsOf(undefined), []);
@@ -33,4 +33,17 @@ test('a net that could not be analysed carries the reason and no counts', () => 
 
 test('nothing at all is read as an empty analysis', () => {
   assert.deepEqual(analysedOf(undefined, undefined), { type: 'analysed', errors: 0, warnings: 0, information: 0, problem: null });
+});
+
+test('a label is reported as the element it belongs to, once', () => {
+  const place = { id: 'p' };
+  const label = { id: 'p_label', labelTarget: place };
+  assert.deepEqual(selectionOf([label]), { id: 'p', count: 1 });
+  assert.deepEqual(selectionOf([place, label]), { id: 'p', count: 1 });
+  assert.deepEqual(selectionOf([place, { id: 'q' }]), { id: 'p', count: 2 });
+});
+
+test('nothing selected is reported as no id and no count', () => {
+  assert.deepEqual(selectionOf([]), { id: null, count: 0 });
+  assert.deepEqual(selectionOf(undefined), { id: null, count: 0 });
 });

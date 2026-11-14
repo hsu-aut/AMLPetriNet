@@ -51,7 +51,7 @@
  *   { type: 'error', message }
  */
 
-import { analysedOf, hostFindingsOf } from './hostMessages.js';
+import { analysedOf, hostFindingsOf, selectionOf } from './hostMessages.js';
 import { exportSvg } from './svg.js';
 
 const CHANGE_DEBOUNCE_MS = 300;
@@ -198,8 +198,7 @@ export function connectBridge(modeler) {
   // view of the same document, and a click on the canvas is the only place
   // where the two views meet.
   eventBus.on('selection.changed', (event) => {
-    const chosen = (event.newSelection ?? []).filter((element) => !element.labelTarget);
-    post({ type: 'selected', id: chosen[0]?.id ?? null, count: chosen.length });
+    post({ type: 'selected', ...selectionOf(event.newSelection) });
   });
 
   // What fired, so a host can say so while a run is going. The model is not

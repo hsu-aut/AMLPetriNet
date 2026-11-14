@@ -114,11 +114,40 @@ const told = await messagesOfType('selected');
 check(told.some((m) => m.id === 'p_waiting' && m.count === 1),
   `the selection was reported as ${JSON.stringify(told)}`);
 
+// A click on a place's name selects its label, and the host is told about the place.
+await clearMessages();
+await page.evaluate(() => {
+  const label = window.ptn.get('elementRegistry').filter((e) => e.labelTarget)[0];
+  window.ptn.get('selection').select(label);
+});
+await page.waitForTimeout(200);
+const labelId = await page.evaluate(() => window.ptn.get('elementRegistry').filter((e) => e.labelTarget)[0].labelTarget.id);
+check((await messagesOfType('selected')).some((m) => m.id === labelId && m.count === 1),
+  `the selection of a label was reported as ${JSON.stringify(await messagesOfType('selected'))}`);
+
 await clearMessages();
 await page.evaluate(() => window.ptn.get('selection').select(null));
 await page.waitForTimeout(200);
 check((await messagesOfType('selected')).some((m) => m.id === null && m.count === 0),
   'clearing the selection was not reported');
+
+// An edit in the properties panel reaches the host like any edit: one `changed`, with the new value.
+await page.evaluate(() => {
+  window.ptn.get('propertiesPanel').open();
+  window.ptn.get('selection').select(window.ptn.get('elementRegistry').get('p_waiting'));
+});
+await page.waitForTimeout(100);
+await clearMessages();
+const nameField = page.locator('.ptn-properties').getByLabel('Name', { exact: true });
+await nameField.fill('Waiting for the panel');
+await nameField.press('Enter');
+await page.waitForTimeout(900);
+const panelChanged = await messagesOfType('changed');
+check(panelChanged.length === 1 && panelChanged[0].pnml.includes('Waiting for the panel'),
+  `an edit in the panel was reported ${panelChanged.length} time(s)`);
+await page.evaluate(() => window.ptn.get('commandStack').undo());
+await page.waitForTimeout(500);
+await page.evaluate(() => window.ptn.get('propertiesPanel').close());
 
 await clearMessages();
 await page.evaluate(() => window.__hostSend({ type: 'selectElement', id: 'does_not_exist' }));
