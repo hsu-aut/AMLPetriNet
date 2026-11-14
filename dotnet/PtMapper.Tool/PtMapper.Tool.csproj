@@ -10,4 +10,10 @@
   <ItemGroup>
     <ProjectReference Include="..\PtMapper.Conversion\PtMapper.Conversion.csproj" />
   </ItemGroup>
+  <!-- The analysis bundle, built by 'npm run build' in web/. It is optional for the
+       build: only 'ptmap analyze' needs it, and says so when it is missing. -->
+  <ItemGroup>
+    <None Include="..\..\web\dist-node\ptmap-analysis.mjs" Condition="Exists('..\..\web\dist-node\ptmap-analysis.mjs')"
+          Link="ptmap-analysis.mjs" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

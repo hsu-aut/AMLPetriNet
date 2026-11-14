@@ -10,6 +10,7 @@
 //   ptmap sample   <out.pnml>           emit a small demo net
 //   ptmap fixtures <out-dir>            emit the interop fixture set
 //   ptmap validate <in.pnml|in.aml>     check against the ISO/IEC 15909-1 rules
+//   ptmap analyze  <in.pnml|in.aml> [hierarchy] [options]   structural and behavioural findings
 //   ptmap report   <in.pnml|in.aml> <out.md>   write a conformance report
 //   ptmap selfcontained <in.aml> <out.aml> [libDir]   inline the libraries
 //   ptmap editor-test <out-dir> [libDir]      write the AML Editor test files
@@ -17,6 +18,7 @@
 using Aml.Engine.CAEX;
 using PtMapper.Conversion;
 using PtMapper.Conversion.Models;
+using PtMapper.Tool.Analysis;
 
 if (args.Length == 0)
 {
@@ -147,6 +149,9 @@ try
             return errors > 0 ? 4 : 0;
         }
 
+        case "analyze" when args.Length >= 2:
+            return AnalyzeCommand.Run(args[1..], Console.Out, Console.Error, new NodeAnalysisRunner());
+
         case "fixtures" when args.Length >= 2:
         {
             Directory.CreateDirectory(args[1]);
@@ -218,6 +223,8 @@ static void Usage()
         ptmap sample   <out.pnml>
         ptmap fixtures <out-dir>
         ptmap validate <in.pnml|in.aml>
+        ptmap analyze  <in.pnml|in.aml> [hierarchy] [--format text|json] [--fail-on error|warning|never]
+                       [--markings N] [--time-limit ms] [--timeout s] [--all] [--require-complete]
         ptmap report   <in.pnml|in.aml> <out.md>
         ptmap selfcontained <in.aml> <out.aml> [libDir]
         ptmap editor-test <out-dir> [libDir]

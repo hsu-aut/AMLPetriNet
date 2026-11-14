@@ -132,9 +132,36 @@ dotnet run --project dotnet/PtMapper.Tool -- <command>
 | `roundtrip <in.aml> [hierarchy]` | Round trip in both directions with a report of the differences |
 | `compare <before.aml> <after.aml> [hierarchy]` | Differences between two versions of a document |
 | `validate <in.pnml or in.aml>` | Structural checks, non-zero exit code on errors |
+| `analyze <in.pnml or in.aml> [hierarchy] [options]` | The structural rules and the behaviour of the net (deadlocks, bounds, liveness, invariants) in one report, as text or JSON, with an exit code for CI. Needs Node.js 20 or later at run time |
 | `report <in> <out.md>` | Checks as a Markdown report |
 | `library <out.aml>` | Writes the `ISO_PT` domain library |
 | `selfcontained <in.aml> <out.aml>` | Embeds the referenced libraries into a document |
+
+### `ptmap analyze`
+
+```bash
+dotnet run --project dotnet/PtMapper.Tool -- analyze examples/quality-gate.pnml
+dotnet run --project dotnet/PtMapper.Tool -- analyze doc.aml IH_PT_View --format json --fail-on error
+```
+
+Options: `--format text|json`, `--fail-on error|warning|never` (default `warning`),
+`--markings N` (default 20000), `--time-limit ms` (default none, so the answer is
+the same on every machine), `--timeout s` (default 120, kills the analysis),
+`--all` (lists the information findings, the text only counts them otherwise) and
+`--require-complete` (a search that stopped at its limit fails the run).
+
+| Exit code | Meaning |
+|---|---|
+| 0 | nothing at or above `--fail-on` |
+| 1 | wrong use |
+| 2 | no file, no net, no such hierarchy, Node.js 20 or the analysis bundle missing |
+| 3 | the analysis failed or ran into `--timeout` |
+| 4 | at least one error |
+| 5 | at least one warning, no error (`validate` exits 0 on warnings) |
+
+The behaviour is computed by the analysis core of PetriNet.js, in a Node process,
+so a file gives the same findings here as on the canvas. The bundle is built by
+`npm run build` in `web/` and copied next to `ptmap.dll`.
 
 ## Representation in AML
 

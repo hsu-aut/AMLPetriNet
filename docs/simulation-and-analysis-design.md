@@ -258,7 +258,9 @@ Each stage leaves the tool working and shippable.
   application hand their structural findings (PT01 to PT11) to the modeler, so
   the panel on the canvas holds one list. The WPF table stays for read warnings
   and the conformance report.
-- Whether the command line tool gets `ptmap analyze` from the same core, which
+- Settled: `ptmap analyze` runs the JavaScript core in a Node process, see
+  `plan-ptmap-analyze.md`. The question was whether the command line tool gets
+  `ptmap analyze` from the same core, which
   would mean a second implementation in C# or running the JavaScript core in the
   tool. Not decided; nothing in stages 1 to 5 depends on it.
 - When `modeler/` moves into its own repository. Expected, not scheduled; the

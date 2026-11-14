@@ -1,0 +1,32 @@
+namespace PtMapper.Tool.Analysis;
+
+/// <summary>The report as text for a person: counts per net, errors and warnings listed, notes counted.</summary>
+public static class FindingsText
+{
+    public static void Write(TextWriter output, AnalyzeReport report, bool all)
+    {
+        foreach (var net in report.Nets)
+        {
+            var state = !net.Analysed ? "not analysed"
+                : net.Complete ? $"complete, {net.Markings} markings"
+                : $"partial (stopped at {net.Stopped}), {net.Markings} markings";
+
+            output.WriteLine($"{net.Name ?? net.Id} ({net.Id}): {Plural(net.Counts.Error, "error")}, "
+                + $"{Plural(net.Counts.Warning, "warning")}, {net.Counts.Information} information; {state}");
+
+            if (net.Problem != null) output.WriteLine("  " + net.Problem);
+
+            foreach (var finding in net.Findings)
+            {
+                if (!all && finding.Severity == "information") continue;
+                output.WriteLine($"  {finding.Severity.ToUpperInvariant(),-12} {finding.Rule,-5} "
+                    + $"{(finding.Element ?? "-"),-12} {finding.Message}");
+            }
+
+            if (!all && net.Counts.Information > 0)
+                output.WriteLine($"  ({net.Counts.Information} information finding(s) not listed; --all lists them)");
+        }
+    }
+
+    private static string Plural(int count, string word) => count == 1 ? $"1 {word}" : $"{count} {word}s";
+}

@@ -42,7 +42,11 @@ jobs:
           dotnet restore Aml.Editor.Plugin.PetriNet.sln
           dotnet build Aml.Editor.Plugin.PetriNet.sln -c Release --no-restore
 
+      # PTMAP_REQUIRE_NODE makes the tests of 'ptmap analyze' that need Node fail
+      # instead of skipping, so that a missing bundle cannot hide a failure.
       - name: Test the mapper
+        env:
+          PTMAP_REQUIRE_NODE: "1"
         run: dotnet test dotnet/PtMapper.Tests -c Release --no-build
 
       # The parts of the plugin that are plain data: the messages from the

@@ -1,0 +1,528 @@
+using System.Diagnostics;
+using System.Text.Json;
+using PtMapper.Conversion;
+using PtMapper.Conversion.Models;
+using PtMapper.Tool.Analysis;
+using Xunit;
+
+namespace PtMapper.Tests;
+
+/// <summary>
+/// ptmap analyze. The parts that are plain data are tested with a runner that
+/// answers from the test; the parts that need the real analysis are tested end
+/// to end and are skipped where Node is not installed, unless
+/// PTMAP_REQUIRE_NODE=1, which CI sets so that a skip cannot hide a failure.
+/// </summary>
+public class AnalyzeTests
+{
+    // ── a runner that answers from the test ────────────────────────────────
+    private sealed class FakeRunner(string answer) : IAnalysisRunner
+    {
+        public string? Request { get; private set; }
+        public int Calls { get; private set; }
+        public string Run(string requestJson, int timeoutSeconds) { Request = requestJson; Calls++; return answer; }
+    }
+
+    private sealed class ThrowingRunner(Exception exception) : IAnalysisRunner
+    {
+        public string Run(string requestJson, int timeoutSeconds) => throw exception;
+    }
+
+    private static string Answer(params string[] findings) =>
+        $$"""{"core":"9.9.9","results":[{"key":"0","problem":null,"complete":true,"stopped":null,"markings":3,"unbounded":[],"findings":[{{string.Join(",", findings)}}]}]}""";
+
+    private static string F(string rule, string severity, string? element = null, string message = "m") =>
+        $$"""{"rule":"{{rule}}","severity":"{{severity}}","element":{{(element == null ? "null" : "\"" + element + "\"")}},"message":"{{message}}"}""";
+
+    private static string PnmlOf(PtNet net)
+    {
+        var path = Path.Combine(Path.GetTempPath(), "ptmap-analyze-" + Guid.NewGuid().ToString("N") + ".pnml");
+        File.WriteAllText(path, Pnml.Write(net));
+        return path;
+    }
+
+    private static PtNet Loop()
+    {
+        var net = new PtNet { Id = "loop", Name = "Loop" };
+        net.Places.Add(new PtPlace { Id = "p", Name = "Idle", InitialMarking = 1 });
+        net.Transitions.Add(new PtTransition { Id = "t", Name = "Go" });
+        net.Arcs.Add(new PtArc { Id = "a", SourceId = "p", TargetId = "t" });
+        net.Arcs.Add(new PtArc { Id = "b", SourceId = "t", TargetId = "p" });
+        return net;
+    }
+
+    private static (int Exit, string Out, string Err) Run(IAnalysisRunner runner, params string[] args)
+    {
+        var output = new StringWriter();
+        var error = new StringWriter();
+        var exit = AnalyzeCommand.Run(args, output, error, runner);
+        return (exit, output.ToString(), error.ToString());
+    }
+
+    // ── the command line ────────────────────────────────────────────────────
+    [Fact]
+    public void TheDefaultsAreWhatThePlanSays()
+    {
+        var (options, error) = AnalyzeOptions.Parse(new[] { "net.pnml" });
+        Assert.Null(error);
+        Assert.Equal(("text", "warning", 20000, (int?)null, 120, false, false),
+            (options!.Format, options.FailOn, options.Markings, options.TimeLimitMilliseconds, options.TimeoutSeconds, options.All, options.RequireComplete));
+    }
+
+    [Theory]
+    [InlineData("--bogus")]
+    [InlineData("--format", "xml")]
+    [InlineData("--fail-on", "sometimes")]
+    [InlineData("--markings", "0")]
+    [InlineData("--markings", "many")]
+    [InlineData("--time-limit", "0")]
+    [InlineData("--timeout", "-3")]
+    public void ABadOptionIsAUsageError(params string[] bad)
+    {
+        var (options, error) = AnalyzeOptions.Parse(new[] { "net.pnml" }.Concat(bad).ToArray());
+        Assert.Null(options);
+        Assert.False(string.IsNullOrEmpty(error));
+    }
+
+    [Fact]
+    public void AMissingValueIsAUsageError() =>
+        Assert.Null(AnalyzeOptions.Parse(new[] { "net.pnml", "--markings" }).Options);
+
+    [Fact]
+    public void ABadOptionGivesExitOne()
+    {
+        var runner = new FakeRunner(Answer());
+        var (exit, _, err) = Run(runner, "net.pnml", "--markings", "0");
+        Assert.Equal(ExitCodes.Usage, exit);
+        Assert.Contains("ptmap analyze", err);
+        Assert.Equal(0, runner.Calls);
+    }
+
+    // ── the request ─────────────────────────────────────────────────────────
+    [Fact]
+    public void TheRequestCarriesIdsNamesMarkingsAndWeights()
+    {
+        var net = Loop();
+        net.Places[0].Name = null; // no name becomes an empty string
+        net.Arcs[0].Weight = 3;
+
+        using var json = JsonDocument.Parse(AnalysisRequest.Build(new[] { net }, 500, null));
+        var root = json.RootElement;
+        Assert.Equal(500, root.GetProperty("limits").GetProperty("markings").GetInt32());
+        Assert.Equal(JsonValueKind.Null, root.GetProperty("limits").GetProperty("milliseconds").ValueKind);
+
+        var sent = root.GetProperty("nets")[0];
+        Assert.Equal("0", sent.GetProperty("key").GetString());
+        Assert.Equal("", sent.GetProperty("places")[0].GetProperty("name").GetString());
+        Assert.Equal(1, sent.GetProperty("places")[0].GetProperty("marking").GetInt32());
+        Assert.Equal(3, sent.GetProperty("arcs")[0].GetProperty("weight").GetInt32());
+        Assert.Equal("t", sent.GetProperty("arcs")[0].GetProperty("target").GetString());
+    }
+
+    [Fact]
+    public void ParallelArcsStayTwoArcs()
+    {
+        var net = Loop();
+        net.Arcs.Add(new PtArc { Id = "a2", SourceId = "p", TargetId = "t" });
+        using var json = JsonDocument.Parse(AnalysisRequest.Build(new[] { net }, 1, 5));
+        Assert.Equal(3, json.RootElement.GetProperty("nets")[0].GetProperty("arcs").GetArrayLength());
+        Assert.Equal(5, json.RootElement.GetProperty("limits").GetProperty("milliseconds").GetInt32());
+    }
+
+    [Fact]
+    public void MarkupAndUmlautsInNamesSurviveTheRequest()
+    {
+        var net = Loop();
+        net.Places[0].Name = "Prüf <a> & \"b\"";
+        var text = AnalysisRequest.Build(new[] { net }, 1, null);
+        using var json = JsonDocument.Parse(text);
+        Assert.Equal("Prüf <a> & \"b\"", json.RootElement.GetProperty("nets")[0].GetProperty("places")[0].GetProperty("name").GetString());
+        Assert.False(text.StartsWith('﻿'));
+    }
+
+    // ── the exit codes ──────────────────────────────────────────────────────
+    [Theory]
+    [InlineData("warning", "information", "text", ExitCodes.Ok)]
+    [InlineData("warning", "warning", "text", ExitCodes.Warnings)]
+    [InlineData("error", "warning", "text", ExitCodes.Ok)]
+    [InlineData("never", "warning", "text", ExitCodes.Ok)]
+    [InlineData("warning", "warning", "json", ExitCodes.Warnings)]
+    public void TheExitCodeFollowsTheSeverityAndTheSwitch(string failOn, string severity, string format, int expected)
+    {
+        var path = PnmlOf(Loop());
+        try
+        {
+            var (exit, _, _) = Run(new FakeRunner(Answer(F("PT13", severity, "p"))), path, "--fail-on", failOn, "--format", format);
+            Assert.Equal(expected, exit);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public void AnErrorFromTheCoreGivesFourEvenWhenNothingFailsOnWarnings()
+    {
+        var path = PnmlOf(Loop());
+        try
+        {
+            var (exit, _, _) = Run(new FakeRunner(Answer(F("PT99", "error"))), path, "--fail-on", "never");
+            Assert.Equal(ExitCodes.Errors, exit);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public void APartialResultFailsOnlyWithRequireComplete()
+    {
+        var partial = """{"core":"1","results":[{"key":"0","problem":null,"complete":false,"stopped":"markings","markings":5,"unbounded":[],"findings":[]}]}""";
+        var path = PnmlOf(Loop());
+        try
+        {
+            Assert.Equal(ExitCodes.Ok, Run(new FakeRunner(partial), path).Exit);
+            Assert.Equal(ExitCodes.Warnings, Run(new FakeRunner(partial), path, "--require-complete").Exit);
+            Assert.Equal(ExitCodes.Ok, Run(new FakeRunner(Answer()), path, "--require-complete").Exit);
+        }
+        finally { File.Delete(path); }
+    }
+
+    // ── what ends up in the report ──────────────────────────────────────────
+    [Fact]
+    public void FindingsAreOrderedErrorsWarningsInformation()
+    {
+        var path = PnmlOf(Loop());
+        try
+        {
+            var runner = new FakeRunner(Answer(F("PT13", "information"), F("PT14", "warning"), F("PT99", "error"), F("PT16", "information")));
+            var (_, output, _) = Run(runner, path, "--format", "json");
+            using var json = JsonDocument.Parse(output);
+            var order = json.RootElement.GetProperty("nets")[0].GetProperty("findings").EnumerateArray()
+                .Select(f => f.GetProperty("rule").GetString()).ToArray();
+            Assert.Equal(new[] { "PT99", "PT14", "PT13", "PT16" }, order);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public void ANetWithoutTransitionsReportsNoDeadlock()
+    {
+        var net = new PtNet { Id = "lonely", Name = "Lonely" };
+        net.Places.Add(new PtPlace { Id = "p", Name = "P", InitialMarking = 1 });
+        var path = PnmlOf(net);
+        try
+        {
+            var runner = new FakeRunner(Answer(F("PT15", "warning", null, "No transition is enabled")));
+            var (_, output, _) = Run(runner, path, "--format", "json");
+            Assert.DoesNotContain("PT15", output);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public void ANetThatBreaksTheStandardIsNotAnalysedAndSaysWhy()
+    {
+        var net = Loop();
+        net.Arcs.Add(new PtArc { Id = "bad", SourceId = "p", TargetId = "p" }); // place to place
+        var path = PnmlOf(net);
+        try
+        {
+            var runner = new FakeRunner(Answer());
+            var (exit, output, _) = Run(runner, path, "--format", "json");
+            Assert.Equal(ExitCodes.Errors, exit);
+            Assert.Equal(0, runner.Calls); // nothing was left to analyse, so nobody was asked
+            using var json = JsonDocument.Parse(output);
+            var reported = json.RootElement.GetProperty("nets")[0];
+            Assert.False(reported.GetProperty("analysed").GetBoolean());
+            Assert.Contains("ISO/IEC 15909-1", reported.GetProperty("problem").GetString());
+            Assert.Contains(reported.GetProperty("findings").EnumerateArray(), f => f.GetProperty("severity").GetString() == "error");
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public void TheTextCountsNotesAndListsThemWithAll()
+    {
+        var path = PnmlOf(Loop());
+        try
+        {
+            var answer = Answer(F("PT14", "warning", "t", "Go can never fire"), F("PT13", "information", "p", "Idle holds at most one token"));
+            var (_, brief, _) = Run(new FakeRunner(answer), path);
+            Assert.Contains("1 warning", brief);
+            Assert.Contains("Go can never fire", brief);
+            Assert.DoesNotContain("holds at most", brief);
+            Assert.Contains("--all", brief);
+
+            var (_, full, _) = Run(new FakeRunner(answer), path, "--all");
+            Assert.Contains("holds at most", full);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public void TheJsonCarriesEveryFieldOfThePlan()
+    {
+        var path = PnmlOf(Loop());
+        try
+        {
+            var (_, output, _) = Run(new FakeRunner(Answer(F("PT13", "information", "p"))), path, "--format", "json", "--markings", "77");
+            using var json = JsonDocument.Parse(output);
+            var root = json.RootElement;
+            Assert.Equal(path, root.GetProperty("file").GetString());
+            Assert.Equal("petrinetjs 9.9.9", root.GetProperty("core").GetString());
+            Assert.Equal(77, root.GetProperty("limits").GetProperty("markings").GetInt32());
+            Assert.Equal(JsonValueKind.Null, root.GetProperty("limits").GetProperty("milliseconds").ValueKind);
+            Assert.Equal(1, root.GetProperty("counts").GetProperty("information").GetInt32());
+            Assert.Equal(0, root.GetProperty("exit").GetInt32());
+
+            var net = root.GetProperty("nets")[0];
+            foreach (var name in new[] { "id", "name", "hierarchy", "analysed", "problem", "complete", "stopped", "markings", "unbounded", "counts", "findings" })
+                Assert.True(net.TryGetProperty(name, out _), $"the net lacks '{name}'");
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public void ReadWarningsGoToTheErrorStreamAndNotIntoTheJson()
+    {
+        var net = Loop();
+        net.Warnings.Add("something was left out");
+        // A written PNML file does not carry warnings; a PNML the reader has to repair does.
+        // What matters here is only that the stream for notes is the error stream.
+        var path = PnmlOf(net);
+        try
+        {
+            var (_, output, _) = Run(new FakeRunner(Answer()), path, "--format", "json");
+            using var json = JsonDocument.Parse(output); // must be JSON from the first character
+            Assert.Equal(JsonValueKind.Object, json.RootElement.ValueKind);
+        }
+        finally { File.Delete(path); }
+    }
+
+    // ── what goes wrong around it ───────────────────────────────────────────
+    [Fact]
+    public void AMissingFileGivesExitTwo()
+    {
+        var (exit, _, err) = Run(new FakeRunner(Answer()), "/no/such/file.pnml");
+        Assert.Equal(ExitCodes.Input, exit);
+        Assert.Contains("no such file", err);
+    }
+
+    [Fact]
+    public void AMissingHierarchyGivesExitTwo()
+    {
+        var aml = FindFile("examples/paper/BridgingExample_MPS500.aml");
+        var (exit, _, err) = Run(new FakeRunner(Answer()), aml, "IH_DoesNotExist");
+        Assert.Equal(ExitCodes.Input, exit);
+        Assert.Contains("IH_DoesNotExist", err);
+    }
+
+    [Fact]
+    public void ARunnerThatCannotRunGivesExitTwoWithItsSentence()
+    {
+        var path = PnmlOf(Loop());
+        try
+        {
+            var (exit, _, err) = Run(new ThrowingRunner(new AnalysisUnavailableException("needs Node 20")), path);
+            Assert.Equal(ExitCodes.Input, exit);
+            Assert.Contains("needs Node 20", err);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public void ARunnerThatFailsGivesExitThree()
+    {
+        var path = PnmlOf(Loop());
+        try
+        {
+            var (exit, _, err) = Run(new ThrowingRunner(new AnalysisFailedException("ran out of time")), path);
+            Assert.Equal(ExitCodes.Failure, exit);
+            Assert.Contains("ran out of time", err);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public void AnAnswerThatIsNotJsonGivesExitThree()
+    {
+        var path = PnmlOf(Loop());
+        try { Assert.Equal(ExitCodes.Failure, Run(new FakeRunner("this is not json"), path).Exit); }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public void AnAmlFindingCarriesTheIdOfTheElementInTheDocument()
+    {
+        var aml = FindFile("examples/paper/BridgingExample_MPS500.aml");
+        using var read = JsonDocument.Parse("{}");
+        // Ask for a finding about a transition of the first net and see that the id is the document's.
+        var (_, _, _) = (0, "", "");
+        var nets = PtMapper.Conversion.CaexToPtNet.ReadAll(Aml.Engine.CAEX.CAEXDocument.LoadFromFile(aml));
+        var element = nets[0].Transitions[0].Id;
+        var (exit, output, _) = Run(new FakeRunner(Answer(F("PT14", "warning", element))), aml, "--format", "json");
+        using var json = JsonDocument.Parse(output);
+        var found = json.RootElement.GetProperty("nets")[0].GetProperty("findings")[0];
+        Assert.True(found.TryGetProperty("internalElementId", out var id) && !string.IsNullOrEmpty(id.GetString()),
+            "the finding carries no id of the document element");
+        Assert.True(exit is ExitCodes.Warnings or ExitCodes.Ok);
+    }
+
+    // ── end to end, with the real analysis ──────────────────────────────────
+    private static string RepoRoot()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, "web")) ) dir = dir.Parent;
+        return dir?.FullName ?? throw new InvalidOperationException("the repository root was not found");
+    }
+
+    private static string FindFile(string relative) => Path.Combine(RepoRoot(), relative.Replace('/', Path.DirectorySeparatorChar));
+
+    private static string BundlePath => Path.Combine(RepoRoot(), "web", "dist-node", "ptmap-analysis.mjs");
+
+    private static bool NodeWorks()
+    {
+        try
+        {
+            var info = new ProcessStartInfo("node", "--version") { RedirectStandardOutput = true, UseShellExecute = false };
+            using var process = Process.Start(info);
+            if (process == null) return false;
+            var text = process.StandardOutput.ReadToEnd();
+            process.WaitForExit();
+            return process.ExitCode == 0 && int.TryParse(text.Trim().TrimStart('v').Split('.')[0], out var major) && major >= 20;
+        }
+        catch { return false; }
+    }
+
+    private static NodeAnalysisRunner RealRunner()
+    {
+        var required = Environment.GetEnvironmentVariable("PTMAP_REQUIRE_NODE") == "1";
+        var ready = NodeWorks() && File.Exists(BundlePath);
+        if (!ready && required) Assert.Fail("Node 20 and the analysis bundle are required here (PTMAP_REQUIRE_NODE=1).");
+        Skip.IfNot(ready, "Node 20 or the analysis bundle (npm run build in web/) is not available.");
+        return new NodeAnalysisRunner(BundlePath);
+    }
+
+    [SkippableFact]
+    public void TheQualityGateGivesOneDeadlockWarning()
+    {
+        var runner = RealRunner();
+        var (exit, output, _) = Run(runner, FindFile("examples/quality-gate.pnml"), "--format", "json");
+        Assert.Equal(ExitCodes.Warnings, exit);
+
+        using var json = JsonDocument.Parse(output);
+        var findings = json.RootElement.GetProperty("nets")[0].GetProperty("findings").EnumerateArray().ToList();
+        var deadlock = Assert.Single(findings, f => f.GetProperty("rule").GetString() == "PT15");
+        Assert.True(deadlock.TryGetProperty("marking", out _));
+        Assert.Equal(11, findings.Count(f => f.GetProperty("severity").GetString() == "information"));
+        Assert.True(json.RootElement.GetProperty("nets")[0].GetProperty("complete").GetBoolean());
+    }
+
+    [SkippableFact]
+    public void AmlAndPnmlOfTheSameNetGiveTheSameFindings()
+    {
+        var runner = RealRunner();
+        var (_, aml, _) = Run(runner, FindFile("examples/quality-gate.aml"), "--format", "json");
+        var (_, pnml, _) = Run(runner, FindFile("examples/quality-gate.pnml"), "--format", "json");
+
+        static List<string> Rules(string text)
+        {
+            using var json = JsonDocument.Parse(text);
+            return json.RootElement.GetProperty("nets")[0].GetProperty("findings").EnumerateArray()
+                .Select(f => f.GetProperty("rule").GetString() + "|" + f.GetProperty("message").GetString()).OrderBy(x => x).ToList();
+        }
+
+        Assert.Equal(Rules(pnml), Rules(aml));
+    }
+
+    [SkippableFact]
+    public void ALiveLoopGivesExitZero()
+    {
+        var runner = RealRunner();
+        var path = PnmlOf(Loop());
+        try
+        {
+            var (exit, output, _) = Run(runner, path, "--format", "json");
+            using var json = JsonDocument.Parse(output);
+            Assert.Equal(0, json.RootElement.GetProperty("counts").GetProperty("warning").GetInt32());
+            Assert.Equal(ExitCodes.Ok, exit);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [SkippableFact]
+    public void AGrowingNetWithTightLimitsIsPartialOrUnbounded()
+    {
+        var runner = RealRunner();
+        var net = new PtNet { Id = "grow", Name = "Grow" };
+        net.Places.Add(new PtPlace { Id = "stock", Name = "Stock" });
+        net.Transitions.Add(new PtTransition { Id = "make", Name = "Make" });
+        net.Arcs.Add(new PtArc { Id = "a", SourceId = "make", TargetId = "stock" });
+        var path = PnmlOf(net);
+        try
+        {
+            var (_, output, _) = Run(runner, path, "--format", "json", "--markings", "50");
+            using var json = JsonDocument.Parse(output);
+            var rules = json.RootElement.GetProperty("nets")[0].GetProperty("findings").EnumerateArray()
+                .Select(f => f.GetProperty("rule").GetString()).ToList();
+            Assert.Contains("PT12", rules);
+            Assert.DoesNotContain("Infinity", output);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [SkippableFact]
+    public void ATimeoutKillsTheProcess()
+    {
+        var runner = RealRunner();
+        // A net too wide to finish in a second: 18 places that each hold a token and
+        // each lose it independently, which is 2^18 reachable markings.
+        var net = new PtNet { Id = "wide", Name = "Wide" };
+        for (var i = 0; i < 18; i++)
+        {
+            net.Places.Add(new PtPlace { Id = $"p{i}", Name = $"P{i}", InitialMarking = 1 });
+            net.Transitions.Add(new PtTransition { Id = $"t{i}", Name = $"T{i}" });
+            net.Arcs.Add(new PtArc { Id = $"a{i}", SourceId = $"p{i}", TargetId = $"t{i}" });
+        }
+
+        var path = PnmlOf(net);
+        try
+        {
+            var (exit, _, err) = Run(runner, path, "--markings", "100000000", "--timeout", "1");
+            Assert.Equal(ExitCodes.Failure, exit);
+            Assert.Contains("did not finish", err);
+
+            Assert.NotNull(runner.LastProcessId);
+            Thread.Sleep(500);
+            // Its own process, by id: other programs may be running Node as well.
+            var alive = Process.GetProcesses().Any(p => p.Id == runner.LastProcessId);
+            Assert.False(alive, "the analysis process is still running after the timeout");
+        }
+        finally { File.Delete(path); }
+    }
+
+    [SkippableFact]
+    public void AMissingBundleGivesExitTwoWithTheInstruction()
+    {
+        RealRunner(); // only to skip where Node is missing
+        var path = PnmlOf(Loop());
+        try
+        {
+            var (exit, _, err) = Run(new NodeAnalysisRunner(Path.Combine(Path.GetTempPath(), "no-such-bundle.mjs")), path);
+            Assert.Equal(ExitCodes.Input, exit);
+            Assert.Contains("npm run build", err);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public void WithoutNodeOnThePathTheRunnerSaysSo()
+    {
+        var path = PnmlOf(Loop());
+        var bundle = Path.GetTempFileName();
+        try
+        {
+            var (exit, _, err) = Run(new NodeAnalysisRunner(bundle, "no-such-node-executable"), path);
+            Assert.Equal(ExitCodes.Input, exit);
+            Assert.Contains("Node.js", err);
+        }
+        finally { File.Delete(path); File.Delete(bundle); }
+    }
+}

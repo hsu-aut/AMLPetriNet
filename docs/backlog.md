@@ -65,13 +65,23 @@ that all findings appear in the panel.
   the menu plan); needs a change in PetriNet.js.
 - [ ] E4. Tried in the real AML Editor; version, release note and tag.
 
+## Block F: `ptmap analyze`
+
+Plan and decisions: `plan-ptmap-analyze.md`.
+
+- [x] F1. PetriNet.js 0.3.0: `net.js` and `analyseData` (built, tag waits for the push).
+- [x] F2. The analysis bundle (`web/src/analysis.js`, `dist-node/`, `verify-analysis.mjs`).
+- [x] F3. `ptmap analyze` with text and JSON (`dotnet/PtMapper.Tool/Analysis/`, tests
+  in `AnalyzeTests.cs`). On a branch (`ptmap-analyze`); the lock file stays on
+  `file:` until 0.3.0 is tagged.
+- [ ] F4. Review, merge, CI with `PTMAP_REQUIRE_NODE`.
+
 ## Not started, to be planned first
 
 - Search in a Web Worker.
 - Workflow net soundness.
 - Net classes and Commoner's theorem.
 - A properties panel.
-- `ptmap analyze`. Planned and decided: `plan-ptmap-analyze.md`. Waits for B6 and PetriNet.js 0.3.0.
 - CITATION.cff.
 
 ## Later, by the author

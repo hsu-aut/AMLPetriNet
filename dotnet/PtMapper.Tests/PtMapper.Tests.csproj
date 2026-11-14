@@ -13,6 +13,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\PtMapper.Conversion\PtMapper.Conversion.csproj" />
+    <ProjectReference Include="..\PtMapper.Tool\PtMapper.Tool.csproj" />
   </ItemGroup>
   <ItemGroup>
     <!-- The published library artefacts the generator is checked against. -->
