@@ -303,6 +303,18 @@ public partial class PetriNetPlugin : PluginViewBase, ISupportsThemes, INotifyAM
         if (string.Equals(pnml, _echoBaseline, StringComparison.Ordinal))
         {
             PluginLog.Debug("Change matched the import baseline; treated as import fallout.");
+
+            // The same content also arrives when edits are undone back to the
+            // loaded net. The check has to follow, or the list on the canvas
+            // keeps the findings of the edit that is gone.
+            try
+            {
+                Revalidate(Pnml.Read(pnml), Array.Empty<string>(), open: false);
+            }
+            catch (Exception ex)
+            {
+                PluginLog.Debug("Could not check the diagram: " + ex.Message);
+            }
             return;
         }
 

@@ -412,6 +412,12 @@
 
       await modeler.importPNML(pnml);
 
+      // Another net, so what was found about the last one no longer applies:
+      // not in the table, and not in the list on the canvas, which keeps the
+      // server's findings through edits and would link them to the wrong
+      // elements. A switch of hierarchy comes through here as well.
+      clearFindings();
+
       source = { aml, name, hierarchy: detail?.hierarchy ?? hierarchy ?? null };
       document.body.classList.add('loaded');
       fillHierarchies(detail);
