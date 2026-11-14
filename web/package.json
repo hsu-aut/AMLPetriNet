@@ -7,15 +7,15 @@
   "scripts": {
     "build": "node build.mjs",
     "pretest": "playwright install chromium",
-    "test": "node --test src/ && node tools/verify-interop.mjs && node tools/verify-bridge.mjs && node tools/verify-svg.mjs",
-    "test:svg": "node tools/verify-svg.mjs",
+    "test": "node --test src/ && node tools/verify-interop.mjs && node tools/verify-bridge.mjs && node tools/verify-svg.mjs && node tools/verify-analysis.mjs",
+    "test:svg": "node tools/verify-svg.mjs && node tools/verify-analysis.mjs",
     "test:interop": "node tools/verify-interop.mjs",
     "dump": "node tools/dump-xml.mjs",
     "test:bridge": "node tools/verify-bridge.mjs",
     "test:webapp": "node tools/verify-webapp.mjs"
   },
   "dependencies": {
-    "petrinetjs": "github:hsu-aut/PetriNet.js#v0.2.2"
+    "petrinetjs": "file:../../PetriNet.js"
   },
   "devDependencies": {
     "esbuild": "^0.25.0",

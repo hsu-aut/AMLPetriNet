@@ -21,3 +21,4 @@ deploy.zip
 
 # Downloaded by web/tools/validate-pnml.mjs: the PNML grammar and the validator.
 web/.cache/
+web/dist-node/

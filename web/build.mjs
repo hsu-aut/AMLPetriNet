@@ -5,7 +5,7 @@
  * a CDN at runtime, so the host can serve the bundle offline from disk.
  */
 import * as esbuild from 'esbuild';
-import { cp, mkdir, rm } from 'node:fs/promises';
+import { cp, mkdir, readFile, rm } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -73,4 +73,19 @@ await esbuild.build({
 });
 
 await cp(resolve(here, 'index.html'), resolve(dist, 'index.html'));
+
+// The analysis for ptmap, a Node process rather than a page. It goes to a folder
+// of its own so that it does not travel in the plugin package, which takes all of
+// dist. It carries the version of the core it was built from.
+const distNode = resolve(here, 'dist-node');
+await rm(distNode, { recursive: true, force: true });
+const coreVersion = JSON.parse(await readFile(resolve(pkg, 'package.json'), 'utf8')).version;
+await esbuild.build({
+  ...shared,
+  entryPoints: [resolve(here, 'src/analysis.js')],
+  platform: 'node',
+  format: 'esm',
+  outfile: resolve(distNode, 'ptmap-analysis.mjs'),
+  define: { __CORE_VERSION__: JSON.stringify(coreVersion) },
+});
 console.log('dist/ ready');
