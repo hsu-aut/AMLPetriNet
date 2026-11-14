@@ -1,6 +1,6 @@
 # Modeler fork and net core implementation plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Status: carried out, kept as a record.** The paths below are from the time the modeler lived in `modeler/` of this repository. It has since moved to [PetriNet.js](https://github.com/hsu-aut/PetriNet.js), where `modeler/src/` is `src/` and the browser checks named `web/tools/verify-*.mjs` (except bridge, interop, svg and the web application) are `test/browser/`.
 
 **Goal:** Bring the Petri net modeler into this repository as a fork that is a package of its own, and add an analysis core that answers questions about a net's behaviour, with no visible change to the tool yet.
 
