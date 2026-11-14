@@ -75,13 +75,18 @@ Plan and decisions: `plan-ptmap-analyze.md`.
   in `AnalyzeTests.cs`). The lock file points at PetriNet.js v0.3.0.
 - [x] F4. Review done, merged; CI runs with `PTMAP_REQUIRE_NODE`.
 
+## Block G: CITATION.cff
+
+- [x] G1. `CITATION.cff` in PetriNet.js (0.3.0, names ptn-js as the work it forks)
+  and in AMLPetriNet (0.1.18). No ORCID and no preferred paper: the author adds
+  them. The version and date are to be updated with each release.
+
 ## Not started, to be planned first
 
 - Search in a Web Worker.
 - Workflow net soundness.
 - Net classes and Commoner's theorem.
 - A properties panel.
-- CITATION.cff.
 
 ## Later, by the author
 
