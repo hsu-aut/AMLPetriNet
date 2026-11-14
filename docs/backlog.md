@@ -85,12 +85,11 @@ Plan and decisions: `plan-ptmap-analyze.md`.
 
 - Workflow net soundness, net classes and Commoner's theorem: `plan-net-classes.md`
   (decided in 9a).
-- Search in a Web Worker: `plan-web-worker.md` (decided in 8a), PetriNet.js 0.4.0 or later,
-  breaking.
+- A properties panel: `plan-properties-panel.md` (decided).
+- Search in a Web Worker: `plan-web-worker.md` (decided in 8a), breaking.
 
-## Not started, to be planned first
-
-- A properties panel.
+Order of building, and with it the PetriNet.js versions: net classes 0.4.0,
+properties panel 0.5.0, Web Worker 0.6.0.
 
 ## Later, by the author
 
