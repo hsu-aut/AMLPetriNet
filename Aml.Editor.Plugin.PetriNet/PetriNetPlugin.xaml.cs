@@ -55,6 +55,13 @@ public partial class PetriNetPlugin : PluginViewBase, ISupportsThemes, INotifyAM
     /// </summary>
     private bool _restoringPending;
 
+    /// <summary>
+    /// True while the echo baseline is the unsaved diagram itself (after a page
+    /// reload restored it) rather than the net loaded from the document. Undoing
+    /// back to that baseline is then not "back to the document".
+    /// </summary>
+    private bool _baselineIsPending;
+
     /// <summary>The last theme the editor announced, re-sent after every page boot.</summary>
     private string? _lastTheme;
 
@@ -189,10 +196,12 @@ public partial class PetriNetPlugin : PluginViewBase, ISupportsThemes, INotifyAM
             {
                 // The canvas shows the unsaved edits again; they are still unsaved.
                 _restoringPending = false;
+                _baselineIsPending = true;
             }
             else
             {
                 _pendingPnml = null;
+                _baselineIsPending = false;
             }
             UpdatePendingLabel();
         };
@@ -303,6 +312,14 @@ public partial class PetriNetPlugin : PluginViewBase, ISupportsThemes, INotifyAM
         if (string.Equals(pnml, _echoBaseline, StringComparison.Ordinal))
         {
             PluginLog.Debug("Change matched the import baseline; treated as import fallout.");
+
+            // Undone all the way back to the loaded net: nothing is unsaved any
+            // more, and a stale copy must not overwrite the document later.
+            if (_pendingPnml != null && !_baselineIsPending)
+            {
+                _pendingPnml = null;
+                UpdatePendingLabel();
+            }
 
             // The same content also arrives when edits are undone back to the
             // loaded net. The check has to follow, or the list on the canvas

@@ -252,10 +252,10 @@ Each stage leaves the tool working and shippable.
 
 ## 8. Open questions
 
-- Whether `Findings.setHostFindings` is worth keeping: the plugin and the web
-  application both show the findings of their own validator in their own table,
-  so nothing in production hands findings to the modeler. The way is tested and
-  documented; using it would mean one list instead of two.
+- Settled: `Findings.setHostFindings` is in use. The plugin and the web
+  application hand their structural findings (PT01 to PT11) to the modeler, so
+  the panel on the canvas holds one list. The WPF table stays for read warnings
+  and the conformance report.
 - Whether the command line tool gets `ptmap analyze` from the same core, which
   would mean a second implementation in C# or running the JavaScript core in the
   tool. Not decided; nothing in stages 1 to 5 depends on it.
