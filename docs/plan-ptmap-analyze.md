@@ -225,6 +225,18 @@ in AMLPetriNet, because the protocol belongs to ptmap.
 - Later switch to (c): measure Jint on the 16384-marking net first; run the
   end-to-end tests against both runners.
 
+## 8a. Decided (2026-11-14)
+
+The author left the questions below open and asked for the recommended answers:
+1. A warning fails the run by default (exit 5); `--fail-on error` turns it off.
+2. All warnings count alike, PT05, PT08, PT09 and PT10 included.
+3. A partial result (PT17) fails only with `--require-complete`.
+4. No time limit in ptmap, so the answer is reproducible; the panel keeps its limit.
+5. For AML input a finding also carries the InternalElement ID.
+6. An empty net, or one without transitions, reports no deadlock.
+7. The text output only counts information findings; `--all` lists them.
+8. `petrinetjs analyze` stays open.
+
 ## 8. Open questions for the author
 
 1. Should a warning fail the run by default (exit 5), or only an error, as in

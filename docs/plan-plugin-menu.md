@@ -178,6 +178,16 @@ Work on a new branch from `findings-in-panel`, or from `main` once merged.
 - D-4: the host gains no write path. `_pendingPnml` changes only on `changed`, and
   a run never posts `changed`.
 
+## 8a. Decided (2026-11-14)
+
+The author left the questions below open and asked for the recommended answers:
+1. Analyse during a run uses the document's initial marking.
+2. Export SVG always shows the document's marking.
+3. Refresh, net switch, New Net and Import end a run with a status note, no question.
+4. PT12 to PT21 stay on the canvas, not in the WPF table or the conformance report.
+5. The status line reports only analyses started from the menu.
+6. No "State space" entry for now.
+
 ## 8. Open questions for the author
 
 1. Analyse during a run: from the document's initial marking (planned), or from
