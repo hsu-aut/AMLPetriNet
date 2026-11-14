@@ -62,6 +62,8 @@ that all findings appear in the panel.
   `verify-bridge.mjs`).
 - [x] E3. The plugin's Net menu has Simulate and Analyse (`NetMenuState`, tests).
   On a branch (`plugin-menu`); the lock file stays on `file:` until 0.2.1 is tagged.
+- [ ] E5. Export SVG during a run shows the document's marking (decision 8a.2 of
+  the menu plan); needs a change in PetriNet.js.
 - [ ] E4. Tried in the real AML Editor; version, release note and tag.
 
 ## Not started, to be planned first

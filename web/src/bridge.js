@@ -237,9 +237,9 @@ export function connectBridge(modeler) {
     if (simulating) {
       // The menu click left the focus in the host; the keys of a run (a click
       // fires, Escape ends it) need it on the canvas.
-      const container = canvas.getContainer();
-      if (!container.hasAttribute('tabindex')) container.setAttribute('tabindex', '-1');
-      container.focus({ preventScroll: true });
+      // The keyboard of diagram-js listens on the drawing itself, not on its
+      // container, so the focus has to go to the drawing.
+      canvas.focus();
     }
   };
 

@@ -289,6 +289,19 @@ check(answers.length === 1 && answers[0].active === true && answers[0].problem =
   `simulate true was answered by ${JSON.stringify(answers)}`);
 check(await runState() === true, 'the run is on after simulate true');
 
+// The keys of a run need the focus on the drawing, where diagram-js listens: a
+// click on the menu leaves it in the host. Escape then ends the run.
+check(await page.evaluate(() => document.activeElement === document.querySelector('.djs-container svg')),
+  'the drawing has the keyboard focus after simulate true');
+await clearMessages();
+await page.keyboard.press('Escape');
+await page.waitForTimeout(300);
+check(await runState() === false, 'Escape ends a run that the host started');
+answers = await messagesOfType('simulation');
+check(answers.length === 1 && answers[0].active === false, `Escape was reported as ${JSON.stringify(answers)}`);
+await send({ type: 'simulate', active: true });
+await page.waitForTimeout(300);
+
 await clearMessages();
 await send({ type: 'simulate', active: true });
 await page.waitForTimeout(300);
@@ -326,6 +339,8 @@ await clearMessages();
 await send({ type: 'simulate', active: 'yes' });
 await page.waitForTimeout(300);
 check(await runState() === false, 'a request that is not true or false changes nothing');
+answers = await messagesOfType('simulation');
+check(answers.length === 1 && answers[0].active === false, `a malformed simulate was answered by ${JSON.stringify(answers)}`);
 check((await messagesOfType('error')).length === 0, 'a malformed simulate raises no error');
 
 // A net the modeler refuses to run: the answer says why.
@@ -354,11 +369,11 @@ await page.waitForTimeout(500);
 await send({ type: 'simulate', active: true });
 await page.waitForTimeout(300);
 await clearMessages();
-await page.evaluate(() => window.ptn.get('simulation').stop('The net was replaced.'));
-await page.waitForTimeout(300);
+await page.evaluate((pnml) => window.__hostSend({ type: 'importPNML', pnml }), samplePnml);
+await page.waitForTimeout(700);
 answers = await messagesOfType('simulation');
-check(answers.length === 1 && answers[0].active === false && answers[0].problem === 'The net was replaced.',
-  `a run that ended by itself was reported as ${JSON.stringify(answers)}`);
+check(answers.length === 1 && answers[0].active === false && typeof answers[0].problem === 'string' && answers[0].problem.length > 0,
+  `a run that an import ended was reported as ${JSON.stringify(answers)}`);
 
 // The analysis: counts that match the list, the list open, the host's findings kept.
 await page.evaluate((pnml) => window.__hostSend({ type: 'importPNML', pnml }), samplePnml);

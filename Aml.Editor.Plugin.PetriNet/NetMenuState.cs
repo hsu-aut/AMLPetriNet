@@ -10,9 +10,9 @@ public sealed record NetMenuItems(bool CanSimulate, bool CanAnalyse, string Simu
 /// </summary>
 public static class NetMenuState
 {
-    public static NetMenuItems For(bool documentOpen, bool pageReady, bool simulating)
+    public static NetMenuItems For(bool documentOpen, bool netBound, bool pageReady, bool simulating)
     {
-        var usable = documentOpen && pageReady;
+        var usable = documentOpen && netBound && pageReady;
         return new NetMenuItems(
             CanSimulate: usable,
             CanAnalyse: usable,

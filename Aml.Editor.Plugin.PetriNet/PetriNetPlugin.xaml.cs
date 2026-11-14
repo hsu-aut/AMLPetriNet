@@ -54,6 +54,12 @@ public partial class PetriNetPlugin : PluginViewBase, ISupportsThemes, INotifyAM
     /// <summary>True from a menu click on Analyse until the page answers, so that only these get a status line.</summary>
     private bool _analysisAsked;
 
+    /// <summary>
+    /// Stops the plugin asked for itself (a document closed, a document without a
+    /// net) whose answers must not write a status line of their own.
+    /// </summary>
+    private int _silentStops;
+
     /// <summary>Latest PNML from the viewer that has not been written back yet.</summary>
     private string? _pendingPnml;
 
@@ -234,7 +240,9 @@ public partial class PetriNetPlugin : PluginViewBase, ISupportsThemes, INotifyAM
     {
         if (_bridge == null) return;
 
-        // A page that boots anew knows of no run.
+        // A page that boots anew knows of no run and of no question.
+        _silentStops = 0;
+        _analysisAsked = false;
         SetSimulating(false);
 
         if (_pendingPnml != null)
@@ -253,7 +261,7 @@ public partial class PetriNetPlugin : PluginViewBase, ISupportsThemes, INotifyAM
     }
 
     private NetMenuItems MenuItems() =>
-        NetMenuState.For(_document != null, _bridge?.IsReady == true, _simulating);
+        NetMenuState.For(_document != null, _hierarchyId != null, _bridge?.IsReady == true, _simulating);
 
     /// <summary>Follows the run in the menu: the entry says Stop while one is on.</summary>
     private void SetSimulating(bool active)
@@ -287,8 +295,22 @@ public partial class PetriNetPlugin : PluginViewBase, ISupportsThemes, INotifyAM
         else SetStatus("The modeler is not ready yet.");
     }
 
+    /// <summary>Ends a run the user did not end, without a status line for the answer.</summary>
+    private void StopRunSilently()
+    {
+        if (_simulating && _bridge?.SetSimulation(false) == true) _silentStops++;
+        SetSimulating(false);
+        _analysisAsked = false;
+    }
+
     private void OnSimulationChanged(bool active, string? problem)
     {
+        if (!active && _silentStops > 0)
+        {
+            _silentStops--;
+            return;
+        }
+
         var wasRunning = _simulating;
         SetSimulating(active);
         SetStatus(NetMenuState.SimulationStatus(wasRunning, active, problem));
@@ -520,8 +542,7 @@ public partial class PetriNetPlugin : PluginViewBase, ISupportsThemes, INotifyAM
         _pendingPnml = null;
         _echoBaseline = null;
         _selectedNetIndex = 0;
-        if (_simulating) _bridge?.SetSimulation(false);
-        SetSimulating(false);
+        StopRunSilently();
         ClearFindings();
         UpdatePendingLabel();
         RefreshNetChoices();
@@ -565,6 +586,7 @@ public partial class PetriNetPlugin : PluginViewBase, ISupportsThemes, INotifyAM
         {
             _hierarchyId = null;
             _hierarchyName = null;
+            StopRunSilently();
             RefreshNetChoices();
             ShowPlaceholder(true);
             PluginLog.Info("Document has no PT_Net instance hierarchy. Use New Net in the Net menu to add one.");

@@ -5,12 +5,13 @@ namespace Aml.Editor.Plugin.PetriNet.Tests;
 public class NetMenuStateTests
 {
     [Theory]
-    [InlineData(false, false)]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
-    public void WithoutADocumentAndAReadyPageNothingIsOffered(bool document, bool ready)
+    [InlineData(false, true, true)]
+    [InlineData(true, false, true)]
+    [InlineData(true, true, false)]
+    [InlineData(false, false, false)]
+    public void WithoutADocumentANetAndAReadyPageNothingIsOffered(bool document, bool net, bool ready)
     {
-        var items = NetMenuState.For(document, ready, simulating: false);
+        var items = NetMenuState.For(document, net, ready, simulating: false);
         Assert.False(items.CanSimulate);
         Assert.False(items.CanAnalyse);
     }
@@ -18,7 +19,7 @@ public class NetMenuStateTests
     [Fact]
     public void WithADocumentAndAReadyPageBothAreOffered()
     {
-        var items = NetMenuState.For(true, true, simulating: false);
+        var items = NetMenuState.For(true, true, true, simulating: false);
         Assert.True(items.CanSimulate && items.CanAnalyse);
         Assert.Equal("Simulate", items.SimulateHeader);
         Assert.False(items.SimulateChecked);
@@ -27,7 +28,7 @@ public class NetMenuStateTests
     [Fact]
     public void DuringARunTheEntryOffersToStopIt()
     {
-        var items = NetMenuState.For(true, true, simulating: true);
+        var items = NetMenuState.For(true, true, true, simulating: true);
         Assert.Equal("Stop Simulation", items.SimulateHeader);
         Assert.True(items.SimulateChecked);
         Assert.True(items.CanAnalyse);

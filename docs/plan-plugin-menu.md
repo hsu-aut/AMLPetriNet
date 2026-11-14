@@ -182,7 +182,10 @@ Work on a new branch from `findings-in-panel`, or from `main` once merged.
 
 The author left the questions below open and asked for the recommended answers:
 1. Analyse during a run uses the document's initial marking.
-2. Export SVG always shows the document's marking.
+2. Export SVG always shows the document's marking. **Not built yet:** during a run
+   the picture still shows the run's marking and highlights, because the picture is
+   the canvas as drawn. It needs a way to draw the document's marking for the
+   export in PetriNet.js (backlog E5).
 3. Refresh, net switch, New Net and Import end a run with a status note, no question.
 4. PT12 to PT21 stay on the canvas, not in the WPF table or the conformance report.
 5. The status line reports only analyses started from the menu.
