@@ -156,6 +156,16 @@ check('validation answers', /finding/.test(verdict), verdict.trim());
 const rows = await page.locator('#findings tbody tr').count();
 check('the findings table lists the new dangling place', rows > 0, `${rows} row(s)`);
 
+// The server's findings are also in the list on the canvas, where the analysis
+// of the modeler is: one list, not two. The closed button carries their count.
+const onCanvas = await page.evaluate(() => ({
+  host: window.ptn.get('findings').host.length,
+  button: document.querySelector('.ptn-findings-button').textContent,
+}));
+check('the server findings are in the list on the canvas', onCanvas.host === rows,
+  `${onCanvas.host} on the canvas, ${rows} in the table`);
+check('the closed Analyse button carries their count', /^Analyse \(/.test(onCanvas.button), onCanvas.button);
+
 // ── PNML export ─────────────────────────────────────────────────────────────
 
 await page.locator('#pnml').click();

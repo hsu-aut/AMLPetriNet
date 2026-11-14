@@ -86,9 +86,25 @@ const result = await page.evaluate(async () => {
   findings.analyse();
   const afterSecond = rows();
 
-  // Editing the net clears the list rather than leaving a stale one on screen.
+  // Editing the net drops what the analysis computed rather than leaving a
+  // stale list on screen. What the host found stays, because only the host can
+  // say whether the edit cured it.
   modeling.updateLabel(out, 'Finished');
   const afterEdit = rows();
+
+  // With the list closed the button says what the host found.
+  document.querySelector('.ptn-findings-close').click();
+  const button = () => document.querySelector('.ptn-findings-button');
+  const closed = { text: button().textContent, error: button().classList.contains('ptn-findings-button-error') };
+
+  // A finding about an element that is gone is no longer a link.
+  const linkBefore = rows().find((row) => row.rule === 'PT02')?.clickable;
+  modeling.removeShape(mid);
+  const linkAfter = rows().find((row) => row.rule === 'PT02')?.clickable;
+
+  // The host empties its list; the button goes back to its plain name.
+  findings.setHostFindings([]);
+  const cleared = { text: button().textContent, error: button().classList.contains('ptn-findings-button-error') };
 
   return {
     before,
@@ -97,6 +113,10 @@ const result = await page.evaluate(async () => {
     withHost,
     afterSecond,
     afterEdit,
+    closed,
+    linkBefore,
+    linkAfter,
+    cleared,
     documentUnchanged: pnmlBefore === pnmlAfter,
   };
 });
@@ -134,13 +154,21 @@ check(ruleOf(result.withHost, 'PT02').length === 1, 'a finding from the host doe
 check(result.withHost[0]?.rule === 'PT02', `the error is not first; the list starts with ${result.withHost[0]?.rule}`);
 check(ruleOf(result.afterSecond, 'PT02').length === 1, 'analysing again dropped the findings from the host');
 
-// The list goes back to saying nothing rather than keeping findings about a
-// net that has since changed.
-check(result.afterEdit.every((row) => row.rule === ''),
-  `editing the net left ${result.afterEdit.filter((row) => row.rule).length} stale finding(s) on screen`);
+// What the analysis computed is gone, what the host found is still there.
+check(ruleOf(result.afterEdit, 'PT02').length === 1,
+  `the host's finding did not survive an edit: ${JSON.stringify(result.afterEdit)}`);
+check(!result.afterEdit.some((row) => /^PT1\d$|^PT2\d$/.test(row.rule)),
+  `editing the net left ${result.afterEdit.filter((row) => /^PT1|^PT2/.test(row.rule)).length} stale finding(s) of the analysis on screen`);
 // And it says that it dropped them, not that the net is fine.
-check(result.afterEdit.length === 1 && /net changed.*Analyse again/.test(result.afterEdit[0].message),
-  `after an edit the panel shows ${JSON.stringify(result.afterEdit)}`);
+check(result.afterEdit.some((row) => row.rule === '' && /net changed.*Analyse again/.test(row.message)),
+  `after an edit the panel does not say what it dropped: ${JSON.stringify(result.afterEdit)}`);
+
+check(result.closed.text === 'Analyse (1 error)', `the closed button reads '${result.closed.text}'`);
+check(result.closed.error === true, 'the closed button does not look like an error');
+check(result.linkBefore === true, 'the host finding about an existing element is not a link');
+check(result.linkAfter === false, 'a finding about a deleted element is still a link');
+check(result.cleared.text === 'Analyse' && result.cleared.error === false,
+  `the button after the host cleared its list reads '${result.cleared.text}'`);
 
 if (pageErrors.length) problems.push('page errors: ' + pageErrors.join('; '));
 

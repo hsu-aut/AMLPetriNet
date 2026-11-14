@@ -11,6 +11,14 @@
  *   { type: 'selectElement', id }  select and scroll to a model element
  *   { type: 'requestExport' }      ask for the current PNML on demand
  *   { type: 'requestSvg' }         ask for the diagram as an SVG picture
+ *   { type: 'hostFindings', findings }
+ *                                  what the host's own check of the net found,
+ *                                  [{ rule, severity, element, message }] with
+ *                                  severity 'error' | 'warning' | 'information'
+ *                                  and element the PNML id; the page lists them
+ *                                  with its own findings. They stay until the
+ *                                  host sends the list again, an empty one
+ *                                  clears them
  *
  * Page -> host:
  *   { type: 'ready', url }
@@ -115,6 +123,24 @@ function showFatal(text) {
 }
 
 /**
+ * The findings of a host message, as far as they can be read. The message comes
+ * from outside the page, so a list that is not a list is an empty one, and an
+ * entry that is not an object is left out rather than failing the others.
+ */
+function hostFindingsOf(findings) {
+  if (!Array.isArray(findings)) return [];
+
+  return findings
+    .filter((finding) => finding && typeof finding === 'object')
+    .map((finding) => ({
+      rule: typeof finding.rule === 'string' ? finding.rule : '',
+      severity: finding.severity,
+      element: typeof finding.element === 'string' && finding.element ? finding.element : null,
+      message: typeof finding.message === 'string' ? finding.message : '',
+    }));
+}
+
+/**
  * Wires a modeler instance to the host. Returns nothing; the page keeps the
  * modeler on window for diagnostics.
  */
@@ -214,6 +240,8 @@ export function connectBridge(modeler) {
         if (pnml !== null) post({ type: 'changed', pnml });
       } else if (msg.type === 'requestSvg') {
         post({ type: 'svg', svg: await exportSvg(modeler) });
+      } else if (msg.type === 'hostFindings') {
+        modeler.get('findings').setHostFindings(hostFindingsOf(msg.findings));
       } else if (msg.type === 'setTheme') {
         const theme = msg.theme === 'dark' ? 'dark' : 'light';
         document.documentElement.setAttribute('data-theme', theme);

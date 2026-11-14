@@ -534,6 +534,8 @@
     function clearFindings() {
       el('findings').innerHTML = '';
       document.body.classList.remove('showfindings');
+      // The list on the canvas keeps what the server found until told otherwise.
+      modeler?.get('findings').setHostFindings([]);
     }
 
     async function validate() {
@@ -594,6 +596,10 @@
       table.appendChild(body);
       el('findings').replaceChildren(table);
       document.body.classList.add('showfindings');
+
+      // The same findings in the list on the canvas, beside what the analysis
+      // computes there.
+      modeler?.get('findings').setHostFindings(findings);
     }
 
     function select(id) {

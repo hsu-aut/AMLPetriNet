@@ -830,6 +830,13 @@ public partial class PetriNetPlugin : PluginViewBase, ISupportsThemes, INotifyAM
 
         Dispatcher.Invoke(() =>
         {
+            // The same findings, in the list on the canvas. The WPF table below
+            // stays: it also carries what reading the document left off the
+            // canvas and feeds the conformance report.
+            _bridge?.SendHostFindings(findings
+                .Select(f => new HostFinding(f.Rule, f.Severity.ToString(), f.ElementId, f.Message))
+                .ToList());
+
             if (FindingsGrid == null || FindingsPanel == null || FindingsButton == null) return;
 
             FindingsGrid.ItemsSource = rows;
@@ -868,6 +875,10 @@ public partial class PetriNetPlugin : PluginViewBase, ISupportsThemes, INotifyAM
     /// </summary>
     private void ClearFindings()
     {
+        // The list on the canvas keeps the findings of the host through edits,
+        // so it is told when they no longer describe the net.
+        _bridge?.SendHostFindings(Array.Empty<HostFinding>());
+
         if (FindingsGrid == null || FindingsPanel == null) return;
 
         FindingsGrid.ItemsSource = null;

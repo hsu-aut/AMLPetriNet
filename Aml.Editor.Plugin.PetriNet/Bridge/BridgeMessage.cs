@@ -51,4 +51,37 @@ public static class JsMessageType
     public const string RequestSvg = "requestSvg";
     public const string SetTheme = "setTheme";
     public const string SelectElement = "selectElement";
+    public const string HostFindings = "hostFindings";
+}
+
+/// <summary>
+/// One finding of the plugin's own check, as the page lists it. Kept apart from
+/// the mapper's finding type so that this assembly's wire format does not
+/// depend on it: the page reads the strings below and nothing else.
+/// </summary>
+/// <param name="Rule">The rule, for instance PT05.</param>
+/// <param name="Severity">"error", "warning" or "information", in any case.</param>
+/// <param name="Element">The PNML id of the element it is about, or null.</param>
+/// <param name="Message">What is wrong, as a sentence.</param>
+public sealed record HostFinding(string Rule, string Severity, string? Element, string Message);
+
+/// <summary>
+/// The message that hands the findings of the plugin's check to the page, which
+/// lists them with the ones the modeler computes. Mirrors web/src/bridge.js.
+/// </summary>
+public static class HostFindingsMessage
+{
+    public static object Create(IEnumerable<HostFinding> findings) => new
+    {
+        type = JsMessageType.HostFindings,
+        findings = findings
+            .Select(f => new
+            {
+                rule = f.Rule,
+                severity = f.Severity.ToLowerInvariant(),
+                element = string.IsNullOrEmpty(f.Element) ? null : f.Element,
+                message = f.Message,
+            })
+            .ToArray(),
+    };
 }

@@ -97,5 +97,56 @@ public class BridgeMessageTests
         Assert.Equal("requestSvg", JsMessageType.RequestSvg);
         Assert.Equal("setTheme", JsMessageType.SetTheme);
         Assert.Equal("selectElement", JsMessageType.SelectElement);
+        Assert.Equal("hostFindings", JsMessageType.HostFindings);
+    }
+
+    private static JsonElement Wire(IEnumerable<HostFinding> findings) =>
+        JsonDocument.Parse(JsonSerializer.Serialize(HostFindingsMessage.Create(findings))).RootElement;
+
+    [Fact]
+    public void TheFindingsOfTheCheckAreSentInTheShapeThePageReads()
+    {
+        var wire = Wire(new[]
+        {
+            new HostFinding("PT05", "Error", "p_waiting", "An arc joins two places."),
+            new HostFinding("PT09", "Warning", null, "A place has no arc."),
+        });
+
+        Assert.Equal("hostFindings", wire.GetProperty("type").GetString());
+        var findings = wire.GetProperty("findings");
+        Assert.Equal(2, findings.GetArrayLength());
+
+        // The page compares severities as lower case words; the enum of the
+        // mapper prints them capitalised.
+        Assert.Equal("error", findings[0].GetProperty("severity").GetString());
+        Assert.Equal("warning", findings[1].GetProperty("severity").GetString());
+
+        Assert.Equal("PT05", findings[0].GetProperty("rule").GetString());
+        Assert.Equal("p_waiting", findings[0].GetProperty("element").GetString());
+        Assert.Equal("An arc joins two places.", findings[0].GetProperty("message").GetString());
+    }
+
+    [Fact]
+    public void AFindingAboutTheWholeNetCarriesNoElement()
+    {
+        var wire = Wire(new[]
+        {
+            new HostFinding("PT10", "Warning", null, "x"),
+            new HostFinding("PT10", "Warning", "", "y"),
+        });
+
+        foreach (var finding in wire.GetProperty("findings").EnumerateArray())
+            Assert.Equal(JsonValueKind.Null, finding.GetProperty("element").ValueKind);
+    }
+
+    [Fact]
+    public void NoFindingsIsAnEmptyListNotAMissingOne()
+    {
+        // An empty list is how the host tells the page that the findings no
+        // longer describe the net; a missing property would be read as no news.
+        var wire = Wire(Array.Empty<HostFinding>());
+
+        Assert.Equal(JsonValueKind.Array, wire.GetProperty("findings").ValueKind);
+        Assert.Equal(0, wire.GetProperty("findings").GetArrayLength());
     }
 }

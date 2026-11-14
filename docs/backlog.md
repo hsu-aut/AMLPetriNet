@@ -24,19 +24,19 @@ behavioural findings PT12 to PT21 are in the panel on the canvas.
 `Findings.setHostFindings` was built for this and is not called. The goal is
 that all findings appear in the panel.
 
-- [ ] B1. A bridge message from the host to the page carrying the structural
+- [x] B1. A bridge message from the host to the page carrying the structural
   findings (rule, severity, element as PNML id, message). The plugin sends it
   after each check of its own, the web application likewise.
-- [ ] B2. An edit drops the behavioural findings as before; the host's findings
+- [x] B2. An edit drops the behavioural findings as before; the host's findings
   stay until the host sends new ones. A finding about a deleted element is not a
   link.
-- [ ] B3. With the panel closed, the Analyse button shows the host's number of
+- [x] B3. With the panel closed, the Analyse button shows the host's number of
   errors and warnings.
-- [ ] B4. The WPF table stays for now: it also carries read warnings and the
+- [x] B4. The WPF table stays for now: it also carries read warnings and the
   conformance report.
-- [ ] B5. Tests: node tests for Findings, `verify-findings.mjs` adapted, a bridge
+- [x] B5. Tests: node tests for Findings, `verify-findings.mjs` adapted, a bridge
   test for the message, a plugin test for the message.
-- [ ] B6. PetriNet.js v0.2.0 (behaviour change, CHANGELOG). AMLPetriNet follows
+- [ ] B6. (Built and committed in PetriNet.js as 0.2.0; the tag and the lock file wait for the push.) PetriNet.js v0.2.0 (behaviour change, CHANGELOG). AMLPetriNet follows
   on a branch until the tag is pushed; the lock file is renewed only then.
 
 ## Block C: prepare the release

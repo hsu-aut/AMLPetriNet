@@ -195,6 +195,82 @@ await page.waitForTimeout(100);
 check(await page.evaluate(() => document.documentElement.getAttribute('data-theme')) === 'dark',
   'setTheme reaches the document');
 
+// ── findings of the host ────────────────────────────────────────────────────
+// The host checks the net by itself (the structural rules of ISO/IEC 15909-1)
+// and hands the result to the page, which lists it with what the analysis
+// finds, so that there is one list. They stay until the host sends again.
+const hostRows = () => page.evaluate(() => [...document.querySelectorAll('.ptn-finding')].map((item) => ({
+  rule: item.querySelector('.ptn-finding-rule')?.textContent ?? '',
+  message: item.querySelector('.ptn-finding-message')?.textContent ?? '',
+  clickable: item.classList.contains('ptn-findings-clickable'),
+})));
+const analyseButton = () => page.evaluate(() => document.querySelector('.ptn-findings-button').textContent);
+
+await clearMessages();
+await page.evaluate(() => window.__hostSend({
+  type: 'hostFindings',
+  findings: [
+    { rule: 'PT05', severity: 'error', element: 'p_waiting', message: 'An arc joins two places.' },
+    { rule: 'PT09', severity: 'warning', element: 'no_such_element', message: 'A place has no arc.' },
+    { rule: 'PT10', severity: 'warning', message: 'A finding about the whole net.' },
+  ],
+}));
+await page.waitForTimeout(200);
+
+check((await messagesOfType('error')).length === 0, 'hostFindings raises no error');
+check(await analyseButton() === 'Analyse (1 error, 2 warnings)',
+  `the closed button carries the host's count: '${await analyseButton()}'`);
+
+await page.evaluate(() => window.ptn.get('findingsPanel').open());
+const hostList = await hostRows();
+check(hostList.length === 3 && hostList[0].rule === 'PT05', `the host's findings are listed, errors first: ${JSON.stringify(hostList)}`);
+check(hostList[0].clickable === true, 'a finding about an element on the canvas is not a link');
+check(hostList[1].clickable === false, 'a finding about an element that is not on the canvas is a link');
+check(hostList[2].clickable === false, 'a finding about the whole net is a link');
+
+await page.evaluate(() => document.querySelector('.ptn-finding').click());
+await page.waitForTimeout(200);
+check(await page.evaluate(() => window.ptn.get('selection').get().map((e) => e.id).join()) === 'p_waiting',
+  'a click on the finding selects the element by its PNML id');
+
+// The page analyses by itself too, and the two lists become one.
+await page.evaluate(() => window.ptn.get('findingsPanel').analyse());
+const merged = await hostRows();
+check(merged.some((row) => row.rule === 'PT05') && merged.some((row) => row.rule === 'PT13'),
+  `the host's findings and the analysis share one list: ${JSON.stringify(merged.map((row) => row.rule))}`);
+
+// An edit drops what the analysis computed and leaves the host's findings.
+await page.evaluate(() => {
+  const place = window.ptn.get('elementRegistry').filter((e) => e.type === 'ptn:Place')[0];
+  window.ptn.get('modeling').updateProperty(place, 'initialMarking', 3);
+});
+await page.waitForTimeout(100);
+const edited = (await hostRows()).map((row) => row.rule);
+check(edited.includes('PT05') && !edited.includes('PT13'), `after an edit the list holds ${JSON.stringify(edited)}`);
+
+// A new import does not clear them either: the host does that, when it has
+// loaded another net, by sending an empty list.
+await page.evaluate((pnml) => window.__hostSend({ type: 'importPNML', pnml }), samplePnml);
+await page.waitForTimeout(700);
+check((await hostRows()).some((row) => row.rule === 'PT05'), 'an import dropped the findings of the host');
+
+await page.evaluate(() => window.__hostSend({ type: 'hostFindings', findings: [] }));
+await page.waitForTimeout(100);
+check((await hostRows()).every((row) => row.rule === ''), 'an empty list did not clear the findings of the host');
+
+// Whatever else arrives is read as far as it can be and never takes the page down.
+await clearMessages();
+await page.evaluate(() => {
+  window.__hostSend({ type: 'hostFindings', findings: 'not a list' });
+  window.__hostSend({ type: 'hostFindings', findings: [null, 7, 'x', { rule: 5, severity: 'fatal', message: {} }] });
+});
+await page.waitForTimeout(200);
+// The note that the analysis was dropped is a row of its own and is not a finding.
+const odd = (await hostRows()).filter((row) => !/Analyse again/.test(row.message));
+check(odd.length === 1 && odd[0].rule === '', `a malformed finding was read as ${JSON.stringify(odd)}`);
+check((await messagesOfType('error')).length === 0, 'malformed host findings raise no error');
+await page.evaluate(() => window.__hostSend({ type: 'hostFindings', findings: [] }));
+
 // ── malformed input from the host ───────────────────────────────────────────
 await clearMessages();
 await page.evaluate(() => {

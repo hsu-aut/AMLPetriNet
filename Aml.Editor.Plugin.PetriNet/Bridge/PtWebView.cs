@@ -26,6 +26,11 @@ public sealed class PtWebView : IDisposable
     private string? _pendingPnml;
     private TaskCompletionSource<string?>? _svgRequest;
     private string? _pendingTheme;
+
+    // The findings last handed over. Kept, not only buffered: a page that is
+    // loaded again after a crash starts with an empty list, and the check does
+    // not run again by itself.
+    private IReadOnlyList<HostFinding>? _hostFindings;
     private bool _disposed;
 
     private EventHandler<CoreWebView2WebMessageReceivedEventArgs>? _webMessageHandler;
@@ -242,6 +247,25 @@ public sealed class PtWebView : IDisposable
         Post(new { type = JsMessageType.SetTheme, theme });
     }
 
+    /// <summary>
+    /// Hand the findings of the plugin's own check to the page, which lists them
+    /// with the ones it computes. They stay there until this is called again;
+    /// an empty list clears them. Sent again when the page is loaded anew.
+    /// </summary>
+    public void SendHostFindings(IReadOnlyList<HostFinding> findings)
+    {
+        if (_disposed) return;
+
+        // An empty list over an empty list says nothing; the check clears on
+        // every load, and most loads follow a net that had nothing to report.
+        var unchanged = findings.Count == 0 && (_hostFindings is null || _hostFindings.Count == 0);
+
+        _hostFindings = findings;
+        if (unchanged || !_ready || _view.CoreWebView2 == null) return;
+
+        Post(HostFindingsMessage.Create(findings));
+    }
+
     /// <summary>Select an element and scroll it into view. A missed select is recoverable.</summary>
     public void SelectElement(string id)
     {
@@ -332,6 +356,7 @@ public sealed class PtWebView : IDisposable
             _pendingTheme = null;
             SendTheme(theme);
         }
+        if (_hostFindings is { } findings) Post(HostFindingsMessage.Create(findings));
     }
 
     private void ReportError(string message)
@@ -368,5 +393,6 @@ public sealed class PtWebView : IDisposable
         _ready = false;
         _pendingPnml = null;
         _pendingTheme = null;
+        _hostFindings = null;
     }
 }
