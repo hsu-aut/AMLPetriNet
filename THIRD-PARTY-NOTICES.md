@@ -17,8 +17,8 @@ reproduced below. It is bundled into `ptnjs.esm.js` and `ptnjs.css`.
 
 | Component | Version | License | Copyright |
 |---|---|---|---|
-| [diagram-js](https://github.com/bpmn-io/diagram-js) | 15.26.0 | MIT | 2014-present Camunda Services GmbH |
-| [diagram-js-direct-editing](https://github.com/bpmn-io/diagram-js-direct-editing) | 3.5.1 | MIT | 2014-2017 camunda Services GmbH |
+| [diagram-js](https://github.com/bpmn-io/diagram-js) | 15.29.0 | MIT | 2014-present Camunda Services GmbH |
+| [diagram-js-direct-editing](https://github.com/bpmn-io/diagram-js-direct-editing) | 3.6.0 | MIT | 2014-2017 camunda Services GmbH |
 | [@bpmn-io/diagram-js-ui](https://github.com/bpmn-io/diagram-js-ui) | 0.2.4 | MIT | 2022-present Camunda Services GmbH |
 | [moddle](https://github.com/bpmn-io/moddle) | 7.2.0 | MIT | 2014-present Camunda Services GmbH |
 | [moddle-xml](https://github.com/bpmn-io/moddle-xml) | 11.0.0 | MIT | 2014-present Camunda Services GmbH |
@@ -27,8 +27,8 @@ reproduced below. It is bundled into `ptnjs.esm.js` and `ptnjs.css`.
 | [tiny-svg](https://github.com/bpmn-io/tiny-svg) | 4.1.4 | MIT | 2014 Nico Rehwaldt |
 | [ids](https://github.com/bpmn-io/ids) | 1.0.5 | MIT | 2014 camunda Services GmbH |
 | [object-refs](https://github.com/bpmn-io/object-refs) | 0.4.0 | MIT | 2014-present camunda Services GmbH |
-| [path-intersection](https://github.com/bpmn-io/path-intersection) | 4.1.0 | MIT | 2017 camunda Services GmbH |
-| [didi](https://github.com/nikku/didi) | 11.0.0 | MIT | 2013 Vojta Jína |
+| [path-intersection](https://github.com/bpmn-io/path-intersection) | 4.2.1 | MIT | 2017 camunda Services GmbH |
+| [didi](https://github.com/nikku/didi) | 12.0.0 | MIT | 2013 Vojta Jína, 2015-present Nico Rehwaldt |
 | [saxen](https://github.com/nikku/saxen) | 10.0.0 | MIT | 2012 Vopilovskii Konstantin |
 | [inherits-browser](https://github.com/nikku/inherits-browser) | 0.1.0 | ISC | 2022-present Nico Rehwaldt |
 | [inherits](https://github.com/isaacs/inherits) | 2.0.4 | ISC | Isaac Z. Schlueter |
@@ -130,7 +130,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-### diagram-js 15.26.0
+### diagram-js 15.29.0
 
 `LICENSE`:
 
@@ -158,7 +158,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-### diagram-js-direct-editing 3.5.1
+### diagram-js-direct-editing 3.6.0
 
 `LICENSE`:
 
@@ -440,7 +440,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-### path-intersection 4.1.0
+### path-intersection 4.2.1
 
 `LICENSE`:
 
@@ -494,7 +494,7 @@ Snap.svg. See license notice below:
     limitations under the License.
 ```
 
-### didi 11.0.0
+### didi 12.0.0
 
 `LICENSE`:
 
