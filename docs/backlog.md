@@ -83,7 +83,7 @@ Plan and decisions: `plan-ptmap-analyze.md`.
 
 ## Not started, to be planned first
 
-- Search in a Web Worker.
+- Search in a Web Worker. Planned and decided: `plan-web-worker.md`. PetriNet.js 0.4.0, breaking.
 - Workflow net soundness.
 - Net classes and Commoner's theorem.
 - A properties panel.
