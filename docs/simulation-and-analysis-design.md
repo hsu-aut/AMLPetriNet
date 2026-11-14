@@ -200,9 +200,11 @@ follows what the FPD modeler already offers, so that both tools feel alike.
 
 ## 5. Integration
 
-- **Plugin**: the Net menu gains "Simulate" and "Analyse". The findings table in
-  the plugin shows both kinds of finding. The canvas tab carries the simulation
-  bar itself, so the plugin needs no new WPF beyond the menu entries.
+- **Plugin**: the Net menu has "Simulate" (which turns into "Stop Simulation")
+  and "Analyse", built after `plan-plugin-menu.md`. Both send a message to the
+  page, which starts the run or the analysis as its own buttons do. The canvas
+  carries the simulation bar and the one list of findings; the WPF table keeps
+  the structural findings, the reading warnings and the conformance report.
 - **Web application**: the page carries the same bar and panels. The API does not
   change; analysis runs in the browser.
 - **Document**: unchanged. The simulation never writes, and analysis never

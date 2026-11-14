@@ -54,13 +54,22 @@ that all findings appear in the panel.
   interop, SVG and web application stay here. The check of coordinate numbers
   (`verify-numbers`) moved with them, since it tests the modeler alone.
 
+## Block E: the Net menu
+
+- [x] E1. PetriNet.js 0.2.1: the play clock stops with the run (built, tag waits
+  for the push).
+- [x] E2. The page answers `simulate` and `analyse` (`web/src/bridge.js`, checks in
+  `verify-bridge.mjs`).
+- [x] E3. The plugin's Net menu has Simulate and Analyse (`NetMenuState`, tests).
+  On a branch (`plugin-menu`); the lock file stays on `file:` until 0.2.1 is tagged.
+- [ ] E4. Tried in the real AML Editor; version, release note and tag.
+
 ## Not started, to be planned first
 
 - Search in a Web Worker.
 - Workflow net soundness.
 - Net classes and Commoner's theorem.
 - A properties panel.
-- Simulate and Analyse in the plugin menu. Planned and decided: `plan-plugin-menu.md`. Waits for B6.
 - `ptmap analyze`. Planned and decided: `plan-ptmap-analyze.md`. Waits for B6 and PetriNet.js 0.3.0.
 - CITATION.cff.
 

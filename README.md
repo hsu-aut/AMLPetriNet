@@ -92,8 +92,8 @@ include it. `npm ci` in `web` installs PetriNet.js from its tag on GitHub. The p
 - **Update** writes the net into the document. Elements are updated in place,
   so attributes and links added by others are kept.
 - **Refresh** reloads the net from the document.
-- The **Net** menu creates a new net, imports and exports PNML and SVG, and
-  saves a conformance report.
+- The **Net** menu creates a new net, starts and stops a simulation, analyses the
+  net, imports and exports PNML and SVG, and saves a conformance report.
 
 Do not copy `Aml.Editor.Plugin.Contract.dll` into an installed plugin folder.
 The editor ignores the plugin without an error message if it finds a second
