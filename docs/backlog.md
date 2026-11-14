@@ -2,8 +2,7 @@
 
 What is open on the Petri net modeler (PetriNet.js) and on AMLPetriNet, in the
 order the work is done. A box is ticked when the work is finished, tested and
-committed. Nothing here is pushed, tagged or published by the work itself; the
-commands for that are handed over at the end.
+committed. Publishing, tagging and deploying are done by the maintainer.
 
 ## Block A: tidy up AMLPetriNet
 
@@ -43,7 +42,7 @@ that all findings appear in the panel.
 
 - [x] C1. Plugin 0.1.18 (csproj and Metadata.xml), built, nupkg in the plugin
   manager's source folder. Done 2026-11-14, commit 91a47ce.
-- [ ] C2. A release note that sums up what the plugin gained since 0.1.15.
+- [x] C2. A release note that sums up what the plugin gained since 0.1.15.
 - [x] C3. Redeploy of aml.fpbjs.net/pt/ (Azure `pt-aml-mapper`). Done
   2026-11-14, checked against the live URL.
 
@@ -55,7 +54,7 @@ that all findings appear in the panel.
   interop, SVG and web application stay here. The check of coordinate numbers
   (`verify-numbers`) moved with them, since it tests the modeler alone.
 
-## Not started, to be planned with Opus first
+## Not started, to be planned first
 
 - Search in a Web Worker.
 - Workflow net soundness.
