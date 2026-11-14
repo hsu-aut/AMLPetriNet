@@ -42,9 +42,12 @@ To use the plugin without building it:
    put it in a folder of its own.
 3. Start the editor, open the PlugIn Manager and add that folder as a package
    source.
-4. Select the source, find "Aml.Editor.Plugin.PetriNet" under Available and
-   install it. An update comes through the Updates tab.
-5. The plugin opens as the tab "AMLPetriNet" once a document is open. It needs
+4. Select the source, find AMLPetriNet (package `Aml.Editor.Plugin.PetriNet`)
+   under Available and install it. An update comes through the Updates tab.
+5. The PlugIn Manager keeps showing "Loading an AutomationML Editor PlugIn"
+   until you confirm the message "Restart required". That message is a separate
+   window and may sit behind the editor; look for it in the taskbar.
+6. Restart the editor. The plugin appears as the tab "AMLPetriNet". It needs
    the AutomationML Editor 6.4 or later and the WebView2 runtime, which comes
    with current Windows and Edge.
 
@@ -68,9 +71,6 @@ include it. `npm ci` in `web` installs PetriNet.js from its tag on GitHub. The p
 `build/Plugins/Aml.Editor.Plugin.PetriNet/<configuration>/`.
 
 ## Plugin
-
-Add the package folder as a source in the PlugIn Manager of the AutomationML
-Editor and install the plugin from there. It opens as the tab "AMLPetriNet".
 
 - The canvas shows a net of the open document; a list switches between nets.
 - **Simulate** fires the net on the canvas: enabled transitions are marked, a
