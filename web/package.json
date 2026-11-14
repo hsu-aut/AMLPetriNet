@@ -28,7 +28,7 @@
     "test:arrange": "node tools/verify-arrange.mjs"
   },
   "dependencies": {
-    "petrinetjs": "github:hsu-aut/PetriNet.js#v0.1.0"
+    "petrinetjs": "file:../../PetriNet.js"
   },
   "devDependencies": {
     "esbuild": "^0.25.0",
