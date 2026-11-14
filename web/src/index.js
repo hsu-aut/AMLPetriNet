@@ -1,8 +1,8 @@
-import { PnModeler } from 'petrinet-js';
+import { PnModeler } from 'petrinetjs';
 
 export { connectBridge, installDiagnostics, post, showFatal } from './bridge.js';
 export { exportSvg } from './svg.js';
-export { convertModdleXmlToPnmlXml, convertPnmlXmlToModdleXml } from 'petrinet-js';
+export { convertModdleXmlToPnmlXml, convertPnmlXmlToModdleXml } from 'petrinetjs';
 
 export { PnModeler };
 

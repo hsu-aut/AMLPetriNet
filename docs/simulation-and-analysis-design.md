@@ -51,11 +51,11 @@ without the rest of this repository. It mentions AutomationML nowhere. The
 bundle in `web/` takes it as a file dependency. Hosting it on its own later is a
 move, a publish and one line in `web/package.json`.
 
-Open: whether the fork becomes a separate public repository, under which account,
-and under which name. The author expects to host it separately once it carries
-simulation and analysis. Nothing in this design depends on the answer.
-Recommended when the question comes up: a public fork on the author's own
-account, named `PetriNet.js`, so the lineage stays visible on GitHub.
+Decided on 2026-11-14: the fork is [PetriNet.js](https://github.com/hsu-aut/PetriNet.js)
+on hsu-aut, a GitHub fork of the original so the lineage stays visible, with the
+history of `modeler/` replayed on top of the original's main branch. The npm name
+is `petrinetjs`, because `petrinet-js` belongs to an unrelated package. `web/`
+installs it from a tag, and `modeler/` is gone from this repository.
 
 The two defects we work around were reported upstream as pull requests,
 independent of the fork, and both were merged on 2026-11-10 (#9 and #10):
@@ -252,7 +252,6 @@ Each stage leaves the tool working and shippable.
 
 ## 8. Open questions
 
-- Where the fork finally lives (see D-1), and its name.
 - Whether `Findings.setHostFindings` is worth keeping: the plugin and the web
   application both show the findings of their own validator in their own table,
   so nothing in production hands findings to the modeler. The way is tested and

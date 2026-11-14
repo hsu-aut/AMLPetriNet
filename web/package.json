@@ -2,13 +2,12 @@
   "name": "ptnjs-aml-bundle",
   "version": "0.1.0",
   "private": true,
-  "description": "Bundles the bptlab Petri net modeler plus the AML Editor bridge into a single ESM file for the WebView2 host.",
+  "description": "Bundles the PetriNet.js modeler plus the AML Editor bridge into a single ESM file for the WebView2 host.",
   "type": "module",
   "scripts": {
-    "prepare": "npm --prefix ../modeler ci --no-audit --no-fund",
     "build": "node build.mjs",
     "pretest": "playwright install chromium",
-    "test": "npm run test:net && node tools/roundtrip.mjs && node tools/verify-interop.mjs && node tools/verify-pages.mjs && node tools/verify-bridge.mjs && node tools/verify-labels.mjs && node tools/verify-tokens.mjs && node tools/verify-simulation.mjs && node tools/verify-findings.mjs && node tools/verify-states.mjs && node tools/verify-paths.mjs && node tools/verify-invariants.mjs && node tools/verify-steps.mjs && node tools/verify-export.mjs && node tools/verify-arrange.mjs && node tools/verify-numbers.mjs && node tools/verify-svg.mjs",
+    "test": "node tools/roundtrip.mjs && node tools/verify-interop.mjs && node tools/verify-pages.mjs && node tools/verify-bridge.mjs && node tools/verify-labels.mjs && node tools/verify-tokens.mjs && node tools/verify-simulation.mjs && node tools/verify-findings.mjs && node tools/verify-states.mjs && node tools/verify-paths.mjs && node tools/verify-invariants.mjs && node tools/verify-steps.mjs && node tools/verify-export.mjs && node tools/verify-arrange.mjs && node tools/verify-numbers.mjs && node tools/verify-svg.mjs",
     "test:svg": "node tools/verify-svg.mjs",
     "test:numbers": "node tools/verify-numbers.mjs",
     "test:labels": "node tools/verify-labels.mjs",
@@ -19,7 +18,6 @@
     "dump": "node tools/dump-xml.mjs",
     "test:bridge": "node tools/verify-bridge.mjs",
     "test:webapp": "node tools/verify-webapp.mjs",
-    "test:net": "npm --prefix ../modeler test",
     "test:simulation": "node tools/verify-simulation.mjs",
     "test:findings": "node tools/verify-findings.mjs",
     "test:states": "node tools/verify-states.mjs",
@@ -30,7 +28,7 @@
     "test:arrange": "node tools/verify-arrange.mjs"
   },
   "dependencies": {
-    "petrinet-js": "file:../modeler"
+    "petrinetjs": "github:hsu-aut/PetriNet.js#v0.1.0"
   },
   "devDependencies": {
     "esbuild": "^0.25.0",

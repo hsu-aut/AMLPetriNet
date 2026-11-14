@@ -11,7 +11,9 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const dist = resolve(here, 'dist');
-const pkg = resolve(here, '..', 'modeler');
+// The modeler is PetriNet.js (github.com/hsu-aut/PetriNet.js), installed from a
+// tag like any other dependency; its stylesheet is bundled from there.
+const pkg = resolve(here, 'node_modules', 'petrinetjs');
 
 await rm(dist, { recursive: true, force: true });
 await mkdir(dist, { recursive: true });
@@ -28,8 +30,9 @@ const shared = {
   // minifier renames those parameters and the injector dies at boot.
   //
   // Two separate failures were observed, and only the first is understood:
-  //   1. The Petri net package's UpdatePropertyHandler declares no $inject
-  //      (its sibling UpdateLabelHandler does). src/index.js patches that.
+  //   1. The Petri net package's UpdatePropertyHandler declared no $inject
+  //      (its sibling UpdateLabelHandler did). Fixed in the original and in
+  //      PetriNet.js.
   //   2. With that patched, a minified build still dies with
   //      'No provider for "l"! (Resolving: keyboardMove -> distributeElements
   //      -> alignElements -> l)'. The cause was not tracked down: the $inject

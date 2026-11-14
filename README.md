@@ -20,8 +20,11 @@ The counterpart for the Formalised Process Description (VDI/VDE 3682) is
 | `dotnet/PtMapper.Tool/` | Command line tool `ptmap` |
 | `dotnet/PtMapper.Web/` | Web application |
 | `dotnet/PtMapper.Tests/` | Mapper tests |
-| `modeler/` | The Petri net modeler as a package of its own: canvas, PNML reader and writer, simulation, analysis core, state space view, demo page |
 | `web/` | The bundle for plugin and web application, host bridge, browser tests |
+
+The Petri net modeler itself is [PetriNet.js](https://github.com/hsu-aut/PetriNet.js),
+a repository of its own: canvas, PNML reader and writer, simulation, analysis
+core, state space view. `web/` installs it from a tag.
 | `libraries/` | `ISO_PT` domain library and the libraries it references |
 | `examples/` | Example documents, including the MPS500 quality check in `examples/paper/` |
 | `docs/` | Round-trip validation and PNML conformance |
@@ -40,7 +43,7 @@ dotnet build Aml.Editor.Plugin.PetriNet.sln
 ```
 
 The modeler bundle is built first because the plugin and the web application
-include it. `npm ci` in `web` also installs what `modeler/` needs. The plugin package ends up in
+include it. `npm ci` in `web` installs PetriNet.js from its tag on GitHub. The plugin package ends up in
 `build/Plugins/Aml.Editor.Plugin.PetriNet/<configuration>/`.
 
 ## Plugin
@@ -154,9 +157,9 @@ The plugin's own tests cover the parts of it that are plain data: the messages
 the modeler sends and the settings that are stored between sessions. Everything
 else in the plugin needs a running AutomationML Editor.
 
-`npm test` runs the analysis core in Node and the modeler in Chromium. The core
-can be run on its own with `npm test` in `modeler/`, and `npm run demo` there
-opens the modeler without the rest of this repository.
+`npm test` drives the bundled modeler in Chromium. The analysis core and the
+other parts of PetriNet.js that need no browser are tested in its own
+repository.
 
 `web/tools/validate-pnml.mjs` checks PNML files against the ISO/IEC 15909-2
 grammar and needs Java. Results are described in
@@ -167,11 +170,11 @@ grammar and needs Java. Results are described in
 
 MIT, see [LICENSE](LICENSE).
 
-`modeler/` is a fork of
+[PetriNet.js](https://github.com/hsu-aut/PetriNet.js) is a fork of
 [ptn-js](https://github.com/bptlab/openbpt-modeler-petri-net) (MIT) by Maximilian
 König and the Business Process Technology group at the Hasso Plattner Institute,
 based on [diagram-js](https://github.com/bpmn-io/diagram-js). What the fork
-changes is listed in [modeler/README.md](modeler/README.md); the two fixes that
-belonged to the original were merged there, see [docs/upstream/](docs/upstream/). All
+changes is listed in its README; the two fixes that belonged to the original
+were merged there, see [docs/upstream/](docs/upstream/). All
 third-party components are listed in
 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
