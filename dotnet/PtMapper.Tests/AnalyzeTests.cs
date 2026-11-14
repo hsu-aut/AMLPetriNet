@@ -459,7 +459,8 @@ public class AnalyzeTests
         var findings = json.RootElement.GetProperty("nets")[0].GetProperty("findings").EnumerateArray().ToList();
         var deadlock = Assert.Single(findings, f => f.GetProperty("rule").GetString() == "PT15");
         Assert.True(deadlock.TryGetProperty("marking", out _));
-        Assert.Equal(11, findings.Count(f => f.GetProperty("severity").GetString() == "information"));
+        Assert.Equal(13, findings.Count(f => f.GetProperty("severity").GetString() == "information"));
+        Assert.Contains(findings, f => f.GetProperty("rule").GetString() == "PT22");
         Assert.True(json.RootElement.GetProperty("nets")[0].GetProperty("complete").GetBoolean());
     }
 
@@ -478,6 +479,91 @@ public class AnalyzeTests
         }
 
         Assert.Equal(Rules(pnml), Rules(aml));
+    }
+
+    private static PtNet Workflow(bool sound)
+    {
+        // In -> A -> Mid -> B -> Out. In the unsound variant B needs two tokens in Mid, and A makes
+        // only one: the net gets stuck in Mid.
+        var net = new PtNet { Id = "wf", Name = "Workflow" };
+        net.Places.Add(new PtPlace { Id = "i", Name = "In", InitialMarking = 1 });
+        net.Places.Add(new PtPlace { Id = "m", Name = "Mid" });
+        net.Places.Add(new PtPlace { Id = "o", Name = "Out" });
+        net.Transitions.Add(new PtTransition { Id = "a", Name = "A" });
+        net.Transitions.Add(new PtTransition { Id = "b", Name = "B" });
+        net.Arcs.Add(new PtArc { Id = "x1", SourceId = "i", TargetId = "a" });
+        net.Arcs.Add(new PtArc { Id = "x2", SourceId = "a", TargetId = "m" });
+        net.Arcs.Add(new PtArc { Id = "x3", SourceId = "m", TargetId = "b" });
+        net.Arcs.Add(new PtArc { Id = "x4", SourceId = "b", TargetId = "o" });
+        if (!sound)
+        {
+            net.Arcs.First(x => x.Id == "x3").Weight = 2;
+        }
+        return net;
+    }
+
+    [SkippableFact]
+    public void ASoundWorkflowNetGivesExitZeroAndIsReportedAsSound()
+    {
+        var runner = RealRunner();
+        var path = PnmlOf(Workflow(sound: true));
+        try
+        {
+            var (exit, output, _) = Run(runner, path, "--format", "json");
+            using var json = JsonDocument.Parse(output);
+            var net = json.RootElement.GetProperty("nets")[0];
+            Assert.True(net.GetProperty("workflow").GetProperty("sound").GetBoolean());
+            Assert.Equal("i", net.GetProperty("workflow").GetProperty("start").GetString());
+            Assert.Contains("state-machine", net.GetProperty("classes").EnumerateArray().Select(x => x.GetString()));
+            Assert.Equal(0, net.GetProperty("counts").GetProperty("warning").GetInt32());
+            Assert.Equal(ExitCodes.Ok, exit);
+
+            // The end of the process is information, not a deadlock warning.
+            Assert.Contains(net.GetProperty("findings").EnumerateArray(),
+                f => f.GetProperty("rule").GetString() == "PT15" && f.GetProperty("severity").GetString() == "information");
+
+            var (_, text, _) = Run(runner, path);
+            Assert.Contains("workflow net: sound", text);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [SkippableFact]
+    public void AnUnsoundWorkflowNetGivesExitFiveAndSaysSo()
+    {
+        var runner = RealRunner();
+        var path = PnmlOf(Workflow(sound: false));
+        try
+        {
+            var (exit, output, _) = Run(runner, path, "--format", "json");
+            using var json = JsonDocument.Parse(output);
+            var net = json.RootElement.GetProperty("nets")[0];
+            Assert.False(net.GetProperty("workflow").GetProperty("sound").GetBoolean());
+            var verdict = Assert.Single(net.GetProperty("findings").EnumerateArray(), f => f.GetProperty("rule").GetString() == "PT25");
+            Assert.Equal("warning", verdict.GetProperty("severity").GetString());
+            Assert.Equal(ExitCodes.Warnings, exit);
+
+            var (_, text, _) = Run(runner, path);
+            Assert.Contains("workflow net: not sound", text);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [SkippableFact]
+    public void AProvenStatementCarriesItsTheoremInTheJson()
+    {
+        var runner = RealRunner();
+        var path = PnmlOf(Loop());
+        try
+        {
+            var (_, output, _) = Run(runner, path, "--format", "json");
+            using var json = JsonDocument.Parse(output);
+            var live = Assert.Single(json.RootElement.GetProperty("nets")[0].GetProperty("findings").EnumerateArray(),
+                f => f.GetProperty("rule").GetString() == "PT23");
+            Assert.Equal("state-machine", live.GetProperty("proof").GetString());
+            Assert.StartsWith("Proven from the structure", live.GetProperty("message").GetString());
+        }
+        finally { File.Delete(path); }
     }
 
     [SkippableFact]

@@ -87,6 +87,22 @@ const wide = {
 check(json?.results?.[0]?.complete === false && json.results[0].stopped === 'markings', 'the limit on markings stops the search');
 check(json?.results?.[0]?.findings?.some((f) => f.rule === 'PT17'), 'and the partial result is reported');
 
+// What the structure says: the class, a proof marked as such, and the verdict on a workflow net.
+const sequence = (marking) => ({
+  key: 'wf',
+  places: [{ id: 'i', name: 'In', marking }, { id: 'o', name: 'Out', marking: 0 }],
+  transitions: [{ id: 't', name: 'Go' }],
+  arcs: [{ id: 'a', source: 'i', target: 't' }, { id: 'b', source: 't', target: 'o' }],
+});
+({ json } = run({ nets: [sequence(1)] }));
+check(json?.results?.[0]?.classes?.includes('state-machine'), 'the class of a net comes back');
+check(json?.results?.[0]?.workflow?.sound === true && json.results[0].workflow.start === 'i', 'a workflow net is found and found sound');
+check(json?.results?.[0]?.findings?.filter((f) => f.proof).every((f) => /^Proven from the structure/.test(f.message)),
+  'a proven finding says so in its sentence');
+({ json } = run({ nets: [sequence(0)] }));
+check(/Started with one token in In/.test(json?.results?.[0]?.findings?.find((f) => f.rule === 'PT25')?.message ?? ''),
+  'a workflow net drawn without its token is checked from one and says so');
+
 // Several nets in one request, answered in order.
 ({ json } = run({ nets: [{ ...idle(), key: 'one' }, { ...idle('Other'), key: 'two' }] }));
 check(json?.results?.map((r) => r.key).join() === 'one,two', 'several nets are answered in order');

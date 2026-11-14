@@ -136,7 +136,7 @@ public static class AnalyzeCommand
             foreach (var f in core.Findings)
             {
                 findings.Add(new ReportedFinding(f.Rule, f.Severity, f.Element, f.Message,
-                    InternalId(source, f.Element), f.Marking, f.Cover, f.Firings));
+                    InternalId(source, f.Element), f.Marking, f.Cover, f.Firings, f.Proof));
             }
         }
 
@@ -161,7 +161,10 @@ public static class AnalyzeCommand
         var analysed = analysable && core != null && core.Problem == null;
         return new NetReport(net.Id, net.Name, source.Hierarchy, analysed, problem,
             analysed && core!.Complete, analysed ? core!.Stopped : null, analysed ? core!.Markings : 0,
-            analysed ? core!.Unbounded : new List<string>(), counts, ordered);
+            analysed ? core!.Unbounded : new List<string>(),
+            analysed ? core!.Classes : new List<string>(),
+            analysed && core!.Workflow is { } flow ? new WorkflowReport(flow.Start, flow.End, flow.Sound) : null,
+            counts, ordered);
     }
 
     private static int Rank(string severity) => severity switch { "error" => 0, "warning" => 1, _ => 2 };

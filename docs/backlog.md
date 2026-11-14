@@ -81,10 +81,18 @@ Plan and decisions: `plan-ptmap-analyze.md`.
   and in AMLPetriNet (0.1.18). No ORCID and no preferred paper: the author adds
   them. The version and date are to be updated with each release.
 
+## Block H: net classes, Commoner, workflow nets
+
+Plan and decisions: `plan-net-classes.md`.
+
+- [x] H1. PetriNet.js 0.4.0: classes, structural proofs, soundness, with a
+  differential test against the search (built; the tag waits for the push).
+- [x] H2. AMLPetriNet follows: `ptmap analyze` reports classes, proofs and the
+  verdict; on a branch (`net-classes-follow`) with the lock on `file:` until the tag.
+- [ ] H3. Review done, merged, tag pushed, lock renewed.
+
 ## Planned, waiting to be built
 
-- Workflow net soundness, net classes and Commoner's theorem: `plan-net-classes.md`
-  (decided in 9a).
 - A properties panel: `plan-properties-panel.md` (decided).
 - Search in a Web Worker: `plan-web-worker.md` (decided in 8a), breaking.
 

@@ -188,6 +188,10 @@ palette, so that the net cannot change under a running simulation.
 | Transition invariant | information | a firing sequence that returns the marking |
 | Exploration cut off | information | the limit was reached, results are partial |
 
+Net class and the proofs from the structure were added later as PT22 to PT25, see
+`plan-net-classes.md`: the class of the net, liveness and boundedness proven by
+theorem, and the soundness of workflow nets.
+
 The eleven structural rules that exist today (PT01 to PT11) stay where they are
 and keep their place in the findings list; the behavioural findings join them.
 

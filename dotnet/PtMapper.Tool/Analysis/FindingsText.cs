@@ -18,6 +18,13 @@ public static class FindingsText
 
             if (net.Problem != null) output.WriteLine("  " + net.Problem);
 
+            // What the structure says, in one line: the class, and for a workflow net the verdict.
+            var facts = new List<string>();
+            if (net.Classes.Count > 0) facts.Add("class: " + Class(net.Classes));
+            if (net.Workflow != null)
+                facts.Add("workflow net: " + (net.Workflow.Sound switch { true => "sound", false => "not sound", _ => "soundness not decided" }));
+            if (facts.Count > 0) output.WriteLine("  " + string.Join("; ", facts));
+
             foreach (var finding in net.Findings)
             {
                 if (!all && finding.Severity == "information") continue;
@@ -29,6 +36,12 @@ public static class FindingsText
                 output.WriteLine($"  ({net.Counts.Information} information finding(s) not listed; --all lists them)");
         }
     }
+
+    /// <summary>The most specific class, in words; the list is ordered that way.</summary>
+    private static string Class(IReadOnlyList<string> classes) =>
+        classes.Contains("state-machine") && classes.Contains("marked-graph")
+            ? "state machine and marked graph"
+            : classes[0].Replace('-', ' ');
 
     private static string Plural(int count, string word) => count == 1 ? $"1 {word}" : $"{count} {word}s";
 }

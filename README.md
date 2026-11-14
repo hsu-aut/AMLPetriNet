@@ -161,6 +161,11 @@ warnings). `--fail-on never` leaves only the codes 1 to 3.
 | 4 | at least one error |
 | 5 | at least one warning, no error (`validate` exits 0 on warnings) |
 
+The report also names the class of the net (state machine, marked graph,
+free-choice and so on) and, for a workflow net, whether it is sound. A statement
+proven from the structure starts with "Proven from the structure" and carries
+`proof` in the JSON. A workflow net that is not sound is a warning, so it exits 5.
+
 The behaviour is computed by the analysis core of PetriNet.js, in a Node process,
 so a file gives the same findings here as on the canvas. The bundle is built by
 `npm run build` in `web/` and copied next to `ptmap.dll`.

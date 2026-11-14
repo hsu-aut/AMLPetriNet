@@ -15,7 +15,7 @@
     "test:webapp": "node tools/verify-webapp.mjs"
   },
   "dependencies": {
-    "petrinetjs": "github:hsu-aut/PetriNet.js#v0.3.0"
+    "petrinetjs": "file:../../PetriNet.js"
   },
   "devDependencies": {
     "esbuild": "^0.25.0",
