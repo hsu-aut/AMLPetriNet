@@ -118,7 +118,7 @@ names, duplicate ids) and says so.
    coordinates with at most two; the centre follows the rounded size, so a node
    keeps its top-left corner. Found by reading the grammar, not by a file.
    Tests: `ANodeSizeOffTheGridIsWrittenAsPnmlAllowsIt`,
-   `web/tools/verify-numbers.mjs`.
+   `test/browser/verify-numbers.mjs` in PetriNet.js.
 
 ### What is refused, and why that stays
 

@@ -51,9 +51,9 @@ jobs:
         run: dotnet test Aml.Editor.Plugin.PetriNet.Tests -c Release --no-build
 
       # npm test installs Chromium first (see the pretest script), then drives
-      # the bundled modeler in a real browser: the PNML round trip, the interop
-      # fixtures, the host bridge, the simulation, the analysis panels, the
-      # exports and the picture. The analysis core has its own tests in
+      # the bundled modeler in a real browser: the interop fixtures, the host
+      # bridge and the picture. What the modeler does on its own (the PNML
+      # round trip, simulation, analysis, exports, layout) is tested in
       # PetriNet.js.
       - name: Test the modeler
         working-directory: web

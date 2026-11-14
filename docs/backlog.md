@@ -49,10 +49,11 @@ that all findings appear in the panel.
 
 ## Block D: browser tests move to PetriNet.js
 
-- [ ] D1. The checks that only test the modeler (simulation, findings, states,
+- [x] D1. The checks that only test the modeler (simulation, findings, states,
   paths, invariants, steps, export, arrange, labels, tokens, pages, roundtrip)
   move to PetriNet.js, with a test page of their own and into its CI. Bridge,
-  interop, SVG and web application stay here.
+  interop, SVG and web application stay here. The check of coordinate numbers
+  (`verify-numbers`) moved with them, since it tests the modeler alone.
 
 ## Not started, to be planned with Opus first
 

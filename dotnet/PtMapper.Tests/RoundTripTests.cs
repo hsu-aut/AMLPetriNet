@@ -13,7 +13,7 @@ public class RoundTripTests
 {
     /// <summary>
     /// The export of the bundled modeler for a three-node net with a weighted
-    /// arc and a two-bend arc. Captured from web/tools/roundtrip.mjs so both
+    /// arc and a two-bend arc. Captured from test/browser/roundtrip.mjs in PetriNet.js so both
     /// sides are checked against the same bytes.
     /// </summary>
     private const string SampledPnml =
