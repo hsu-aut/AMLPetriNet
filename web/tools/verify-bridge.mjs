@@ -423,8 +423,8 @@ check(busyNow === true, 'the analysis of the large net was not still running 150
 check(ended.length === 1 && typeof ended[0].problem === 'string' && /changed|stopped/.test(ended[0].problem)
   && ended[0].errors + ended[0].warnings + ended[0].information === 0,
   `an import during the analysis was answered by ${JSON.stringify(ended)}`);
-check(await page.evaluate(() => window.ptn.get('search').busy()) === false, 'the search is still running after the import');
-check(await page.evaluate(() => typeof window.ptn.get('search').mode) === 'string', 'the search service is missing');
+check(await page.evaluate(() => window.ptn.get('netSearch').busy()) === false, 'the search is still running after the import');
+check(await page.evaluate(() => typeof window.ptn.get('netSearch').mode) === 'string', 'the search service is missing');
 
 // A run that ends by itself says why.
 await page.evaluate((pnml) => window.__hostSend({ type: 'importPNML', pnml }), samplePnml);
