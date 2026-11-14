@@ -12,7 +12,7 @@ commands for that are handed over at the end.
   Manager, install).
 - [x] A2. A screenshot for the README: a real net (`examples/paper`) with the
   findings panel open, taken with Playwright, in `docs/`, about 150 KB at most.
-- [ ] A3. Pointers to AMLPetriNet in the READMEs of fpb-aml-editor-plugin
+- [x] A3. Pointers to AMLPetriNet in the READMEs of fpb-aml-editor-plugin
   (AMLFPB.js) and fpb-aml-mapper. Committed locally only.
 - [x] A4. CI: a time limit for the PNML grammar step (`timeout-minutes: 5`) and
   for the job.
