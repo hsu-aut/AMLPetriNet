@@ -60,8 +60,8 @@ that all findings appear in the panel.
 - Workflow net soundness.
 - Net classes and Commoner's theorem.
 - A properties panel.
-- Simulate and Analyse in the plugin menu.
-- `ptmap analyze`.
+- Simulate and Analyse in the plugin menu. Planned: `plan-plugin-menu.md`, open questions for the author at the end.
+- `ptmap analyze`. Planned: `plan-ptmap-analyze.md`, open questions for the author at the end.
 - CITATION.cff.
 
 ## Later, by the author
