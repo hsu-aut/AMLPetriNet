@@ -68,7 +68,7 @@
                          put the FPD commands into this tab or doubled these. -->
                     <Button x:Name="NetMenuButton"
                             Click="NetMenuButton_Click"
-                            ToolTip="Create, import or export a Petri net.">
+                            ToolTip="Create, import, simulate, analyse or export a Petri net.">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Style="{StaticResource IconText}" Text="&#xE700;" Foreground="#606060"/>
                             <TextBlock Text="Net &#x25BE;" VerticalAlignment="Center"/>
@@ -81,6 +81,13 @@
                                 <MenuItem x:Name="ImportPnmlItem"
                                           Header="Import PNML..."
                                           ToolTip="Load a .pnml file and add its net as a new instance hierarchy."/>
+                                <Separator/>
+                                <MenuItem x:Name="SimulateItem"
+                                          Header="Simulate"
+                                          ToolTip="Fire the net on the canvas. A run never changes the document."/>
+                                <MenuItem x:Name="AnalyseItem"
+                                          Header="Analyse"
+                                          ToolTip="Check boundedness, deadlocks and invariants of the net and open the list on the canvas."/>
                                 <Separator/>
                                 <MenuItem Header="Export PNML..."
                                           ToolTip="Save the current net as a PNML file (ISO/IEC 15909-2)."

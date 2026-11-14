@@ -45,6 +45,15 @@ public partial class PetriNetPlugin : PluginViewBase, ISupportsThemes, INotifyAM
     /// </summary>
     private string? _echoBaseline;
 
+    /// <summary>
+    /// Whether a run is on, as the page last said. Only the menu wording follows
+    /// it; a run never touches the document.
+    /// </summary>
+    private bool _simulating;
+
+    /// <summary>True from a menu click on Analyse until the page answers, so that only these get a status line.</summary>
+    private bool _analysisAsked;
+
     /// <summary>Latest PNML from the viewer that has not been written back yet.</summary>
     private string? _pendingPnml;
 
@@ -127,6 +136,8 @@ public partial class PetriNetPlugin : PluginViewBase, ISupportsThemes, INotifyAM
         // it every command appeared twice. The commands wait for a document.
         NewNetItem.Command = new RelayCommand<object>(_ => ExecuteNewNet(), _ => _document != null);
         ImportPnmlItem.Command = new RelayCommand<object>(_ => ExecuteImportPnml(), _ => _document != null);
+        SimulateItem.Command = new RelayCommand<object>(_ => ExecuteSimulate(), _ => MenuItems().CanSimulate);
+        AnalyseItem.Command = new RelayCommand<object>(_ => ExecuteAnalyse(), _ => MenuItems().CanAnalyse);
 
         // Created here, not in Loaded: the editor can call DocumentLoaded before
         // the view is loaded, and a null bridge would drop that net on the floor
@@ -206,6 +217,8 @@ public partial class PetriNetPlugin : PluginViewBase, ISupportsThemes, INotifyAM
             UpdatePendingLabel();
         };
         _bridge.OnDiagramChanged += OnDiagramChanged;
+        _bridge.SimulationChanged += OnSimulationChanged;
+        _bridge.Analysed += OnAnalysed;
         _bridge.ElementSelected += OnElementSelected;
         _bridge.TransitionsFired += OnTransitionsFired;
         _bridge.Ready += OnModelerReady;
@@ -221,6 +234,9 @@ public partial class PetriNetPlugin : PluginViewBase, ISupportsThemes, INotifyAM
     {
         if (_bridge == null) return;
 
+        // A page that boots anew knows of no run.
+        SetSimulating(false);
+
         if (_pendingPnml != null)
         {
             _restoringPending = true;
@@ -234,6 +250,55 @@ public partial class PetriNetPlugin : PluginViewBase, ISupportsThemes, INotifyAM
         }
 
         if (_lastTheme != null) _bridge.SendTheme(_lastTheme);
+    }
+
+    private NetMenuItems MenuItems() =>
+        NetMenuState.For(_document != null, _bridge?.IsReady == true, _simulating);
+
+    /// <summary>Follows the run in the menu: the entry says Stop while one is on.</summary>
+    private void SetSimulating(bool active)
+    {
+        _simulating = active;
+        var items = MenuItems();
+        SimulateItem.Header = items.SimulateHeader;
+        SimulateItem.IsChecked = items.SimulateChecked;
+        System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+    }
+
+    private void ExecuteSimulate()
+    {
+        if (_bridge == null) return;
+
+        if (!_bridge.SetSimulation(!_simulating))
+        {
+            SetStatus("The modeler is not ready yet.");
+            return;
+        }
+
+        // The keys of a run (a click fires, Escape ends it) go to the canvas.
+        Modeler.Focus();
+    }
+
+    private void ExecuteAnalyse()
+    {
+        if (_bridge == null) return;
+
+        if (_bridge.Analyse()) _analysisAsked = true;
+        else SetStatus("The modeler is not ready yet.");
+    }
+
+    private void OnSimulationChanged(bool active, string? problem)
+    {
+        var wasRunning = _simulating;
+        SetSimulating(active);
+        SetStatus(NetMenuState.SimulationStatus(wasRunning, active, problem));
+    }
+
+    private void OnAnalysed(int errors, int warnings, int information, string? problem)
+    {
+        if (!_analysisAsked) return;
+        _analysisAsked = false;
+        SetStatus(NetMenuState.AnalysisStatus(errors, warnings, information, problem));
     }
 
     private async Task EnsureBridgeAsync()
@@ -455,6 +520,8 @@ public partial class PetriNetPlugin : PluginViewBase, ISupportsThemes, INotifyAM
         _pendingPnml = null;
         _echoBaseline = null;
         _selectedNetIndex = 0;
+        if (_simulating) _bridge?.SetSimulation(false);
+        SetSimulating(false);
         ClearFindings();
         UpdatePendingLabel();
         RefreshNetChoices();

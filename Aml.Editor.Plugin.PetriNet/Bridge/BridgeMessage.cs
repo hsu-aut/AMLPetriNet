@@ -29,6 +29,17 @@ public class JsToHostMessage
 
     /// <summary>How many elements are selected, for "selected" messages.</summary>
     [JsonPropertyName("count")] public int? Count { get; set; }
+
+    /// <summary>
+    /// Why a start was refused or a run ended by itself, for "simulation"
+    /// messages, or why a net could not be analysed, for "analysed" ones.
+    /// </summary>
+    [JsonPropertyName("problem")] public string? Problem { get; set; }
+
+    /// <summary>What an analysis computed, for "analysed" messages.</summary>
+    [JsonPropertyName("errors")] public int? Errors { get; set; }
+    [JsonPropertyName("warnings")] public int? Warnings { get; set; }
+    [JsonPropertyName("information")] public int? Information { get; set; }
 }
 
 /// <summary>Type tags on the wire, kept as constants rather than loose strings.</summary>
@@ -44,6 +55,7 @@ public static class JsMessageType
     public const string Simulation = "simulation";
     public const string Selected = "selected";
     public const string Fired = "fired";
+    public const string Analysed = "analysed";
 
     // host -> modeler
     public const string ImportPnml = "importPNML";
@@ -52,6 +64,8 @@ public static class JsMessageType
     public const string SetTheme = "setTheme";
     public const string SelectElement = "selectElement";
     public const string HostFindings = "hostFindings";
+    public const string Simulate = "simulate";
+    public const string Analyse = "analyse";
 }
 
 /// <summary>
@@ -84,4 +98,21 @@ public static class HostFindingsMessage
             })
             .ToArray(),
     };
+}
+
+/// <summary>
+/// Starts or ends a run on the canvas, as the Simulate button there does. The
+/// page answers every request with one "simulation" message.
+/// </summary>
+public static class SimulateMessage
+{
+    public static object Create(bool active) => new { type = JsMessageType.Simulate, active };
+}
+
+/// <summary>
+/// Asks the page to analyse the net and open the list; answered by "analysed".
+/// </summary>
+public static class AnalyseMessage
+{
+    public static object Create() => new { type = JsMessageType.Analyse };
 }

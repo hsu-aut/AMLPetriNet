@@ -54,8 +54,18 @@ public sealed class PtWebView : IDisposable
 
     public event Action<string, string>? OnJsLog;
 
-    /// <summary>A simulation started (true) or stopped (false) on the canvas.</summary>
-    public event Action<bool>? SimulationChanged;
+    /// <summary>
+    /// A simulation started (true) or stopped (false), or a start was refused.
+    /// The second argument is the modeler's reason, or null.
+    /// </summary>
+    public event Action<bool, string?>? SimulationChanged;
+
+    /// <summary>
+    /// An analysis asked for by <see cref="Analyse"/> finished: errors, warnings
+    /// and information the modeler computed, and why it could not run, or null.
+    /// </summary>
+    public event Action<int, int, int, string?>? Analysed;
+
 
     /// <summary>
     /// What the user selected on the canvas, by its PNML id, or null where the
@@ -273,6 +283,26 @@ public sealed class PtWebView : IDisposable
         Post(new { type = JsMessageType.SelectElement, id });
     }
 
+    /// <summary>
+    /// Start or end a run on the canvas. Not buffered: a request that the page
+    /// cannot take now would start a run nobody asked for later. Returns whether
+    /// it was sent.
+    /// </summary>
+    public bool SetSimulation(bool active)
+    {
+        if (!IsReady || _disposed || _view.CoreWebView2 == null) return false;
+        Post(SimulateMessage.Create(active));
+        return true;
+    }
+
+    /// <summary>Ask the page to analyse the net and open the list. Not buffered.</summary>
+    public bool Analyse()
+    {
+        if (!IsReady || _disposed || _view.CoreWebView2 == null) return false;
+        Post(AnalyseMessage.Create());
+        return true;
+    }
+
     private void Post(object envelope) =>
         _view.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(envelope));
 
@@ -326,8 +356,14 @@ public sealed class PtWebView : IDisposable
                 // nothing to do about it. It is reported because a user who
                 // wonders why the canvas shows other markings than the
                 // document finds the answer in the log.
-                SimulationChanged?.Invoke(message.Active ?? false);
-                OnInfo?.Invoke(message.Active == true ? "Simulation started" : "Simulation stopped");
+                SimulationChanged?.Invoke(message.Active ?? false, message.Problem);
+                OnInfo?.Invoke(message.Active == true
+                    ? "Simulation started"
+                    : "Simulation stopped" + (string.IsNullOrEmpty(message.Problem) ? "" : ": " + message.Problem));
+                break;
+
+            case JsMessageType.Analysed:
+                Analysed?.Invoke(message.Errors ?? 0, message.Warnings ?? 0, message.Information ?? 0, message.Problem);
                 break;
 
             case JsMessageType.Selected:

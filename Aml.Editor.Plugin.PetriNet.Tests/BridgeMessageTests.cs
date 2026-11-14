@@ -98,6 +98,53 @@ public class BridgeMessageTests
         Assert.Equal("setTheme", JsMessageType.SetTheme);
         Assert.Equal("selectElement", JsMessageType.SelectElement);
         Assert.Equal("hostFindings", JsMessageType.HostFindings);
+        Assert.Equal("simulate", JsMessageType.Simulate);
+        Assert.Equal("analyse", JsMessageType.Analyse);
+        Assert.Equal("analysed", JsMessageType.Analysed);
+    }
+
+    [Fact]
+    public void ARunThatEndedByItselfCarriesItsReason()
+    {
+        var message = Read("""{"type":"simulation","active":false,"problem":"The net was replaced."}""");
+
+        Assert.Equal(false, message.Active);
+        Assert.Equal("The net was replaced.", message.Problem);
+    }
+
+    [Fact]
+    public void ARunWithoutAReasonStillReads()
+    {
+        var message = Read("""{"type":"simulation","active":true,"problem":null}""");
+
+        Assert.Equal(true, message.Active);
+        Assert.Null(message.Problem);
+    }
+
+    [Fact]
+    public void TheAnswerOfAnAnalysisIsRead()
+    {
+        var message = Read("""{"type":"analysed","errors":0,"warnings":2,"information":9,"problem":null}""");
+
+        Assert.Equal(JsMessageType.Analysed, message.Type);
+        Assert.Equal(0, message.Errors);
+        Assert.Equal(2, message.Warnings);
+        Assert.Equal(9, message.Information);
+        Assert.Null(message.Problem);
+    }
+
+    [Fact]
+    public void TheRequestsOfTheMenuHaveTheShapeThePageReads()
+    {
+        var simulate = JsonDocument.Parse(JsonSerializer.Serialize(SimulateMessage.Create(true))).RootElement;
+        Assert.Equal("simulate", simulate.GetProperty("type").GetString());
+        Assert.True(simulate.GetProperty("active").GetBoolean());
+
+        var stop = JsonDocument.Parse(JsonSerializer.Serialize(SimulateMessage.Create(false))).RootElement;
+        Assert.False(stop.GetProperty("active").GetBoolean());
+
+        var analyse = JsonDocument.Parse(JsonSerializer.Serialize(AnalyseMessage.Create())).RootElement;
+        Assert.Equal("analyse", analyse.GetProperty("type").GetString());
     }
 
     private static JsonElement Wire(IEnumerable<HostFinding> findings) =>
