@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   windows:
+    timeout-minutes: 30
     # Windows, because the plugin targets net8.0-windows and WPF, and because
     # the browser checks run against the same Chromium a developer has here.
     runs-on: windows-latest
@@ -65,6 +66,7 @@ jobs:
 
       # bash, because PowerShell passes the * through unexpanded.
       - name: Check the PNML against the ISO/IEC 15909-2 grammar
+        timeout-minutes: 5
         working-directory: web
         shell: bash
         run: node tools/validate-pnml.mjs ../examples/interop/*.pnml ../examples/quality-gate.pnml ../examples/paper/MPS500_PT.pnml
@@ -79,6 +81,7 @@ jobs:
     # the package version, or a tag v0.1.15 would publish a 0.1.14 package.
     if: startsWith(github.ref, 'refs/tags/v')
     needs: windows
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     permissions:
       contents: write

@@ -8,6 +8,8 @@ Place/transition Petri nets (ISO/IEC 15909) in AutomationML.
 
 Online: https://aml.fpbjs.net/pt/
 
+![The MPS500 quality check as a net, with the findings panel open](docs/screenshot.png)
+
 The counterpart for the Formalised Process Description (VDI/VDE 3682) is
 [AMLFPB.js](https://github.com/hsu-aut/AMLFPB.js).
 
@@ -21,13 +23,32 @@ The counterpart for the Formalised Process Description (VDI/VDE 3682) is
 | `dotnet/PtMapper.Web/` | Web application |
 | `dotnet/PtMapper.Tests/` | Mapper tests |
 | `web/` | The bundle for plugin and web application, host bridge, browser tests |
+| `libraries/` | `ISO_PT` domain library and the libraries it references |
+| `examples/` | Example documents, including the MPS500 quality check in `examples/paper/` |
+| `docs/` | Round-trip validation, PNML conformance, plans and the backlog |
 
 The Petri net modeler itself is [PetriNet.js](https://github.com/hsu-aut/PetriNet.js),
 a repository of its own: canvas, PNML reader and writer, simulation, analysis
 core, state space view. `web/` installs it from a tag.
-| `libraries/` | `ISO_PT` domain library and the libraries it references |
-| `examples/` | Example documents, including the MPS500 quality check in `examples/paper/` |
-| `docs/` | Round-trip validation and PNML conformance |
+
+## Install the plugin
+
+To use the plugin without building it:
+
+1. Close every running AutomationML Editor. An update made while a second
+   instance is open can leave the plugin folder half written.
+2. Download `Aml.Editor.Plugin.PetriNet.<version>.nupkg` from the
+   [latest release](https://github.com/hsu-aut/AMLPetriNet/releases/latest) and
+   put it in a folder of its own.
+3. Start the editor, open the PlugIn Manager and add that folder as a package
+   source.
+4. Select the source, find "Aml.Editor.Plugin.PetriNet" under Available and
+   install it. An update comes through the Updates tab.
+5. The plugin opens as the tab "AMLPetriNet" once a document is open. It needs
+   the AutomationML Editor 6.4 or later and the WebView2 runtime, which comes
+   with current Windows and Edge.
+
+What the plugin does is described under [Plugin](#plugin) below.
 
 ## Build
 
