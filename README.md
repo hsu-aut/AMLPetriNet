@@ -171,7 +171,7 @@ MIT, see [LICENSE](LICENSE).
 [ptn-js](https://github.com/bptlab/openbpt-modeler-petri-net) (MIT) by Maximilian
 König and the Business Process Technology group at the Hasso Plattner Institute,
 based on [diagram-js](https://github.com/bpmn-io/diagram-js). What the fork
-changes is listed in [modeler/README.md](modeler/README.md); fixes that belong
-to the original are prepared in [docs/upstream/](docs/upstream/). All
+changes is listed in [modeler/README.md](modeler/README.md); the two fixes that
+belonged to the original were merged there, see [docs/upstream/](docs/upstream/). All
 third-party components are listed in
 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

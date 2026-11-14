@@ -57,8 +57,8 @@ simulation and analysis. Nothing in this design depends on the answer.
 Recommended when the question comes up: a public fork on the author's own
 account, named `PetriNet.js`, so the lineage stays visible on GitHub.
 
-The two defects we work around are reported upstream as pull requests,
-independent of the fork:
+The two defects we work around were reported upstream as pull requests,
+independent of the fork, and both were merged on 2026-11-10 (#9 and #10):
 
 - `UpdatePropertyHandler` declares no `$inject`, so a minified build dies at
   start-up.

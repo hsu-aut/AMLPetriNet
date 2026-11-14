@@ -20,7 +20,9 @@ it work is theirs; the changes below are this fork's.
 - **Two defects fixed.** `UpdatePropertyHandler` declared no `$inject`, which
   kills a minified build at start-up. `UpdateLabelHandler` wrote the text "1",
   the default arc weight, whenever any label was cleared, so a place without a
-  name was called "1". Both are offered back to the original.
+  name was called "1". Both are fixed in the original as well
+  ([#9](https://github.com/bptlab/openbpt-modeler-petri-net/pull/9),
+  [#10](https://github.com/bptlab/openbpt-modeler-petri-net/pull/10)).
 - **Transition names below the box** instead of inside it, where a name longer
   than the box was broken mid-word.
 - **Markings as dots**, up to five, a number above that, which is how Petri nets

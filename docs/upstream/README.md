@@ -2,8 +2,13 @@
 
 Two defects found while building on
 [ptn-js](https://github.com/bptlab/openbpt-modeler-petri-net), each as a patch
-against that repository and nothing else. They mention neither this project nor
-AutomationML, so they can be sent as they are.
+against that repository and nothing else.
+
+**Status: both merged.** Maximilian König merged them into the original on
+2026-11-10, as [#9](https://github.com/bptlab/openbpt-modeler-petri-net/pull/9)
+(commit `e309850`) and [#10](https://github.com/bptlab/openbpt-modeler-petri-net/pull/10)
+(commit `21f0fd8`). No npm release carries them yet; the latest published
+version is still 1.0.2. The patches stay here as the record of what was sent.
 
 ```bash
 git clone https://github.com/bptlab/openbpt-modeler-petri-net
