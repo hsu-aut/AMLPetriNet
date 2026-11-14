@@ -71,7 +71,7 @@ public sealed record AnalyzeOptions(
                     timeLimit = ms;
                     break;
                 case "--timeout":
-                    if (!int.TryParse(Value(), out timeout) || timeout < 1) return (null, "--timeout takes a whole number of seconds, at least 1.");
+                    if (!int.TryParse(Value(), out timeout) || timeout < 1 || timeout > 86400) return (null, "--timeout takes a whole number of seconds, from 1 to 86400.");
                     break;
                 default:
                     return (null, $"Unknown option '{arg}'.");

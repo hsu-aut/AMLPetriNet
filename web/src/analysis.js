@@ -31,7 +31,14 @@ export function answer(request) {
 
   return {
     core: CORE_VERSION,
-    results: (request?.nets ?? []).map((net) => ({ key: net.key, ...analyseData(net, limits) })),
+    // One net that cannot be analysed does not take the others of the file with it.
+    results: (request?.nets ?? []).map((net) => {
+      try {
+        return { key: net.key, ...analyseData(net, limits) };
+      } catch (error) {
+        return { key: net.key, problem: String(error?.message ?? error), complete: false, stopped: null, markings: 0, unbounded: [], findings: [] };
+      }
+    }),
   };
 }
 

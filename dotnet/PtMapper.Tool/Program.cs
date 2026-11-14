@@ -150,7 +150,13 @@ try
         }
 
         case "analyze" when args.Length >= 2:
-            return AnalyzeCommand.Run(args[1..], Console.Out, Console.Error, new NodeAnalysisRunner());
+        {
+            // UTF-8 without a byte order mark, whatever the code page of the
+            // console is: the output is read by a parser or a person on another
+            // machine, and names in it can hold umlauts.
+            using var stdout = new StreamWriter(Console.OpenStandardOutput(), new System.Text.UTF8Encoding(false)) { AutoFlush = true };
+            return AnalyzeCommand.Run(args[1..], stdout, Console.Error, new NodeAnalysisRunner());
+        }
 
         case "fixtures" when args.Length >= 2:
         {

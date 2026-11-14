@@ -237,6 +237,13 @@ The author left the questions below open and asked for the recommended answers:
 7. The text output only counts information findings; `--all` lists them.
 8. `petrinetjs analyze` stays open.
 
+Details settled while building: `--fail-on never` gives 0 whatever was found.
+`--require-complete` fails with 5 on a partial result, which includes a net with
+an unbounded place (`complete` is that of the core's `analyse()`), unless
+`--fail-on never`. A net that could be analysed and got no result is a failure
+(3), not an empty report. The deadlock rule for nets without transitions lives
+in the core (PetriNet.js 0.3.0), so the canvas agrees.
+
 ## 8. Open questions for the author
 
 1. Should a warning fail the run by default (exit 5), or only an error, as in

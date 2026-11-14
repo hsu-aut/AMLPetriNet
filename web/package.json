@@ -8,7 +8,7 @@
     "build": "node build.mjs",
     "pretest": "playwright install chromium",
     "test": "node --test src/ && node tools/verify-interop.mjs && node tools/verify-bridge.mjs && node tools/verify-svg.mjs && node tools/verify-analysis.mjs",
-    "test:svg": "node tools/verify-svg.mjs && node tools/verify-analysis.mjs",
+    "test:svg": "node tools/verify-svg.mjs",
     "test:interop": "node tools/verify-interop.mjs",
     "dump": "node tools/dump-xml.mjs",
     "test:bridge": "node tools/verify-bridge.mjs",

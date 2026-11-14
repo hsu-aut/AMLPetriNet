@@ -9,9 +9,11 @@ public static class FindingsText
         {
             var state = !net.Analysed ? "not analysed"
                 : net.Complete ? $"complete, {net.Markings} markings"
-                : $"partial (stopped at {net.Stopped}), {net.Markings} markings";
+                : net.Stopped != null ? $"partial (stopped at {net.Stopped}), {net.Markings} markings"
+                : $"partial (a place grows without bound), {net.Markings} markings";
+            var where = net.Hierarchy != null ? $"{net.Hierarchy}: " : "";
 
-            output.WriteLine($"{net.Name ?? net.Id} ({net.Id}): {Plural(net.Counts.Error, "error")}, "
+            output.WriteLine($"{where}{net.Name ?? net.Id} ({net.Id}): {Plural(net.Counts.Error, "error")}, "
                 + $"{Plural(net.Counts.Warning, "warning")}, {net.Counts.Information} information; {state}");
 
             if (net.Problem != null) output.WriteLine("  " + net.Problem);

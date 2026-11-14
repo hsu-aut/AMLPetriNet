@@ -77,6 +77,7 @@ public class AnalyzeTests
     [InlineData("--markings", "many")]
     [InlineData("--time-limit", "0")]
     [InlineData("--timeout", "-3")]
+    [InlineData("--timeout", "86401")]
     public void ABadOptionIsAUsageError(params string[] bad)
     {
         var (options, error) = AnalyzeOptions.Parse(new[] { "net.pnml" }.Concat(bad).ToArray());
@@ -158,15 +159,14 @@ public class AnalyzeTests
         finally { File.Delete(path); }
     }
 
-    [Fact]
-    public void AnErrorFromTheCoreGivesFourEvenWhenNothingFailsOnWarnings()
+    [Theory]
+    [InlineData("warning", ExitCodes.Errors)]
+    [InlineData("error", ExitCodes.Errors)]
+    [InlineData("never", ExitCodes.Ok)]
+    public void AnErrorFailsUnlessNothingMayFail(string failOn, int expected)
     {
         var path = PnmlOf(Loop());
-        try
-        {
-            var (exit, _, _) = Run(new FakeRunner(Answer(F("PT99", "error"))), path, "--fail-on", "never");
-            Assert.Equal(ExitCodes.Errors, exit);
-        }
+        try { Assert.Equal(expected, Run(new FakeRunner(Answer(F("PT99", "error"))), path, "--fail-on", failOn).Exit); }
         finally { File.Delete(path); }
     }
 
@@ -180,6 +180,11 @@ public class AnalyzeTests
             Assert.Equal(ExitCodes.Ok, Run(new FakeRunner(partial), path).Exit);
             Assert.Equal(ExitCodes.Warnings, Run(new FakeRunner(partial), path, "--require-complete").Exit);
             Assert.Equal(ExitCodes.Ok, Run(new FakeRunner(Answer()), path, "--require-complete").Exit);
+
+            // Asked for by name, so it holds whatever --fail-on says about warnings,
+            // except "never", which leaves only the failures of the tool.
+            Assert.Equal(ExitCodes.Warnings, Run(new FakeRunner(partial), path, "--require-complete", "--fail-on", "error").Exit);
+            Assert.Equal(ExitCodes.Ok, Run(new FakeRunner(partial), path, "--require-complete", "--fail-on", "never").Exit);
         }
         finally { File.Delete(path); }
     }
@@ -201,15 +206,16 @@ public class AnalyzeTests
         finally { File.Delete(path); }
     }
 
-    [Fact]
+    [SkippableFact]
     public void ANetWithoutTransitionsReportsNoDeadlock()
     {
+        // The core decides this, so the real one answers.
+        var runner = RealRunner();
         var net = new PtNet { Id = "lonely", Name = "Lonely" };
         net.Places.Add(new PtPlace { Id = "p", Name = "P", InitialMarking = 1 });
         var path = PnmlOf(net);
         try
         {
-            var runner = new FakeRunner(Answer(F("PT15", "warning", null, "No transition is enabled")));
             var (_, output, _) = Run(runner, path, "--format", "json");
             Assert.DoesNotContain("PT15", output);
         }
@@ -282,15 +288,28 @@ public class AnalyzeTests
     [Fact]
     public void ReadWarningsGoToTheErrorStreamAndNotIntoTheJson()
     {
-        var net = Loop();
-        net.Warnings.Add("something was left out");
-        // A written PNML file does not carry warnings; a PNML the reader has to repair does.
-        // What matters here is only that the stream for notes is the error stream.
-        var path = PnmlOf(net);
+        // A PNML file with an arc that has no id: the reader leaves it out and says so.
+        var pnml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <pnml xmlns="http://www.pnml.org/version-2009/grammar/pnml">
+              <net id="n" type="http://www.pnml.org/version-2009/grammar/ptnet">
+                <page id="pg">
+                  <place id="p"><initialMarking><text>1</text></initialMarking></place>
+                  <transition id="t"/>
+                  <arc id="a" source="p" target="t"/>
+                  <arc id="" source="t" target="p"/>
+                </page>
+              </net>
+            </pnml>
+            """;
+        var path = Path.Combine(Path.GetTempPath(), "ptmap-warn-" + Guid.NewGuid().ToString("N") + ".pnml");
+        File.WriteAllText(path, pnml);
         try
         {
-            var (_, output, _) = Run(new FakeRunner(Answer()), path, "--format", "json");
-            using var json = JsonDocument.Parse(output); // must be JSON from the first character
+            var (_, output, err) = Run(new FakeRunner(Answer()), path, "--format", "json");
+            Assert.Contains("note: ", err);
+            Assert.DoesNotContain("note:", output);
+            using var json = JsonDocument.Parse(output); // JSON from the first character
             Assert.Equal(JsonValueKind.Object, json.RootElement.ValueKind);
         }
         finally { File.Delete(path); }
@@ -341,6 +360,35 @@ public class AnalyzeTests
     }
 
     [Fact]
+    public void ANetThatGotNoAnswerIsAFailureAndNotAnEmptyReport()
+    {
+        var path = PnmlOf(Loop());
+        try
+        {
+            var wrongKey = """{"core":"1","results":[{"key":"7","problem":null,"complete":true,"stopped":null,"markings":1,"unbounded":[],"findings":[]}]}""";
+            var (exit, output, err) = Run(new FakeRunner(wrongKey), path, "--require-complete");
+            Assert.Equal(ExitCodes.Failure, exit);
+            Assert.Contains("no result", err);
+            Assert.Equal("", output);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public void ANetTheCoreCouldNotReadIsAFailure()
+    {
+        var path = PnmlOf(Loop());
+        try
+        {
+            var refused = """{"core":"1","results":[{"key":"0","problem":"the weight of arc a is 0","complete":false,"stopped":null,"markings":0,"unbounded":[],"findings":[]}]}""";
+            var (exit, _, err) = Run(new FakeRunner(refused), path);
+            Assert.Equal(ExitCodes.Failure, exit);
+            Assert.Contains("the weight of arc a is 0", err);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
     public void AnAnswerThatIsNotJsonGivesExitThree()
     {
         var path = PnmlOf(Loop());
@@ -352,17 +400,17 @@ public class AnalyzeTests
     public void AnAmlFindingCarriesTheIdOfTheElementInTheDocument()
     {
         var aml = FindFile("examples/paper/BridgingExample_MPS500.aml");
-        using var read = JsonDocument.Parse("{}");
-        // Ask for a finding about a transition of the first net and see that the id is the document's.
-        var (_, _, _) = (0, "", "");
-        var nets = PtMapper.Conversion.CaexToPtNet.ReadAll(Aml.Engine.CAEX.CAEXDocument.LoadFromFile(aml));
-        var element = nets[0].Transitions[0].Id;
-        var (exit, output, _) = Run(new FakeRunner(Answer(F("PT14", "warning", element))), aml, "--format", "json");
+        var document = Aml.Engine.CAEX.CAEXDocument.LoadFromFile(aml);
+        var hierarchy = document.CAEXFile.InstanceHierarchy.First(CaexToPtNet.ContainsNet);
+        var net = CaexToPtNet.Read(hierarchy)[0];
+        var element = net.Transitions[0].Id;
+        var expected = CaexToPtNet.FindElement(CaexToPtNet.NetElements(hierarchy)[0], element)!.ID;
+
+        var (_, output, _) = Run(new FakeRunner(Answer(F("PT14", "warning", element))), aml, hierarchy.Name, "--format", "json");
         using var json = JsonDocument.Parse(output);
         var found = json.RootElement.GetProperty("nets")[0].GetProperty("findings")[0];
-        Assert.True(found.TryGetProperty("internalElementId", out var id) && !string.IsNullOrEmpty(id.GetString()),
-            "the finding carries no id of the document element");
-        Assert.True(exit is ExitCodes.Warnings or ExitCodes.Ok);
+        Assert.Equal(expected, found.GetProperty("internalElementId").GetString());
+        Assert.Equal(hierarchy.Name, json.RootElement.GetProperty("nets")[0].GetProperty("hierarchy").GetString());
     }
 
     // ── end to end, with the real analysis ──────────────────────────────────
@@ -426,7 +474,7 @@ public class AnalyzeTests
         {
             using var json = JsonDocument.Parse(text);
             return json.RootElement.GetProperty("nets")[0].GetProperty("findings").EnumerateArray()
-                .Select(f => f.GetProperty("rule").GetString() + "|" + f.GetProperty("message").GetString()).OrderBy(x => x).ToList();
+                .Select(f => f.GetProperty("rule").GetString() + "|" + f.GetProperty("element").GetString() + "|" + f.GetProperty("message").GetString()).OrderBy(x => x).ToList();
         }
 
         Assert.Equal(Rules(pnml), Rules(aml));
@@ -463,7 +511,39 @@ public class AnalyzeTests
             var rules = json.RootElement.GetProperty("nets")[0].GetProperty("findings").EnumerateArray()
                 .Select(f => f.GetProperty("rule").GetString()).ToList();
             Assert.Contains("PT12", rules);
-            Assert.DoesNotContain("Infinity", output);
+            Assert.Contains("PT17", rules);
+            Assert.False(json.RootElement.GetProperty("nets")[0].GetProperty("complete").GetBoolean());
+            Assert.Contains("stock", json.RootElement.GetProperty("nets")[0].GetProperty("unbounded").EnumerateArray().Select(x => x.GetString()));
+
+            // The partial result fails the run when asked to, although the search itself finished.
+            Assert.Equal(ExitCodes.Warnings, Run(runner, path, "--require-complete", "--fail-on", "error").Exit);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [SkippableFact]
+    public void TheToolWritesUtf8WhateverTheConsoleCodePageIs()
+    {
+        RealRunner(); // skips where Node is missing
+        var net = Loop();
+        net.Places[0].Name = "Lager Ü";
+        var path = PnmlOf(net);
+        try
+        {
+            var tool = Path.Combine(AppContext.BaseDirectory, "ptmap.dll");
+            var info = new ProcessStartInfo("dotnet") { RedirectStandardOutput = true, UseShellExecute = false };
+            info.ArgumentList.Add(tool);
+            foreach (var a in new[] { "analyze", path, "--format", "json", "--all" }) info.ArgumentList.Add(a);
+
+            using var process = Process.Start(info)!;
+            using var bytes = new MemoryStream();
+            process.StandardOutput.BaseStream.CopyTo(bytes);
+            process.WaitForExit();
+
+            var raw = bytes.ToArray();
+            Assert.False(raw.Length >= 3 && raw[0] == 0xEF && raw[1] == 0xBB && raw[2] == 0xBF, "a byte order mark");
+            var text = new System.Text.UTF8Encoding(false, throwOnInvalidBytes: true).GetString(raw); // throws on anything else
+            Assert.Contains("Lager Ü", text);
         }
         finally { File.Delete(path); }
     }
@@ -498,10 +578,9 @@ public class AnalyzeTests
         finally { File.Delete(path); }
     }
 
-    [SkippableFact]
+    [Fact]
     public void AMissingBundleGivesExitTwoWithTheInstruction()
     {
-        RealRunner(); // only to skip where Node is missing
         var path = PnmlOf(Loop());
         try
         {

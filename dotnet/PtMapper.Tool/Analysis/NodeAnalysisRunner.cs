@@ -42,8 +42,16 @@ public sealed class NodeAnalysisRunner : IAnalysisRunner
             var output = process.StandardOutput.ReadToEndAsync();
             var errors = process.StandardError.ReadToEndAsync();
 
-            process.StandardInput.Write(requestJson);
-            process.StandardInput.Close();
+            try
+            {
+                process.StandardInput.Write(requestJson);
+                process.StandardInput.Close();
+            }
+            catch (IOException)
+            {
+                // Node ended before it read the request. Its exit status and its
+                // message say why, below.
+            }
 
             if (!process.WaitForExit(TimeSpan.FromSeconds(timeoutSeconds)))
             {
@@ -73,12 +81,14 @@ public sealed class NodeAnalysisRunner : IAnalysisRunner
         try
         {
             using var process = Start("--version");
-            version = process.StandardOutput.ReadToEnd().Trim();
+            var output = process.StandardOutput.ReadToEndAsync();
             if (!process.WaitForExit(TimeSpan.FromSeconds(20)))
             {
                 Kill(process);
                 throw new AnalysisUnavailableException("'node --version' did not answer.");
             }
+
+            version = output.GetAwaiter().GetResult().Trim();
         }
         catch (Win32Exception)
         {

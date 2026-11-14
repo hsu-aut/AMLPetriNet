@@ -88,6 +88,15 @@ public static class AnalyzeCommand
             var index = analysable.IndexOf(sources[i]);
             var core = index >= 0 ? answer.Results.FirstOrDefault(r => r.Key == index.ToString(System.Globalization.CultureInfo.InvariantCulture)) : null;
             reports.Add(Build(sources[i], structural[i], core, index >= 0));
+
+            // A net that could be analysed and was not (no answer under its key, or
+            // a reason from the core) must not pass as a net without findings.
+            if (index >= 0 && !reports[i].Analysed)
+            {
+                error.WriteLine($"The analysis gave no result for the net '{sources[i].Net.Name ?? sources[i].Net.Id}'"
+                    + (reports[i].Problem != null ? ": " + reports[i].Problem : "."));
+                return ExitCodes.Failure;
+            }
         }
 
         var counts = new Counts(reports.Sum(r => r.Counts.Error), reports.Sum(r => r.Counts.Warning), reports.Sum(r => r.Counts.Information));
@@ -126,10 +135,6 @@ public static class AnalyzeCommand
         {
             foreach (var f in core.Findings)
             {
-                // A net without a transition has no deadlock to speak of: nothing is
-                // enabled in it because there is nothing to enable.
-                if (f.Rule == "PT15" && net.Transitions.Count == 0) continue;
-
                 findings.Add(new ReportedFinding(f.Rule, f.Severity, f.Element, f.Message,
                     InternalId(source, f.Element), f.Marking, f.Cover, f.Firings));
             }
@@ -168,10 +173,12 @@ public static class AnalyzeCommand
 
     private static int ExitCode(AnalyzeOptions options, Counts counts, IReadOnlyList<NetReport> reports)
     {
+        // "never" leaves only the failures of the tool itself: codes 1 to 3.
+        if (options.FailOn == "never") return ExitCodes.Ok;
         if (counts.Error > 0) return ExitCodes.Errors;
 
-        var partial = options.RequireComplete && reports.Any(r => r.Analysed && !r.Complete);
-        if (partial) return ExitCodes.Warnings;
+        // Asked for by name, so it holds whatever --fail-on says about warnings.
+        if (options.RequireComplete && reports.Any(r => r.Analysed && !r.Complete)) return ExitCodes.Warnings;
 
         return options.FailOn == "warning" && counts.Warning > 0 ? ExitCodes.Warnings : ExitCodes.Ok;
     }

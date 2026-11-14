@@ -148,14 +148,16 @@ Options: `--format text|json`, `--fail-on error|warning|never` (default `warning
 `--markings N` (default 20000), `--time-limit ms` (default none, so the answer is
 the same on every machine), `--timeout s` (default 120, kills the analysis),
 `--all` (lists the information findings, the text only counts them otherwise) and
-`--require-complete` (a search that stopped at its limit fails the run).
+`--require-complete` (a partial result fails the run: a search that stopped at its
+limit, or a net with an unbounded place; it holds whatever `--fail-on` says about
+warnings). `--fail-on never` leaves only the codes 1 to 3.
 
 | Exit code | Meaning |
 |---|---|
 | 0 | nothing at or above `--fail-on` |
 | 1 | wrong use |
 | 2 | no file, no net, no such hierarchy, Node.js 20 or the analysis bundle missing |
-| 3 | the analysis failed or ran into `--timeout` |
+| 3 | the analysis failed, ran into `--timeout`, or gave no result for a net |
 | 4 | at least one error |
 | 5 | at least one warning, no error (`validate` exits 0 on warnings) |
 
