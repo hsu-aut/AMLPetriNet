@@ -309,13 +309,14 @@ public partial class PetriNetPlugin : PluginViewBase, ISupportsThemes, INotifyAM
 
     private void OnDiagramChanged(string pnml)
     {
-        if (string.Equals(pnml, _echoBaseline, StringComparison.Ordinal))
+        var change = DiagramChangeRules.Classify(pnml, _echoBaseline, _pendingPnml != null, _baselineIsPending);
+        if (change != DiagramChange.Edited)
         {
             PluginLog.Debug("Change matched the import baseline; treated as import fallout.");
 
             // Undone all the way back to the loaded net: nothing is unsaved any
             // more, and a stale copy must not overwrite the document later.
-            if (_pendingPnml != null && !_baselineIsPending)
+            if (change == DiagramChange.RevertedToLoaded)
             {
                 _pendingPnml = null;
                 UpdatePendingLabel();
