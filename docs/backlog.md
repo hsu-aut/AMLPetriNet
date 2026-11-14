@@ -81,11 +81,15 @@ Plan and decisions: `plan-ptmap-analyze.md`.
   and in AMLPetriNet (0.1.18). No ORCID and no preferred paper: the author adds
   them. The version and date are to be updated with each release.
 
+## Planned, waiting to be built
+
+- Workflow net soundness, net classes and Commoner's theorem: `plan-net-classes.md`
+  (decided in 9a).
+- Search in a Web Worker: `plan-web-worker.md` (decided in 8a), PetriNet.js 0.4.0 or later,
+  breaking.
+
 ## Not started, to be planned first
 
-- Search in a Web Worker. Planned and decided: `plan-web-worker.md`. PetriNet.js 0.4.0, breaking.
-- Workflow net soundness.
-- Net classes and Commoner's theorem.
 - A properties panel.
 
 ## Later, by the author
