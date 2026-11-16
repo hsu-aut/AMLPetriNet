@@ -128,6 +128,15 @@ const lost = json?.results?.[0]?.findings?.filter((f) => f.rule === 'PT16') ?? [
 check(lost.length >= 2, `a transition that can never fire again is found (${lost.length})`);
 check(lost.every((f) => typeof f.marking === 'string' && f.marking.length > 0), 'each carries the marking it is lost in');
 
+// The kind is echoed, the titles of the rules come with the answer, and an unknown kind is refused.
+({ json } = run({ nets: [idle()] }));
+check(json?.kind === 'analyse', 'a request without a kind is an analysis and says so');
+check(json?.rules?.PT15 === 'Deadlock', `the answer names the rules (PT15 is ${JSON.stringify(json?.rules?.PT15)})`);
+({ json } = run({ kind: 'analyse', nets: [idle()] }));
+check(json?.kind === 'analyse', 'an analysis asked for by name is answered');
+const unknown = run({ kind: 'nonsense', nets: [idle()] });
+check(unknown.status === 2, `an unknown kind ends with status 2, not ${unknown.status}`);
+
 if (failures.length) {
   console.log(`\n${failures.length} analysis check(s) failed`);
   process.exitCode = 1;
