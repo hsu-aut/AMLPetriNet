@@ -61,8 +61,8 @@ that all findings appear in the panel.
   `verify-bridge.mjs`).
 - [x] E3. The plugin's Net menu has Simulate and Analyse (`NetMenuState`, tests).
   Merged into `main`; the lock file points at PetriNet.js v0.2.1.
-- [ ] E5. Export SVG during a run shows the document's marking (decision 8a.2 of
-  the menu plan); needs a change in PetriNet.js.
+- [x] E5. Export SVG during a run shows the document's marking (decision 8a.2 of
+  the menu plan): PetriNet.js 0.6.1 (built; the tag waits for the push).
 - [ ] E4. Tried in the real AML Editor; version, release note and tag.
 
 ## Block F: `ptmap analyze`
@@ -116,6 +116,10 @@ Plan: `plan-web-worker.md`.
 ## Planned, waiting to be built
 
 Nothing: the three plans are built (blocks H, I, J).
+
+## Ideas
+
+See `ideas.md`. None is decided.
 
 ## Later, by the author
 
