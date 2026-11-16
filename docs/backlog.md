@@ -124,7 +124,8 @@ Nothing: the three plans are built (blocks H, I, J).
 - `ptmap explore`, SARIF and JUnit (ideas 8 and 9): `plan-ptmap-formats.md` (decided).
 - Write the analysis result into the document (idea 10): `plan-analysis-stamp.md`.
   **Waits for the author's decision on question 1**, which changes a rule of the design.
-- Example nets as a library (idea 4): plan still being written.
+- Example nets as a library (idea 4): `plan-example-nets.md` (decided). The nets need to be
+  looked at by the author once (layout, sources).
 
 ## Ideas
 
