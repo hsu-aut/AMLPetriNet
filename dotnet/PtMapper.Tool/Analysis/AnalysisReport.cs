@@ -11,7 +11,7 @@ public sealed class CoreAnswer
     [JsonPropertyName("results")] public List<CoreNetAnswer> Results { get; set; } = new();
 
     /// <summary>The titles of the rules the core knows, by id. Empty from a bundle that predates them.</summary>
-    [JsonPropertyName("rules")] public Dictionary<string, string> Rules { get; set; } = new();
+    [JsonPropertyName("rules")] public Dictionary<string, string>? Rules { get; set; } = new();
 }
 
 public sealed class CoreNetAnswer

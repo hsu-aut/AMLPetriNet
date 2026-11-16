@@ -33,6 +33,13 @@ public static class AnalyzeCommand
             return ExitCodes.Usage;
         }
 
+        // The report must not replace the net it is about.
+        if (options.Output != null && SamePath(options.Output, options.File))
+        {
+            error.WriteLine("--output names the input file; the report would replace the net.");
+            return ExitCodes.Usage;
+        }
+
         List<Source> sources;
         try
         {
@@ -103,9 +110,9 @@ public static class AnalyzeCommand
         var exit = ExitCode(options, counts, reports);
         var report = new AnalyzeReport(options.File, "petrinetjs " + answer.Core,
             new ReportLimits(options.Markings, options.TimeLimitMilliseconds), reports, counts, exit)
-        { Rules = answer.Rules };
+        { Rules = answer.Rules ?? new() };
 
-        var text = Render(report, options);
+        var text = Render(report, options).Replace("\r\n", "\n");
         if (options.Output == null)
         {
             output.Write(text);
@@ -114,12 +121,16 @@ public static class AnalyzeCommand
 
         // Written only now, when the run has succeeded: a failed run leaves an old file as it was.
         // UTF-8 without a byte order mark, which a redirect in Windows PowerShell 5.1 does not give.
+        // Through a temporary file, so that a write that fails halfway leaves the old file whole.
+        var temporary = options.Output + ".ptmap-" + Guid.NewGuid().ToString("N")[..8] + ".tmp";
         try
         {
-            File.WriteAllText(options.Output, text, new System.Text.UTF8Encoding(false));
+            File.WriteAllText(temporary, text, new System.Text.UTF8Encoding(false));
+            File.Move(temporary, options.Output, overwrite: true);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
+            try { File.Delete(temporary); } catch (IOException) { } catch (UnauthorizedAccessException) { }
             error.WriteLine($"{options.Output}: {ex.Message}");
             return ExitCodes.Input;
         }
@@ -127,6 +138,10 @@ public static class AnalyzeCommand
         output.WriteLine($"{options.Output}: {Plural(counts.Error, "error")}, {Plural(counts.Warning, "warning")}, {counts.Information} information.");
         return exit;
     }
+
+    private static bool SamePath(string a, string b) =>
+        string.Equals(Path.GetFullPath(a), Path.GetFullPath(b),
+            OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
 
     private static string Plural(int count, string word) => count == 1 ? $"1 {word}" : $"{count} {word}s";
 

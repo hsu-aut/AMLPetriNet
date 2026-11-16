@@ -248,4 +248,56 @@ public class ReportFormatTests
         Assert.Equal(ExitCodes.Input, Run(Findings, Path.Combine(Path.GetDirectoryName(file)!, "missing.pnml"), "--output", target).Exit);
         Assert.Equal("old", File.ReadAllText(target));
     }
+
+    [Fact]
+    public void TheOutputMayNotBeTheInput()
+    {
+        var file = Pnml();
+        var before = File.ReadAllText(file);
+        Assert.Equal(ExitCodes.Usage, Run(Findings, file, "--format", "sarif", "--output", file).Exit);
+        Assert.Equal(before, File.ReadAllText(file));
+    }
+
+    [Fact]
+    public void ABundleThatSendsNoRulesStillGivesAReport()
+    {
+        var answer = Findings.Replace("\"rules\":{\"PT15\":\"Deadlock\",\"PT16\":\"Transition that can never fire again\"}", "\"rules\":null");
+        var (exit, text, _) = Run(answer, Pnml(), "--format", "sarif");
+        Assert.Equal(ExitCodes.Errors, exit);
+        var rules = JsonDocument.Parse(text).RootElement.GetProperty("runs")[0].GetProperty("tool").GetProperty("driver").GetProperty("rules");
+        Assert.Contains(rules.EnumerateArray(), r => r.GetProperty("id").GetString() == "PT15" && r.GetProperty("shortDescription").GetProperty("text").GetString() == "PT15");
+    }
+
+    [Fact]
+    public void AWarningOnlyFailsAsAWarning()
+    {
+        var (_, text, _) = Run(Answer(F("PT15", "warning", "p", "Idle holds a token.")), Pnml(), "--format", "junit");
+        Assert.Equal("warning", XDocument.Parse(text).Descendants("failure").Single().Attribute("type")!.Value);
+    }
+
+    [Fact]
+    public void AReportIsWrittenWithLineFeedsOnly()
+    {
+        var file = Pnml();
+        var target = Path.Combine(Path.GetDirectoryName(file)!, "r.sarif");
+        Run(Findings, file, "--format", "sarif", "--output", target);
+        Assert.DoesNotContain((char)13, File.ReadAllText(target));
+    }
+
+    [Fact]
+    public void AFailureOfTheToolLeavesTheFileAlone()
+    {
+        var file = Pnml();
+        var target = Path.Combine(Path.GetDirectoryName(file)!, "r.sarif");
+        File.WriteAllText(target, "old");
+        var output = new StringWriter();
+        var exit = AnalyzeCommand.Run(new[] { file, "--output", target }, output, new StringWriter(), new ThrowingRunner());
+        Assert.Equal(ExitCodes.Failure, exit);
+        Assert.Equal("old", File.ReadAllText(target));
+    }
+
+    private sealed class ThrowingRunner : IAnalysisRunner
+    {
+        public string Run(string requestJson, int timeoutSeconds) => throw new AnalysisFailedException("boom");
+    }
 }

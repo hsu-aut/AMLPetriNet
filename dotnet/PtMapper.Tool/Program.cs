@@ -229,8 +229,9 @@ static void Usage()
         ptmap sample   <out.pnml>
         ptmap fixtures <out-dir>
         ptmap validate <in.pnml|in.aml>
-        ptmap analyze  <in.pnml|in.aml> [hierarchy] [--format text|json] [--fail-on error|warning|never]
-                       [--markings N] [--time-limit ms] [--timeout s] [--all] [--require-complete]
+        ptmap analyze  <in.pnml|in.aml> [hierarchy] [--format text|json|sarif|junit] [--output file]
+                       [--fail-on error|warning|never] [--markings N] [--time-limit ms] [--timeout s]
+                       [--all] [--require-complete]
         ptmap report   <in.pnml|in.aml> <out.md>
         ptmap selfcontained <in.aml> <out.aml> [libDir]
         ptmap editor-test <out-dir> [libDir]

@@ -64,7 +64,7 @@ public sealed record AnalyzeOptions(
                     break;
                 case "--output":
                     output = Value();
-                    if (string.IsNullOrWhiteSpace(output)) return (null, "--output takes the name of a file.");
+                    if (string.IsNullOrWhiteSpace(output) || output.StartsWith("--", StringComparison.Ordinal)) return (null, "--output takes the name of a file.");
                     break;
                 case "--fail-on":
                     failOn = Value() ?? "";
