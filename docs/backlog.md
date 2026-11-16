@@ -122,8 +122,8 @@ Nothing: the three plans are built (blocks H, I, J).
 - Take a marking, search further, say why (ideas 1 to 3): `plan-marking-search-why.md`
   (decided). PetriNet.js minor version, then AMLPetriNet follows.
 - `ptmap explore`, SARIF and JUnit (ideas 8 and 9): `plan-ptmap-formats.md` (decided).
-- Write the analysis result into the document (idea 10): `plan-analysis-stamp.md`.
-  **Waits for the author's decision on question 1**, which changes a rule of the design.
+- Write the analysis result into the document (idea 10): `plan-analysis-stamp.md`
+  (decided 2026-11-16: yes, on an explicit command only).
 - Example nets as a library (idea 4): `plan-example-nets.md` (decided). The nets need to be
   looked at by the author once (layout, sources).
 

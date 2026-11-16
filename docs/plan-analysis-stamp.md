@@ -215,6 +215,13 @@ a PNML reader can analyse for itself. Import PNML and `ptmap to-aml` never write
 - The existing Update is still many undo steps; wrapping it in `EditorUndo` is a
   separate item.
 
+## 8a. Decided (2026-11-16)
+
+The author said "good" to all of it, including that one explicit command may write the
+analysis summary into the document (question 1). The recommended answers hold for questions
+2 to 12. The change to design section 5 is: "An analysis never writes by itself; one command
+writes its summary."
+
 ## 8. Open questions for the author (visible behaviour only)
 
 1. May one explicit command write the analysis summary into the document, which
