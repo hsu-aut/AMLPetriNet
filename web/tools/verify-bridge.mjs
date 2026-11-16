@@ -341,6 +341,22 @@ await page.evaluate(() => window.ptn.get('simulation').fireOne());
 await page.waitForTimeout(500);
 check((await messagesOfType('changed')).length === 0, 'a firing during a hosted run reports no edit');
 
+// A picture taken while the net runs is the picture of the document, not of the run.
+await clearMessages();
+await send({ type: 'requestSvg' });
+await waitFor('svg');
+const svgDuring = (await messagesOfType('svg'))[0]?.svg;
+await send({ type: 'simulate', active: false });
+await page.waitForTimeout(300);
+await clearMessages();
+await send({ type: 'requestSvg' });
+await waitFor('svg');
+const svgAfter = (await messagesOfType('svg'))[0]?.svg;
+check(typeof svgDuring === 'string' && svgDuring.length > 0 && svgDuring === svgAfter,
+  'the picture taken during a run is not the picture of the document');
+await send({ type: 'simulate', active: true });
+await page.waitForTimeout(300);
+
 await clearMessages();
 await send({ type: 'analyse' });
 await waitFor('analysed');

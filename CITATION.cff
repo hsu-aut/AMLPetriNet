@@ -10,7 +10,7 @@ authors:
   - family-names: Nabizada
     given-names: Hamied
     affiliation: "Helmut Schmidt University / University of the Federal Armed Forces Hamburg"
-version: 0.1.18
+version: 0.1.19
 date-released: 2026-11-14
 license: MIT
 repository-code: "https://github.com/hsu-aut/AMLPetriNet"
