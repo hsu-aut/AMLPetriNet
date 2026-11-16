@@ -102,12 +102,50 @@ public static class AnalyzeCommand
         var counts = new Counts(reports.Sum(r => r.Counts.Error), reports.Sum(r => r.Counts.Warning), reports.Sum(r => r.Counts.Information));
         var exit = ExitCode(options, counts, reports);
         var report = new AnalyzeReport(options.File, "petrinetjs " + answer.Core,
-            new ReportLimits(options.Markings, options.TimeLimitMilliseconds), reports, counts, exit);
+            new ReportLimits(options.Markings, options.TimeLimitMilliseconds), reports, counts, exit)
+        { Rules = answer.Rules };
 
-        if (options.Format == "json") output.WriteLine(JsonSerializer.Serialize(report, Json));
-        else FindingsText.Write(output, report, options.All);
+        var text = Render(report, options);
+        if (options.Output == null)
+        {
+            output.Write(text);
+            return exit;
+        }
 
+        // Written only now, when the run has succeeded: a failed run leaves an old file as it was.
+        // UTF-8 without a byte order mark, which a redirect in Windows PowerShell 5.1 does not give.
+        try
+        {
+            File.WriteAllText(options.Output, text, new System.Text.UTF8Encoding(false));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            error.WriteLine($"{options.Output}: {ex.Message}");
+            return ExitCodes.Input;
+        }
+
+        output.WriteLine($"{options.Output}: {Plural(counts.Error, "error")}, {Plural(counts.Warning, "warning")}, {counts.Information} information.");
         return exit;
+    }
+
+    private static string Plural(int count, string word) => count == 1 ? $"1 {word}" : $"{count} {word}s";
+
+    /// <summary>The report in the format that was asked for, as the text that is written.</summary>
+    private static string Render(AnalyzeReport report, AnalyzeOptions options)
+    {
+        switch (options.Format)
+        {
+            case "json": return JsonSerializer.Serialize(report, Json) + "\n";
+            case "sarif":
+                var version = typeof(AnalyzeCommand).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+                    .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion ?? "0";
+                return FindingsSarif.Write(report, FindingsSarif.UriOf(options.File, Directory.GetCurrentDirectory()), options.All, version.Split('+')[0]);
+            case "junit": return FindingsJUnit.Write(report);
+            default:
+                var writer = new StringWriter { NewLine = "\n" };
+                FindingsText.Write(writer, report, options.All);
+                return writer.ToString();
+        }
     }
 
     private static CoreAnswer Ask(IAnalysisRunner runner, IReadOnlyList<PtNet> nets, AnalyzeOptions options)

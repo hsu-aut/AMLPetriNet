@@ -9,6 +9,9 @@ public sealed class CoreAnswer
 {
     [JsonPropertyName("core")] public string Core { get; set; } = "unknown";
     [JsonPropertyName("results")] public List<CoreNetAnswer> Results { get; set; } = new();
+
+    /// <summary>The titles of the rules the core knows, by id. Empty from a bundle that predates them.</summary>
+    [JsonPropertyName("rules")] public Dictionary<string, string> Rules { get; set; } = new();
 }
 
 public sealed class CoreNetAnswer
@@ -95,4 +98,8 @@ public sealed record AnalyzeReport(
     [property: JsonPropertyName("limits")] ReportLimits Limits,
     [property: JsonPropertyName("nets")] IReadOnlyList<NetReport> Nets,
     [property: JsonPropertyName("counts")] Counts Counts,
-    [property: JsonPropertyName("exit")] int Exit);
+    [property: JsonPropertyName("exit")] int Exit)
+{
+    /// <summary>The titles of the behavioural rules from the core; not part of the JSON report.</summary>
+    [JsonIgnore] public IReadOnlyDictionary<string, string> Rules { get; init; } = new Dictionary<string, string>();
+}

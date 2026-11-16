@@ -147,13 +147,23 @@ dotnet run --project dotnet/PtMapper.Tool -- analyze examples/quality-gate.pnml
 dotnet run --project dotnet/PtMapper.Tool -- analyze doc.aml IH_PT_View --format json --fail-on error
 ```
 
-Options: `--format text|json`, `--fail-on error|warning|never` (default `warning`),
+Options: `--format text|json|sarif|junit`, `--output file`, `--fail-on error|warning|never` (default `warning`),
 `--markings N` (default 20000), `--time-limit ms` (default none, so the answer is
 the same on every machine), `--timeout s` (default 120, kills the analysis),
 `--all` (lists the information findings, the text only counts them otherwise) and
 `--require-complete` (a partial result fails the run: a search that stopped at its
 limit, or a net with an unbounded place; it holds whatever `--fail-on` says about
 warnings). `--fail-on never` leaves only the codes 1 to 3.
+
+`--format sarif` writes SARIF 2.1.0 for GitHub code scanning: one result per finding, at
+line 1 of the file (GitHub shows no other place), with the element in the message and as
+a logical location. Information findings come in only with `--all`, as notes. The
+fingerprint leaves out wording and path, so rewording a message keeps the alert.
+`--format junit` writes one test suite per net and one test case per rule; a rule fails
+its test case on an error or a warning. The format never changes the exit code.
+`--output file` writes the report as UTF-8 without a byte order mark (a `>` in Windows
+PowerShell 5.1 writes UTF-16, which SARIF uploads refuse), only when the run succeeds,
+and prints one summary line.
 
 | Exit code | Meaning |
 |---|---|

@@ -21,11 +21,13 @@ public sealed record AnalyzeOptions(
     int? TimeLimitMilliseconds,
     int TimeoutSeconds,
     bool All,
-    bool RequireComplete)
+    bool RequireComplete,
+    string? Output = null)
 {
     public const string UsageText = """
-        ptmap analyze <in.pnml|in.aml> [hierarchy] [--format text|json] [--fail-on error|warning|never]
-                      [--markings N] [--time-limit ms] [--timeout s] [--all] [--require-complete]
+        ptmap analyze <in.pnml|in.aml> [hierarchy] [--format text|json|sarif|junit] [--output file]
+                      [--fail-on error|warning|never] [--markings N] [--time-limit ms] [--timeout s]
+                      [--all] [--require-complete]
         """;
 
     /// <summary>Reads the arguments after "analyze". An error is returned as text, never thrown.</summary>
@@ -39,6 +41,7 @@ public sealed record AnalyzeOptions(
         var timeout = 120;
         var all = false;
         var requireComplete = false;
+        string? output = null;
 
         for (var i = 0; i < args.Count; i++)
         {
@@ -57,7 +60,11 @@ public sealed record AnalyzeOptions(
                 case "--require-complete": requireComplete = true; break;
                 case "--format":
                     format = Value() ?? "";
-                    if (format is not ("text" or "json")) return (null, $"--format takes text or json, not '{format}'.");
+                    if (format is not ("text" or "json" or "sarif" or "junit")) return (null, $"--format takes text, json, sarif or junit, not '{format}'.");
+                    break;
+                case "--output":
+                    output = Value();
+                    if (string.IsNullOrWhiteSpace(output)) return (null, "--output takes the name of a file.");
                     break;
                 case "--fail-on":
                     failOn = Value() ?? "";
@@ -81,6 +88,6 @@ public sealed record AnalyzeOptions(
         if (positional.Count is < 1 or > 2) return (null, "analyze takes a file and, for an AML file, optionally the name of a hierarchy.");
 
         return (new AnalyzeOptions(positional[0], positional.Count > 1 ? positional[1] : null,
-            format, failOn, markings, timeLimit, timeout, all, requireComplete), null);
+            format, failOn, markings, timeLimit, timeout, all, requireComplete, output), null);
     }
 }

@@ -19,6 +19,9 @@ public static class PtConformanceReport
     /// <summary>The ids of the rules this report covers, for tests that check coverage.</summary>
     public static IReadOnlyList<string> RuleIds => Rules.Select(r => r.Id).ToList();
 
+    /// <summary>The ids and the plain titles of the rules, for reports that name a rule.</summary>
+    public static IReadOnlyList<(string Id, string What)> RuleTexts => Rules;
+
     /// <summary>The rules the validator applies, in the order they are reported.</summary>
     private static readonly (string Id, string What)[] Rules =
     {

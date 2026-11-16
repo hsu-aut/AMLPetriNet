@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>ptmap</AssemblyName>
     <RootNamespace>PtMapper.Tool</RootNamespace>
+    <Version>0.1.19</Version>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\PtMapper.Conversion\PtMapper.Conversion.csproj" />
