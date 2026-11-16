@@ -83,6 +83,9 @@ include it. `npm ci` in `web` installs PetriNet.js from its tag on GitHub. The p
 - **State space** draws every marking the net can reach and the firings between
   them; a click walks the net into that marking, and the query line answers
   whether a marking you have in mind is reachable, with the way there.
+- **Marking and search.** A run's marking can become the initial marking of the net
+  (one undo). A search that hit its limit can be repeated once with ten times the
+  limits, and "Why" shows the firings into the marking where a transition is lost.
 - **Tidy up** lays the net out by its flow in one undoable step; a selection can
   be lined up and spread evenly.
 - Both panels save what they show: the state space as DOT for a graph tool, the

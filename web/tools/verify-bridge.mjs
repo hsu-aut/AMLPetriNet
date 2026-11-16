@@ -218,6 +218,24 @@ check((await messagesOfType('simulation')).some((m) => m.active === false),
 const afterRun = await page.evaluate(async () => (await window.ptn.savePNML()));
 check(afterRun === markingBefore, 'the net after the run is the one before it');
 
+// ── taking the marking of a run (PetriNet.js 0.7) ──
+// One edit for the host, one message that the run ended, with the reason; undo gives it back.
+await clearMessages();
+await page.evaluate(() => window.ptn.get('simulation').start());
+const tookFired = await page.evaluate(() => window.ptn.get('simulation').fireOne());
+await page.waitForTimeout(200);
+await clearMessages();
+const took = await page.evaluate(() => window.ptn.get('simulation').setAsInitial());
+await page.waitForTimeout(900);
+check(tookFired === true && took !== false, 'a marking was taken from a run (otherwise the next checks prove nothing)');
+check((await messagesOfType('changed')).length === 1, `taking a marking reports one edit, not ${(await messagesOfType('changed')).length}`);
+const runEnded = (await messagesOfType('simulation')).filter((m) => m.active === false);
+check(runEnded.length === 1 && /initial marking/.test(runEnded[0].problem ?? ''), `the run ended with its reason: ${JSON.stringify(runEnded)}`);
+await page.evaluate(() => window.ptn.get('commandStack').undo());
+await page.waitForTimeout(300);
+check(await page.evaluate(async () => (await window.ptn.savePNML())) === markingBefore, 'undo gave back the earlier initial marking');
+await clearMessages();
+
 // ── theme ───────────────────────────────────────────────────────────────────
 await page.evaluate(() => window.__hostSend({ type: 'setTheme', theme: 'dark' }));
 await page.waitForTimeout(100);

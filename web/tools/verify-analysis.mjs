@@ -113,6 +113,21 @@ check(json?.results?.length === 0, 'a request without nets gives no results');
 const rubbish = run('this is not json', true);
 check(rubbish.status === 2 && /not JSON/.test(rubbish.stderr), 'a request that is not JSON ends with status 2 and says why');
 
+// A transition that can never fire again carries the marking from which it cannot (PetriNet.js 0.7).
+const a = (id, source, target) => ({ id, source, target });
+({ json } = run({
+  limits: { markings: 20000, milliseconds: null },
+  nets: [{
+    key: 'loss',
+    places: [{ id: 'p', name: 'P', marking: 1 }, { id: 'q', name: 'Q', marking: 0 }, { id: 'z', name: 'Z', marking: 0 }],
+    transitions: ['t', 'u', 'x', 'y'].map((id) => ({ id, name: id.toUpperCase() })),
+    arcs: [a('1', 'p', 't'), a('2', 't', 'q'), a('3', 'q', 'u'), a('4', 'u', 'p'), a('5', 'q', 'x'), a('6', 'x', 'z'), a('7', 'z', 'y'), a('8', 'y', 'z')],
+  }],
+}));
+const lost = json?.results?.[0]?.findings?.filter((f) => f.rule === 'PT16') ?? [];
+check(lost.length >= 2, `a transition that can never fire again is found (${lost.length})`);
+check(lost.every((f) => typeof f.marking === 'string' && f.marking.length > 0), 'each carries the marking it is lost in');
+
 if (failures.length) {
   console.log(`\n${failures.length} analysis check(s) failed`);
   process.exitCode = 1;
