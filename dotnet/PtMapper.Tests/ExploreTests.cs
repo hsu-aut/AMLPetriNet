@@ -107,7 +107,7 @@ public class ExploreTests
         var target = Path.Combine(Path.GetDirectoryName(file)!, "out.dot");
         File.WriteAllText(target, "old");
 
-        // 2: no such file. 3: an answer without kind, a problem, a throwing runner. 5: stopped at a limit.
+        // 2: no such file. 3: an answer without kind, a problem. 5: stopped at a limit.
         Assert.Equal(ExitCodes.Input, Run(new FakeRunner(Answer()), Path.Combine(Path.GetDirectoryName(file)!, "missing.pnml"), "--output", target).Exit);
         var (old, _, oldErr) = Run(new FakeRunner(Answer(kind: "")), file, "--output", target);
         Assert.Equal(ExitCodes.Failure, old);
@@ -190,9 +190,12 @@ public class ExploreTests
     public void AmlAndPnmlOfTheQualityGateGiveTheSameText()
     {
         var runner = AnalyzeTests.RealRunner();
-        var pnml = Run(runner, QualityGate("pnml")).Out;
-        var aml = Run(runner, QualityGate("aml")).Out;
-        Assert.Equal(pnml, aml);
+        var pnml = Run(runner, QualityGate("pnml"));
+        var aml = Run(runner, QualityGate("aml"));
+        Assert.Equal(ExitCodes.Ok, pnml.Exit);
+        Assert.Equal(ExitCodes.Ok, aml.Exit);
+        Assert.StartsWith("digraph", pnml.Out);
+        Assert.Equal(pnml.Out, aml.Out);
     }
 
     [SkippableFact]
@@ -203,5 +206,28 @@ public class ExploreTests
         var (exit, text, _) = Run(runner, QualityGate("pnml"), "--markings", "5", "--partial");
         Assert.Equal(ExitCodes.Ok, exit);
         Assert.StartsWith("digraph", text);
+    }
+
+    private sealed class ThrowingRunner(Exception exception) : IAnalysisRunner
+    {
+        public string Run(string requestJson, int timeoutSeconds) => throw exception;
+    }
+
+    [Fact]
+    public void ARunnerThatCannotRunOrFailsWritesNothing()
+    {
+        var file = FileOf(Loop());
+        var target = Path.Combine(Path.GetDirectoryName(file)!, "never.dot");
+        Assert.Equal(ExitCodes.Input, Run(new ThrowingRunner(new AnalysisUnavailableException("no node")), file, "--output", target).Exit);
+        Assert.Equal(ExitCodes.Failure, Run(new ThrowingRunner(new AnalysisFailedException("boom")), file, "--output", target).Exit);
+        Assert.False(File.Exists(target), "a file was created although the run failed");
+    }
+
+    [Fact]
+    public void AFileThatIsNotANetIsAnInputError()
+    {
+        var path = Path.Combine(Directory.CreateTempSubdirectory("ptmap-explore-").FullName, "broken.pnml");
+        File.WriteAllText(path, "<not-xml");
+        Assert.Equal(ExitCodes.Input, Run(new FakeRunner(Answer()), path).Exit);
     }
 }

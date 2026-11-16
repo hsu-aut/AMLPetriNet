@@ -80,14 +80,13 @@ try {
 
 // A request without a kind is an analysis, so a ptmap that does not send one keeps working.
 const kind = request?.kind ?? 'analyse';
+// No process.exit after a write: on Linux and macOS a pipe is written asynchronously, and an exit
+// would cut an answer of more than the size of the pipe's buffer.
 if (kind === 'explore') {
   process.stdout.write(JSON.stringify(exploration(request)));
-  process.exit(0);
+} else if (kind === 'analyse') {
+  process.stdout.write(JSON.stringify(answer(request)));
+} else {
+  process.stderr.write(`ptmap-analysis: unknown kind '${kind}'\n`);
+  process.exitCode = 2;
 }
-if (kind !== 'analyse') {
-  process.stderr.write(`ptmap-analysis: unknown kind '${kind}'
-`);
-  process.exit(2);
-}
-
-process.stdout.write(JSON.stringify(answer(request)));

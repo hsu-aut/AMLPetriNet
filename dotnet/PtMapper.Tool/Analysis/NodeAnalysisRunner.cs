@@ -56,7 +56,7 @@ public sealed class NodeAnalysisRunner : IAnalysisRunner
             if (!process.WaitForExit(TimeSpan.FromSeconds(timeoutSeconds)))
             {
                 Kill(process);
-                throw new AnalysisFailedException($"The analysis did not finish within {timeoutSeconds} s and was stopped.");
+                throw new AnalysisFailedException($"The search did not finish within {timeoutSeconds} s and was stopped.");
             }
 
             process.WaitForExit(); // lets the output readers finish
@@ -93,7 +93,7 @@ public sealed class NodeAnalysisRunner : IAnalysisRunner
         catch (Win32Exception)
         {
             throw new AnalysisUnavailableException(
-                $"'analyze' needs Node.js {MinimumNodeVersion} or later and '{_node}' was not found on the PATH.");
+                $"ptmap needs Node.js {MinimumNodeVersion} or later for this command, and '{_node}' was not found on the PATH.");
         }
 
         // "v20.19.0"
@@ -101,7 +101,7 @@ public sealed class NodeAnalysisRunner : IAnalysisRunner
         if (!int.TryParse(major, out var number) || number < MinimumNodeVersion)
         {
             throw new AnalysisUnavailableException(
-                $"'analyze' needs Node.js {MinimumNodeVersion} or later; found '{version}'.");
+                $"ptmap needs Node.js {MinimumNodeVersion} or later for this command; found '{version}'.");
         }
     }
 

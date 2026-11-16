@@ -61,6 +61,11 @@ public static class ExploreCommand
             error.WriteLine(ex.Message);
             return ExitCodes.Input;
         }
+        catch (Exception ex) when (ex is FormatException or System.Xml.XmlException or InvalidDataException)
+        {
+            error.WriteLine($"{options.File} cannot be read: {ex.Message}");
+            return ExitCodes.Input;
+        }
 
         if (sources.Count == 0)
         {
@@ -111,7 +116,8 @@ public static class ExploreCommand
         }
         catch (AnalysisFailedException ex)
         {
-            error.WriteLine(ex.Message);
+            error.WriteLine(ex.Message + (ex.Message.Contains("unknown kind", StringComparison.Ordinal)
+                ? " The analysis bundle is too old for explore. Run 'npm run build' in web/, then build ptmap again." : ""));
             return ExitCodes.Failure;
         }
         catch (JsonException ex)
@@ -123,7 +129,7 @@ public static class ExploreCommand
         // An older bundle answers every request with an analysis and says nothing of its kind.
         if (answer.Kind != "explore")
         {
-            error.WriteLine("The analysis bundle is too old for explore. Run 'npm run build' in web/.");
+            error.WriteLine("The analysis bundle is too old for explore. Run 'npm run build' in web/, then build ptmap again.");
             return ExitCodes.Failure;
         }
 
@@ -141,7 +147,8 @@ public static class ExploreCommand
         if (result.Stopped != null && !options.Partial)
         {
             error.WriteLine(summary);
-            error.WriteLine($"Nothing was written. Raise --markings, or write what was found with --partial.");
+            var raise = result.Stopped == "time" ? "--time-limit" : "--markings";
+            error.WriteLine($"Nothing was written. Raise {raise}, or write what was found with --partial.");
             return ExitCodes.Warnings;
         }
 

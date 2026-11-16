@@ -136,7 +136,7 @@ dotnet run --project dotnet/PtMapper.Tool -- <command>
 | `compare <before.aml> <after.aml> [hierarchy]` | Differences between two versions of a document |
 | `validate <in.pnml or in.aml>` | Structural checks, non-zero exit code on errors |
 | `analyze <in.pnml or in.aml> [hierarchy] [options]` | The structural rules and the behaviour of the net (deadlocks, bounds, liveness, invariants) in one report, as text or JSON, with an exit code for CI. Needs Node.js 20 or later at run time |
-| `explore <in.pnml or in.aml> [hierarchy] [options]` | The state space of one net as DOT (Graphviz) or CSV, the text the state space view saves. `--net id`, `--format dot|csv`, `--output file`, `--markings N`, `--partial` (write a search that stopped at its limit; otherwise exit 5 and nothing is written). Needs Node.js 20 or later |
+| `explore <in.pnml or in.aml> [hierarchy] [options]` | The state space of one net as DOT (Graphviz) or CSV, the text the state space view saves. `--net id`, `--format dot|csv`, `--output file`, `--markings N`, `--time-limit ms`, `--timeout s`, `--partial` (write a search that stopped at its limit; otherwise exit 5 and nothing is written). Exit codes as for `analyze`, except 5 means the search stopped and 4 that the net breaks ISO/IEC 15909-1. ptmap has no time limit by default, so it can write more than the view does. Needs Node.js 20 or later |
 | `report <in> <out.md>` | Checks as a Markdown report |
 | `library <out.aml>` | Writes the `ISO_PT` domain library |
 | `selfcontained <in.aml> <out.aml>` | Embeds the referenced libraries into a document |

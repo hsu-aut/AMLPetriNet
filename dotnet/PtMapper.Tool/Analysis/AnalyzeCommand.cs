@@ -53,6 +53,11 @@ public static class AnalyzeCommand
             error.WriteLine(ex.Message);
             return ExitCodes.Input;
         }
+        catch (Exception ex) when (ex is FormatException or System.Xml.XmlException or InvalidDataException)
+        {
+            error.WriteLine($"{options.File} cannot be read: {ex.Message}");
+            return ExitCodes.Input;
+        }
 
         if (sources.Count == 0)
         {
