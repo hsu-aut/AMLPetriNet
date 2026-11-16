@@ -136,6 +136,7 @@ dotnet run --project dotnet/PtMapper.Tool -- <command>
 | `compare <before.aml> <after.aml> [hierarchy]` | Differences between two versions of a document |
 | `validate <in.pnml or in.aml>` | Structural checks, non-zero exit code on errors |
 | `analyze <in.pnml or in.aml> [hierarchy] [options]` | The structural rules and the behaviour of the net (deadlocks, bounds, liveness, invariants) in one report, as text or JSON, with an exit code for CI. Needs Node.js 20 or later at run time |
+| `explore <in.pnml or in.aml> [hierarchy] [options]` | The state space of one net as DOT (Graphviz) or CSV, the text the state space view saves. `--net id`, `--format dot|csv`, `--output file`, `--markings N`, `--partial` (write a search that stopped at its limit; otherwise exit 5 and nothing is written). Needs Node.js 20 or later |
 | `report <in> <out.md>` | Checks as a Markdown report |
 | `library <out.aml>` | Writes the `ISO_PT` domain library |
 | `selfcontained <in.aml> <out.aml>` | Embeds the referenced libraries into a document |
@@ -173,6 +174,24 @@ and prints one summary line.
 | 3 | the analysis failed, ran into `--timeout`, or gave no result for a net |
 | 4 | at least one error |
 | 5 | at least one warning, no error (`validate` exits 0 on warnings) |
+
+Code scanning on GitHub, with the findings of a net in the repository:
+
+```yaml
+permissions:
+  contents: read
+  security-events: write
+steps:
+  - uses: actions/checkout@v4
+  - run: dotnet ptmap.dll analyze nets/line.pnml --format sarif --output ptmap.sarif --fail-on never
+  - uses: github/codeql-action/upload-sarif@v3
+    with: { sarif_file: ptmap.sarif }
+```
+
+GitHub shows a result at a line of a file. A net has no lines, so every result points at
+line 1 and names the element in its text. The same file uploaded from two paths is two
+analyses. Uploading the quality gate of this repository would keep a deadlock open for
+ever, so the repository's own CI does not upload.
 
 The report also names the class of the net (state machine, marked graph,
 free-choice and so on) and, for a workflow net, whether it is sound. A statement
@@ -212,6 +231,20 @@ for moved labels. Nodes without a position are arranged when a net is loaded.
 | PT09 | No transition without an input place (warning) |
 | PT10 | No transition without an output place (warning) |
 | PT11 | Identifiers are valid XML names |
+| PT12 | Unbounded place (shown as omega) |
+| PT13 | The bound of a place |
+| PT14 | Dead transition: it can never fire, with the place that never holds enough |
+| PT15 | Deadlock: a marking in which nothing is enabled |
+| PT16 | Not live: a transition that can never fire again, with the marking where it is lost |
+| PT17 | Partial result: the search stopped at its limit |
+| PT18 | Place invariant |
+| PT19 | Transition invariant |
+| PT20 | Siphon without a token |
+| PT21 | Trap |
+| PT22 | Net class (state machine, marked graph, free-choice and so on) |
+| PT23 | Liveness proven from the structure |
+| PT24 | Boundedness proven from the structure |
+| PT25 | Workflow net soundness |
 
 ## Tests
 

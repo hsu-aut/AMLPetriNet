@@ -6,15 +6,19 @@
  * file; the answer for each net is the one the canvas would give, from the same
  * core. Nothing else in this file knows about nets.
  *
- *   in:  { kind: 'analyse' (the default),
+ *   in:  { kind: 'analyse' (the default) or 'explore',
  *          limits: { markings, milliseconds },
  *          nets: [{ key, places: [{ id, name, marking }], transitions: [{ id, name }],
  *                   arcs: [{ id, source, target, weight }] }] }
  *   out: { core, kind: 'analyse', rules: { PT12: 'Unbounded place', ... }, results: [{ key, problem, complete, stopped, markings, unbounded, findings }] }
  *
+ * An 'explore' request carries `format` ('dot' or 'csv') and gets, for each net,
+ *   { key, problem, complete, stopped, markings, edges, deadlocks, unbounded, text }
+ * and no rules.
+ *
  * A `milliseconds` of null means no time limit.
  */
-import { analyseData, RULES } from 'petrinetjs/net.js';
+import { analyseData, exploreData, RULES } from 'petrinetjs/net.js';
 
 /** Injected by the build from the installed package. */
 const CORE_VERSION = typeof __CORE_VERSION__ === 'undefined' ? 'unknown' : __CORE_VERSION__;
@@ -23,6 +27,25 @@ async function readStdin() {
   const chunks = [];
   for await (const chunk of process.stdin) chunks.push(chunk);
   return Buffer.concat(chunks).toString('utf8').replace(/^﻿/, '');
+}
+
+export function exploration(request) {
+  const limits = {};
+  if (request?.limits && 'markings' in request.limits) limits.markings = request.limits.markings;
+  if (request?.limits && 'milliseconds' in request.limits) limits.milliseconds = request.limits.milliseconds;
+  const format = request?.format === 'csv' ? 'csv' : 'dot';
+
+  return {
+    core: CORE_VERSION,
+    kind: 'explore',
+    results: (request?.nets ?? []).map((net) => {
+      try {
+        return { key: net.key, ...exploreData(net, limits, format) };
+      } catch (error) {
+        return { key: net.key, problem: String(error?.message ?? error), complete: false, stopped: null, markings: 0, edges: 0, deadlocks: 0, unbounded: [], text: '' };
+      }
+    }),
+  };
 }
 
 export function answer(request) {
@@ -57,6 +80,10 @@ try {
 
 // A request without a kind is an analysis, so a ptmap that does not send one keeps working.
 const kind = request?.kind ?? 'analyse';
+if (kind === 'explore') {
+  process.stdout.write(JSON.stringify(exploration(request)));
+  process.exit(0);
+}
 if (kind !== 'analyse') {
   process.stderr.write(`ptmap-analysis: unknown kind '${kind}'
 `);

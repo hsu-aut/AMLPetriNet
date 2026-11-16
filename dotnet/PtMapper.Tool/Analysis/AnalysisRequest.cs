@@ -10,12 +10,14 @@ namespace PtMapper.Tool.Analysis;
 /// </summary>
 public static class AnalysisRequest
 {
-    public static string Build(IReadOnlyList<PtNet> nets, int markings, int? timeLimitMilliseconds)
+    public static string Build(IReadOnlyList<PtNet> nets, int markings, int? timeLimitMilliseconds, string kind = "analyse", string? format = null)
     {
         using var stream = new MemoryStream();
         using (var json = new Utf8JsonWriter(stream))
         {
             json.WriteStartObject();
+            json.WriteString("kind", kind);
+            if (format != null) json.WriteString("format", format);
 
             json.WriteStartObject("limits");
             json.WriteNumber("markings", markings);

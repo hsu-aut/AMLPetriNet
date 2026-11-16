@@ -414,7 +414,7 @@ public class AnalyzeTests
     }
 
     // ── end to end, with the real analysis ──────────────────────────────────
-    private static string RepoRoot()
+    internal static string RepoRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, "web")) ) dir = dir.Parent;
@@ -423,7 +423,7 @@ public class AnalyzeTests
 
     private static string FindFile(string relative) => Path.Combine(RepoRoot(), relative.Replace('/', Path.DirectorySeparatorChar));
 
-    private static string BundlePath => Path.Combine(RepoRoot(), "web", "dist-node", "ptmap-analysis.mjs");
+    internal static string BundlePath => Path.Combine(RepoRoot(), "web", "dist-node", "ptmap-analysis.mjs");
 
     private static bool NodeWorks()
     {
@@ -439,7 +439,7 @@ public class AnalyzeTests
         catch { return false; }
     }
 
-    private static NodeAnalysisRunner RealRunner()
+    internal static NodeAnalysisRunner RealRunner()
     {
         var required = Environment.GetEnvironmentVariable("PTMAP_REQUIRE_NODE") == "1";
         var ready = NodeWorks() && File.Exists(BundlePath);

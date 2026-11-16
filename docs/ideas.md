@@ -31,10 +31,7 @@ that is taken up gets a plan in `docs/` first, then a block in `backlog.md`.
 
 ## The tools around it (AMLPetriNet)
 
-8. **`ptmap explore`**: the state space as DOT or CSV from the command line, for
-   papers and for CI. Small.
-9. **Machine formats for `ptmap analyze`**: SARIF, which GitHub shows as code
-   scanning alerts, and JUnit XML for CI dashboards. Small to medium.
+8. **`ptmap explore`**, 9. **SARIF and JUnit**: built (2026-11-17), see the README.
 10. **Write the result of an analysis into the document**, on request and not by
     itself: the class, boundedness and liveness as attributes of the PT_Net element,
     so that they are visible in the AML tree and to other tools. This is the one that

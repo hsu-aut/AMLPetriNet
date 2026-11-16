@@ -134,6 +134,17 @@ check(json?.kind === 'analyse', 'a request without a kind is an analysis and say
 check(json?.rules?.PT15 === 'Deadlock', `the answer names the rules (PT15 is ${JSON.stringify(json?.rules?.PT15)})`);
 ({ json } = run({ kind: 'analyse', nets: [idle()] }));
 check(json?.kind === 'analyse', 'an analysis asked for by name is answered');
+// The state space as a file.
+({ json } = run({ kind: 'explore', format: 'dot', limits: { markings: 20000, milliseconds: null }, nets: [idle('Prüf <station> & "co"')] }));
+check(json?.kind === 'explore' && json.results?.[0]?.key === 'n', 'an exploration is answered and says so');
+check(json?.results?.[0]?.text?.startsWith('digraph') && json.results[0].text.includes('doublecircle'), 'the DOT starts and marks the initial marking');
+check(json?.results?.[0]?.text?.includes('Prüf') && json.results[0].text.includes('<station>'), 'umlauts and markup survive in the text');
+check(json?.results?.[0]?.markings === 2 && json.results[0].deadlocks === 1 && json.results[0].complete === true, `the numbers are right: ${JSON.stringify(json?.results?.[0] && { ...json.results[0], text: '' })}`);
+({ json } = run({ kind: 'explore', format: 'csv', limits: { markings: 20000, milliseconds: null }, nets: [idle()] }));
+check(json?.results?.[0]?.text?.startsWith('marking,firings,deadlock'), 'the CSV starts with its head');
+({ json } = run({ kind: 'explore', format: 'dot', limits: { markings: 1, milliseconds: null }, nets: [idle()] }));
+check(json?.results?.[0]?.stopped === 'markings' && json.results[0].text.startsWith('digraph'), 'a stopped search says so and still returns text');
+
 const unknown = run({ kind: 'nonsense', nets: [idle()] });
 check(unknown.status === 2, `an unknown kind ends with status 2, not ${unknown.status}`);
 

@@ -11,6 +11,7 @@
 //   ptmap fixtures <out-dir>            emit the interop fixture set
 //   ptmap validate <in.pnml|in.aml>     check against the ISO/IEC 15909-1 rules
 //   ptmap analyze  <in.pnml|in.aml> [hierarchy] [options]   structural and behavioural findings
+//   ptmap explore  <in.pnml|in.aml> [hierarchy] [options]   the state space as DOT or CSV
 //   ptmap report   <in.pnml|in.aml> <out.md>   write a conformance report
 //   ptmap selfcontained <in.aml> <out.aml> [libDir]   inline the libraries
 //   ptmap editor-test <out-dir> [libDir]      write the AML Editor test files
@@ -157,6 +158,14 @@ try
             using var stdout = new StreamWriter(Console.OpenStandardOutput(), new System.Text.UTF8Encoding(false)) { AutoFlush = true };
             return AnalyzeCommand.Run(args[1..], stdout, Console.Error, new NodeAnalysisRunner());
         }
+        case "explore" when args.Length >= 2:
+        {
+            // UTF-8 without a byte order mark, whatever the code page of the
+            // console is: the output is read by a parser or a person on another
+            // machine, and names in it can hold umlauts.
+            using var stdout = new StreamWriter(Console.OpenStandardOutput(), new System.Text.UTF8Encoding(false)) { AutoFlush = true };
+            return ExploreCommand.Run(args[1..], stdout, Console.Error, new NodeAnalysisRunner());
+        }
 
         case "fixtures" when args.Length >= 2:
         {
@@ -232,6 +241,8 @@ static void Usage()
         ptmap analyze  <in.pnml|in.aml> [hierarchy] [--format text|json|sarif|junit] [--output file]
                        [--fail-on error|warning|never] [--markings N] [--time-limit ms] [--timeout s]
                        [--all] [--require-complete]
+        ptmap explore  <in.pnml|in.aml> [hierarchy] [--net id] [--format dot|csv] [--output file]
+                       [--markings N] [--time-limit ms] [--timeout s] [--partial]
         ptmap report   <in.pnml|in.aml> <out.md>
         ptmap selfcontained <in.aml> <out.aml> [libDir]
         ptmap editor-test <out-dir> [libDir]

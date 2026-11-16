@@ -21,8 +21,6 @@ public static class AnalyzeCommand
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
-    private sealed record Source(PtNet Net, string? Hierarchy, InternalElementType? Element);
-
     public static int Run(IReadOnlyList<string> args, TextWriter output, TextWriter error, IAnalysisRunner runner)
     {
         var (options, problem) = AnalyzeOptions.Parse(args);
@@ -34,16 +32,16 @@ public static class AnalyzeCommand
         }
 
         // The report must not replace the net it is about.
-        if (options.Output != null && SamePath(options.Output, options.File))
+        if (options.Output != null && ReportOutput.SamePath(options.Output, options.File))
         {
             error.WriteLine("--output names the input file; the report would replace the net.");
             return ExitCodes.Usage;
         }
 
-        List<Source> sources;
+        List<NetSource> sources;
         try
         {
-            sources = Load(options, error, out var fault);
+            sources = NetSources.Load(options.File, options.Hierarchy, error, out var fault);
             if (fault != null)
             {
                 error.WriteLine(fault);
@@ -121,27 +119,16 @@ public static class AnalyzeCommand
 
         // Written only now, when the run has succeeded: a failed run leaves an old file as it was.
         // UTF-8 without a byte order mark, which a redirect in Windows PowerShell 5.1 does not give.
-        // Through a temporary file, so that a write that fails halfway leaves the old file whole.
-        var temporary = options.Output + ".ptmap-" + Guid.NewGuid().ToString("N")[..8] + ".tmp";
-        try
+        var failure = ReportOutput.Write(options.Output, text);
+        if (failure != null)
         {
-            File.WriteAllText(temporary, text, new System.Text.UTF8Encoding(false));
-            File.Move(temporary, options.Output, overwrite: true);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            try { File.Delete(temporary); } catch (IOException) { } catch (UnauthorizedAccessException) { }
-            error.WriteLine($"{options.Output}: {ex.Message}");
+            error.WriteLine(failure);
             return ExitCodes.Input;
         }
 
         output.WriteLine($"{options.Output}: {Plural(counts.Error, "error")}, {Plural(counts.Warning, "warning")}, {counts.Information} information.");
         return exit;
     }
-
-    private static bool SamePath(string a, string b) =>
-        string.Equals(Path.GetFullPath(a), Path.GetFullPath(b),
-            OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
 
     private static string Plural(int count, string word) => count == 1 ? $"1 {word}" : $"{count} {word}s";
 
@@ -178,7 +165,7 @@ public static class AnalyzeCommand
         }
     }
 
-    private static NetReport Build(Source source, IReadOnlyList<PtFinding> structural, CoreNetAnswer? core, bool analysable)
+    private static NetReport Build(NetSource source, IReadOnlyList<PtFinding> structural, CoreNetAnswer? core, bool analysable)
     {
         var net = source.Net;
         var findings = new List<ReportedFinding>();
@@ -222,7 +209,7 @@ public static class AnalyzeCommand
 
     private static int Rank(string severity) => severity switch { "error" => 0, "warning" => 1, _ => 2 };
 
-    private static string? InternalId(Source source, string? elementId) =>
+    private static string? InternalId(NetSource source, string? elementId) =>
         source.Element == null || string.IsNullOrEmpty(elementId)
             ? null
             : CaexToPtNet.FindElement(source.Element, elementId)?.ID;
@@ -237,42 +224,5 @@ public static class AnalyzeCommand
         if (options.RequireComplete && reports.Any(r => r.Analysed && !r.Complete)) return ExitCodes.Warnings;
 
         return options.FailOn == "warning" && counts.Warning > 0 ? ExitCodes.Warnings : ExitCodes.Ok;
-    }
-
-    /// <summary>The nets of the file, each with the hierarchy and, for AML, the element it came from.</summary>
-    private static List<Source> Load(AnalyzeOptions options, TextWriter error, out string? fault)
-    {
-        fault = null;
-        if (!File.Exists(options.File)) throw new FileNotFoundException($"{options.File}: no such file.", options.File);
-
-        if (!options.File.EndsWith(".aml", StringComparison.OrdinalIgnoreCase))
-        {
-            if (options.Hierarchy != null) error.WriteLine("note: a hierarchy name means nothing for a PNML file and is ignored.");
-            using var stream = File.OpenRead(options.File);
-            return Pnml.ReadAll(stream).Select(n => new Source(n, null, null)).ToList();
-        }
-
-        var document = CAEXDocument.LoadFromFile(options.File);
-        var hierarchies = document.CAEXFile.InstanceHierarchy.ToList();
-        if (options.Hierarchy != null)
-        {
-            hierarchies = hierarchies.Where(h => h.Name == options.Hierarchy).ToList();
-            if (hierarchies.Count == 0)
-            {
-                fault = $"{options.File} has no InstanceHierarchy '{options.Hierarchy}'.";
-                return new List<Source>();
-            }
-        }
-
-        var sources = new List<Source>();
-        foreach (var hierarchy in hierarchies)
-        {
-            // Read and NetElements come out in the same order, so they pair up.
-            var nets = CaexToPtNet.Read(hierarchy);
-            var elements = CaexToPtNet.NetElements(hierarchy);
-            for (var i = 0; i < nets.Count; i++) sources.Add(new Source(nets[i], hierarchy.Name, elements[i]));
-        }
-
-        return sources;
     }
 }
